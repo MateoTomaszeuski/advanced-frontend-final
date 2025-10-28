@@ -193,4 +193,411 @@ An intelligent Spotify management assistant that automates playlist creation, mu
     - Filter by operation type
     - Export history as JSON/CSV
 
+---
+
+## Project Outline & Rubric Checklist
+
+### Agent Requirements
+
+[ ] 4 custom functions (actions) that can be called
+
+[ ] `createSmartPlaylist()` - autonomous playlist creation
+
+[ ] `discoverNewMusic()` - autonomous new music discovery
+
+[ ] `removeDuplicates()` - requires user confirmation
+
+[ ] `suggestMusicByContext()` - requires user confirmation
+
+[ ] 1+ action(s) can be performed autonomously (createSmartPlaylist, discoverNewMusic)
+
+[ ] 1+ action(s) require user confirmation to perform (removeDuplicates, suggestMusicByContext)
+
+[ ] 1+ action(s) automatically adjust the UI when performed (navigate to new playlist, update dashboard)
+
+[ ] Structured output, validated with Zod
+
+[ ] Agentic loop runs until task is complete or user intervention required
+
+[ ] LLM decisions and actions are persisted and can be inspected by users
+
+### Additional Tasks (Choose 1+)
+
+[ ] Real-time WebSocket communication for agent status updates
+
+[ ] Streaming generation in the UI for agent responses
+
+[ ] User configurable benchmarking tool for agent performance
+
+### Technical Requirements
+
+[ ] Deployed in production (public internet or class Kubernetes cluster)
+
+[ ] CI/CD pipeline configured
+
+[ ] Unit tests run automatically in pipeline
+
+[ ] Linter runs automatically in pipeline
+
+[ ] Data persisted on server for multi-client access
+
+### Technology Requirements
+
+[ ] Global client-side state management (Zustand/Redux)
+
+[ ] Toasts / global notifications for agent actions
+
+[ ] Error handling (API requests and render errors)
+
+[ ] Network calls - read data (GET playlists, tracks)
+
+[ ] Network calls - write data (POST/PUT/DELETE playlists)
+
+[ ] Developer type helping (TypeScript)
+
+[ ] 10+ pages/views with router
+
+[ ] CI/CD pipeline
+
+[ ] Live production environment
+
+[ ] Automated testing and linting in pipeline (abort on fail)
+
+[ ] 3+ reusable form input components
+
+[ ] 2+ reusable layout components
+
+[ ] Authentication and user account support (Spotify OAuth)
+
+[ ] Authorized pages and public pages
+
+---
+
+## Project Schedule
+
+### Oct 29 (Week 1 - Foundation)
+
+#### Estimates:
+
+**Rubric Items:**
+- CI/CD pipeline configured with GitHub Actions
+- Linter runs automatically in pipeline
+- Automated testing setup (abort build if fails)
+- Live production environment (Kubernetes)
+- Authentication and user account support (Keycloak)
+- Authorized pages and public pages
+
+**Features:**
+- Project scaffolding with Vite + React + TypeScript
+- ESLint configuration
+- GitHub Actions workflow for CI/CD
+- Keycloak authentication flow
+- Landing page (public)
+- Basic dashboard layout (authorized)
+- Protected route wrapper component
+
+#### Delivered:
+
+**Rubric Items:**
+
+
+**Features:**
+
+
+---
+
+### Nov 1 (Week 2 - Core Infrastructure)
+
+#### Estimates:
+
+**Rubric Items:**
+- Global client-side state management (Zustand setup)
+- Developer type helping (TypeScript throughout)
+- 2+ reusable layout components (MainLayout, AuthLayout)
+- 3+ reusable form input components (TextInput, Select, Button)
+- Error handling for render errors (Error Boundary)
+- Data persisted on server setup (backend API initialization)
+
+**Features:**
+- Spotify OAuth 2.0 integration (connect Spotify within user account)
+- State management store structure
+- Reusable layout components (MainLayout, AuthLayout, Sidebar)
+- Reusable form components (TextInput, SelectDropdown, Button, SearchInput)
+- Error boundary component
+- Settings page with Spotify connection (authorized)
+- Backend API scaffolding (Express.js or similar)
+- Database schema design for user data and agent logs
+- Spotify token storage and management
+
+#### Delivered:
+
+**Rubric Items:**
+
+
+**Features:**
+
+
+---
+
+### Nov 5 (Week 3 - Agent Core Functions Part 1)
+
+#### Estimates:
+
+**Rubric Items:**
+- 2 custom functions implemented (`createSmartPlaylist`, `discoverNewMusic`)
+- 1+ action(s) can be performed autonomously
+- Structured output validated with Zod
+- Network calls - read data (GET Spotify playlists, tracks, recommendations)
+- Network calls - write data (POST create playlist)
+
+**Features:**
+- Playlist Creator page with natural language input
+- `createSmartPlaylist()` agent function implementation
+- `discoverNewMusic()` agent function implementation
+- New Music Discovery page
+- Spotify API integration service
+- Zod schemas for API responses and agent outputs
+- Agent action logging to database
+
+#### Delivered:
+
+**Rubric Items:**
+
+
+**Features:**
+
+
+---
+
+### Nov 8 (Week 4 - Agent Core Functions Part 2)
+
+#### Estimates:
+
+**Rubric Items:**
+- 2 additional custom functions (`removeDuplicates`, `suggestMusicByContext`)
+- 1+ action(s) require user confirmation to perform
+- 1+ action(s) automatically adjust UI when performed
+- Toasts / global notifications for agent actions
+- Error handling for API requests
+
+**Features:**
+- Duplicate Cleaner page with confirmation UI
+- `removeDuplicates()` agent function with user approval flow
+- Music Suggestion Engine page
+- `suggestMusicByContext()` agent function
+- Toast notification system (react-hot-toast or similar)
+- API error handling with retry logic
+- Auto-navigation after playlist creation
+
+#### Delivered:
+
+**Rubric Items:**
+
+
+**Features:**
+
+
+---
+
+### Nov 12 (Week 5 - Agentic Loop & Persistence)
+
+#### Estimates:
+
+**Rubric Items:**
+- Agentic loop runs until task complete or user intervention required
+- LLM decisions and actions persisted and can be inspected
+- Unit tests run automatically in pipeline
+- Real-time WebSocket communication (Additional Task)
+
+**Features:**
+- Agent Control Center page with live status
+- Agentic orchestration loop implementation
+- Agent action history database persistence
+- Activity History page with action logs
+- WebSocket server setup for real-time updates
+- WebSocket client integration
+- Unit tests for agent functions
+- Unit tests for API endpoints
+
+#### Delivered:
+
+**Rubric Items:**
+
+
+**Features:**
+
+
+---
+
+### Nov 15 (Week 6 - Additional Pages & UI Polish)
+
+#### Estimates:
+
+**Rubric Items:**
+- 10+ pages/views with router (complete remaining pages)
+- Streaming generation in UI (Additional Task - optional)
+
+**Features:**
+- Playlist Analytics page with visualizations
+- Dashboard home page with metrics and quick actions
+- Complete all 10 pages/views
+- Chart.js or Recharts integration for analytics
+- Audio feature visualization (radar charts, histograms)
+- Genre distribution visualizations
+- Streaming LLM responses in Playlist Creator
+- UI polish and responsive design improvements
+
+#### Delivered:
+
+**Rubric Items:**
+
+
+**Features:**
+
+
+---
+
+### Nov 19 (Week 7 - Advanced Features & Testing)
+
+#### Estimates:
+
+**Rubric Items:**
+- User configurable benchmarking tool (Additional Task - optional)
+- Comprehensive unit test coverage
+
+**Features:**
+- Agent performance benchmarking dashboard
+- Benchmark configuration options
+- Batch operations support (process multiple playlists)
+- Playlist comparison tools
+- Integration tests for Spotify API
+- E2E tests for critical user flows
+- Test coverage reporting in CI/CD
+
+#### Delivered:
+
+**Rubric Items:**
+
+
+**Features:**
+
+
+---
+
+### Nov 22 (Week 8 - Optimization & UX)
+
+#### Estimates:
+
+**Rubric Items:**
+- Performance optimization complete
+- All error handling edge cases covered
+
+**Features:**
+- Lazy loading for large playlists
+- Virtualization for long lists
+- Optimistic UI updates
+- Loading states and skeletons
+- Rate limiting handling for Spotify API
+- Token refresh logic
+- User preference persistence
+- Keyboard shortcuts and accessibility improvements
+
+#### Delivered:
+
+**Rubric Items:**
+
+
+**Features:**
+
+
+---
+
+### Nov 25 (Week 9 - Integration & Bug Fixes)
+
+#### Estimates:
+
+**Rubric Items:**
+- All rubric items integration tested
+- Production deployment stable
+
+**Features:**
+- End-to-end feature integration testing
+- Cross-browser compatibility testing
+- Mobile responsiveness verification
+- Bug fixes from testing
+- Performance profiling and optimization
+- Security audit (OAuth flow, API keys)
+- Documentation updates
+
+#### Delivered:
+
+**Rubric Items:**
+
+
+**Features:**
+
+
+---
+
+### Dec 3 (Week 10 - Buffer & Final Polish)
+
+#### Estimates:
+
+**Rubric Items:**
+- All remaining rubric items completed
+- Final production deployment
+
+**Features:**
+- Overflow work from previous weeks
+- Final bug fixes
+- UI/UX refinements based on testing
+- Performance final optimizations
+- Complete documentation
+- Demo preparation
+- User guide/help section
+
+#### Delivered:
+
+**Rubric Items:**
+
+
+**Features:**
+
+
+---
+
+### Dec 6 (Final Submission)
+
+#### Estimates:
+
+**Rubric Items:**
+- Final verification all rubric items complete
+- Production deployment verified
+
+**Features:**
+- Final testing and validation
+- Submission preparation
+- Demo video/presentation materials
+- Code cleanup and commenting
+- README updates with deployment links
+- Final deployment verification
+
+#### Delivered:
+
+**Rubric Items:**
+
+
+**Features:**
+
+
+---
+
+## Notes
+- Each check-in targets approximately 10% of project completion
+- First two weeks focus on infrastructure (CI/CD, auth, deployment)
+- Weeks 3-5 implement core agent functionality
+- Weeks 6-8 complete remaining features and testing
+- Weeks 9-10 serve as buffer for overflow and polish
+- Production deployment maintained throughout for continuous testing
+
 
