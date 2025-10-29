@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "xZ3p4hYAAB0=",
+  "success": true,
+  "projectFilePath": "/home/mateo/fall2025/frontend/advanced-frontend-final/app/server/API/API.csproj",
+  "expectedPackageFiles": [
+    "/home/mateo/.nuget/packages/microsoft.aspnetcore.openapi/9.0.8/microsoft.aspnetcore.openapi.9.0.8.nupkg.sha512",
+    "/home/mateo/.nuget/packages/microsoft.openapi/1.6.17/microsoft.openapi.1.6.17.nupkg.sha512"
+  ],
+  "logs": []
+}

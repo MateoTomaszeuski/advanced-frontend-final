@@ -1,0 +1,16 @@
+---
+applyTo: '**'
+---
+- Stay in line with what is asked.
+- Do not go out of your way doing extra files like:
+    - example files
+    - summary files
+    - test files
+    - read me files
+- do not create docs, unless asked for
+- Do not add extra comments, only when the code is really complex and might be necessary.
+- Use tailwind v4 for styling.
+    - Ignore the @apply linting errors, we want to use it.
+- Use pnpm not npm or yarn.
+- Use React and Typescript.
+- Use functional components and hooks.
