@@ -17,6 +17,25 @@
           "lib/net9.0/EnumerableAsyncProcessor.dll": {}
         }
       },
+      "Microsoft.AspNetCore.OpenApi/9.0.8": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.OpenApi": "1.6.17"
+        },
+        "compile": {
+          "lib/net9.0/Microsoft.AspNetCore.OpenApi.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net9.0/Microsoft.AspNetCore.OpenApi.dll": {
+            "related": ".xml"
+          }
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
+      },
       "Microsoft.CodeCoverage/17.12.0": {
         "type": "package",
         "compile": {
@@ -81,6 +100,19 @@
         },
         "buildMultiTargeting": {
           "buildMultiTargeting/Microsoft.NET.Test.Sdk.props": {}
+        }
+      },
+      "Microsoft.OpenApi/1.6.17": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/Microsoft.OpenApi.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.0/Microsoft.OpenApi.dll": {
+            "related": ".pdb;.xml"
+          }
         }
       },
       "Microsoft.Testing.Extensions.CodeCoverage/18.1.0": {
@@ -963,6 +995,22 @@
         "build": {
           "buildTransitive/net9.0/TUnit.Engine.props": {}
         }
+      },
+      "API/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "dependencies": {
+          "Microsoft.AspNetCore.OpenApi": "9.0.8"
+        },
+        "compile": {
+          "bin/placeholder/API.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/API.dll": {}
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
       }
     }
   },
@@ -1051,6 +1099,22 @@
         "lib/net8.0/EnumerableAsyncProcessor.dll",
         "lib/net9.0/EnumerableAsyncProcessor.dll",
         "lib/netstandard2.0/EnumerableAsyncProcessor.dll"
+      ]
+    },
+    "Microsoft.AspNetCore.OpenApi/9.0.8": {
+      "sha512": "BwF9sQCKmvu93C/pmKxJjPhF5fFB23MEcgTsGL+7W3wKLYawS4lyFSL5/qh00IJzuADLf+1SmvxMaphbyZYqQQ==",
+      "type": "package",
+      "path": "microsoft.aspnetcore.openapi/9.0.8",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "PACKAGE.md",
+        "THIRD-PARTY-NOTICES.TXT",
+        "lib/net9.0/Microsoft.AspNetCore.OpenApi.dll",
+        "lib/net9.0/Microsoft.AspNetCore.OpenApi.xml",
+        "microsoft.aspnetcore.openapi.9.0.8.nupkg.sha512",
+        "microsoft.aspnetcore.openapi.nuspec"
       ]
     },
     "Microsoft.CodeCoverage/17.12.0": {
@@ -1173,6 +1237,21 @@
         "lib/netcoreapp3.1/_._",
         "microsoft.net.test.sdk.17.12.0.nupkg.sha512",
         "microsoft.net.test.sdk.nuspec"
+      ]
+    },
+    "Microsoft.OpenApi/1.6.17": {
+      "sha512": "Le+kehlmrlQfuDFUt1zZ2dVwrhFQtKREdKBo+rexOwaCoYP0/qpgT9tLxCsZjsgR5Itk1UKPcbgO+FyaNid/bA==",
+      "type": "package",
+      "path": "microsoft.openapi/1.6.17",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "lib/netstandard2.0/Microsoft.OpenApi.dll",
+        "lib/netstandard2.0/Microsoft.OpenApi.pdb",
+        "lib/netstandard2.0/Microsoft.OpenApi.xml",
+        "microsoft.openapi.1.6.17.nupkg.sha512",
+        "microsoft.openapi.nuspec"
       ]
     },
     "Microsoft.Testing.Extensions.CodeCoverage/18.1.0": {
@@ -2031,10 +2110,16 @@
         "tunit.engine.0.81.7.nupkg.sha512",
         "tunit.engine.nuspec"
       ]
+    },
+    "API/1.0.0": {
+      "type": "project",
+      "path": "../API/API.csproj",
+      "msbuildProject": "../API/API.csproj"
     }
   },
   "projectFileDependencyGroups": {
     "net9.0": [
+      "API >= 1.0.0",
       "Microsoft.NET.Test.Sdk >= 17.12.0",
       "TUnit >= 0.81.7",
       "coverlet.collector >= 6.0.2"
@@ -2064,7 +2149,11 @@
       "frameworks": {
         "net9.0": {
           "targetAlias": "net9.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "/home/mateo/fall2025/frontend/advanced-frontend-final/app/server/API/API.csproj": {
+              "projectPath": "/home/mateo/fall2025/frontend/advanced-frontend-final/app/server/API/API.csproj"
+            }
+          }
         }
       },
       "warningProperties": {

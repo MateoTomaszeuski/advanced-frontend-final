@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mateo-spotify-frontend
+  namespace: $NAMESPACE
+  labels:
+    app: spotify-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spotify-frontend
+  template:
+    metadata:
+      labels:
+        app: spotify-frontend
+    spec:
+      containers:
+      - name: mateo-spotify-frontend
+        image: mateotomaszeuski/spotify-frontend:$BUILD_NUMBER
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80

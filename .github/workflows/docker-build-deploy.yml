@@ -1,0 +1,105 @@
+name: Build and Deploy Docker Images & Apply Kubernetes Changes
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint-and-test:
+    runs-on: self-hosted
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: app/client/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        working-directory: app/client
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        working-directory: app/client
+        run: pnpm lint
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore backend dependencies
+        working-directory: app/server
+        run: dotnet restore
+
+      - name: Build backend
+        working-directory: app/server
+        run: dotnet build --no-restore
+
+      - name: Run backend tests
+        working-directory: app/server
+        run: dotnet test --no-build --verbosity normal
+
+  build-and-push:
+    needs: lint-and-test
+    runs-on: self-hosted
+    if: github.event_name != 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build frontend image
+        run: |
+          docker buildx build --platform linux/amd64 \
+          -f ./dockerfiles/Dockerfile.client \
+          -t ${{ secrets.DOCKER_USERNAME }}/spotify-frontend:${{ github.run_number }} \
+          .
+
+      - name: Build backend image
+        run: |
+          docker buildx build --platform linux/amd64 \
+          -f ./dockerfiles/Dockerfile.server \
+          -t ${{ secrets.DOCKER_USERNAME }}/spotify-backend:${{ github.run_number }} \
+          .
+
+      - name: Push frontend image to DockerHub
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/spotify-frontend:${{ github.run_number }}
+
+      - name: Push backend image to DockerHub
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/spotify-backend:${{ github.run_number }}
+
+      - name: Set up kube config
+        run: export KUBECONFIG=$HOME/.kube/config
+        
+      - name: Check Nodes
+        run: kubectl get nodes
+
+      - name: Apply Kubernetes Changes
+        run: |
+          export BUILD_NUMBER=${{ github.run_number }}
+          export NAMESPACE=mateo-spotify
+          
+          for FILE in "kube"/*
+          do
+              cat $FILE | envsubst | kubectl apply -f -
+          done

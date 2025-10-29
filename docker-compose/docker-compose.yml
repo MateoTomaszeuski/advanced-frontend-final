@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: node:20-alpine
+    container_name: spotify-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+    working_dir: /app
+    volumes:
+      - ../app/client:/app
+      - /app/node_modules
+    command: >-
+      sh -c "corepack enable && corepack prepare pnpm@latest --activate && pnpm install && pnpm run dev --host"
+    depends_on:
+      - backend
+
+  backend:
+    image: mcr.microsoft.com/dotnet/sdk:9.0
+    container_name: spotify-backend
+    ports:
+      - "8080:8080"
+    working_dir: /app
+    volumes:
+      - ../app/server:/app
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=spotifydb;Username=spotifyuser;Password=spotifypass
+    command: >-
+      sh -c "dotnet restore && dotnet run --project API/API.csproj"
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: spotify-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=spotifyuser
+      - POSTGRES_PASSWORD=spotifypass
+      - POSTGRES_DB=spotifydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+# psql -U spotifyuser spotifydb
+
+volumes:
+  postgres_data:
