@@ -32,7 +32,10 @@ jobs:
         run: cd app/client && pnpm lint
 
       - name: Set DOTNET_ROOT
-        run: echo "DOTNET_ROOT=$(dirname $(dirname $(readlink -f $(which dotnet))))" >> $GITHUB_ENV
+        run: |
+          DOTNET_PATH=$(readlink -f $(which dotnet))
+          DOTNET_DIR=$(dirname $DOTNET_PATH)
+          echo "DOTNET_ROOT=$DOTNET_DIR" >> $GITHUB_ENV
 
       - name: Restore backend dependencies
         run: cd app/server && dotnet restore
