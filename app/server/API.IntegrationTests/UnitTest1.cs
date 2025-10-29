@@ -5,6 +5,7 @@ public class UnitTest1
     [Test]
     public async Task Test1()
     {
-        await Assert.That(1 + 1).IsEqualTo(2);
+        var value = 1 + 1;
+        await Assert.That(value).IsEqualTo(2);
     }
 }
