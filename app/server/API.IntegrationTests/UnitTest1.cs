@@ -2,9 +2,9 @@
 
 public class UnitTest1
 {
-    [Fact]
-    public void Test1()
+    [Test]
+    public async Task Test1()
     {
-
+        await Assert.That(1 + 1).IsEqualTo(2);
     }
 }
