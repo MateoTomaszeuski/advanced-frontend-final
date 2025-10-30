@@ -316,9 +316,6 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 - Dockerfiles for frontend (Nginx-based) and backend (.NET 9)
 - Kubernetes deployments, services, and ingress configs
 - PostgreSQL database setup in Kubernetes
-- Production domains configured (mateo-spotify.duckdns.org, api.mateo-spotify.duckdns.org)
-- TLS/SSL secrets configured
-
 
 ---
 
