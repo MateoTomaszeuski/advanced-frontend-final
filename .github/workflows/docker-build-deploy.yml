@@ -64,6 +64,10 @@ jobs:
       - name: Build frontend image
         run: |
           docker buildx build --platform linux/amd64 \
+          --build-arg VITE_KEYCLOAK_CLIENT_ID=mateo-spotify-agent \
+          --build-arg VITE_KEYCLOAK_AUTHORITY=https://auth-dev.snowse.io/realms/DevRealm \
+          --build-arg VITE_KEYCLOAK_JWKS_URI=https://auth-dev.snowse.io/realms/DevRealm/protocol/openid-connect/certs \
+          --build-arg VITE_API_URL=http://api.mateo-spotify.duckdns.org \
           -f ./dockerfiles/Dockerfile.client \
           -t ${{ secrets.DOCKER_USERNAME }}/spotify-frontend:${{ github.run_number }} \
           .
@@ -85,14 +89,29 @@ jobs:
         run: export KUBECONFIG=$HOME/.kube/config
         
       - name: Check Nodes
+        env:
+          KUBECONFIG: /home/mateo/.kube/config
         run: kubectl get nodes
 
       - name: Apply Kubernetes Changes
+        env:
+          KUBECONFIG: /home/mateo/.kube/config
         run: |
           export BUILD_NUMBER=${{ github.run_number }}
           export NAMESPACE=mateo-spotify
           
-          for FILE in "kube"/*
+          # Apply ConfigMaps first
+          for FILE in kube/*-config.yml
           do
-              cat $FILE | envsubst | kubectl apply -f -
+              if [ -f "$FILE" ]; then
+                  cat $FILE | envsubst | kubectl apply -f -
+              fi
+          done
+          
+          # Apply all other resources
+          for FILE in kube/*
+          do
+              if [[ ! "$FILE" =~ -config.yml$ ]]; then
+                  cat $FILE | envsubst | kubectl apply -f -
+              fi
           done

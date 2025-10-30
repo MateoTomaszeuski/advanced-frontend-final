@@ -1,5 +1,10 @@
 FROM node:20-alpine AS build
 
+ARG VITE_KEYCLOAK_CLIENT_ID
+ARG VITE_KEYCLOAK_AUTHORITY
+ARG VITE_KEYCLOAK_JWKS_URI
+ARG VITE_API_URL
+
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
@@ -9,6 +14,11 @@ COPY app/client/package.json app/client/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY app/client .
+
+ENV VITE_KEYCLOAK_CLIENT_ID=${VITE_KEYCLOAK_CLIENT_ID}
+ENV VITE_KEYCLOAK_AUTHORITY=${VITE_KEYCLOAK_AUTHORITY}
+ENV VITE_KEYCLOAK_JWKS_URI=${VITE_KEYCLOAK_JWKS_URI}
+ENV VITE_API_URL=${VITE_API_URL}
 
 RUN pnpm build
 

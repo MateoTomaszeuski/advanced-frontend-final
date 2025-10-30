@@ -1,35 +1,126 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { useEffect } from 'react';
+import { useAuth } from 'react-oidc-context';
+import { KeycloakProvider } from './providers/KeycloakProvider';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { showToast } from './utils/toast';
 
-function App() {
-  const [count, setCount] = useState(0)
+import { LandingPage } from './pages/LandingPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { SettingsPage } from './pages/SettingsPage';
+import {
+  PlaylistCreatorPage,
+  DiscoverPage,
+  DuplicateCleanerPage,
+  SuggestionsPage,
+  AgentControlPage,
+  AnalyticsPage,
+  HistoryPage,
+} from './pages/OtherPages';
+
+function AppContent() {
+  const auth = useAuth();
+
+  useEffect(() => {
+    if (auth.isAuthenticated && auth.user) {
+      const name = auth.user.profile.name || auth.user.profile.preferred_username || 'User';
+      showToast.success(`Welcome, ${name}!`);
+    }
+  }, [auth.isAuthenticated, auth.user]);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/playlist-creator"
+          element={
+            <ProtectedRoute>
+              <PlaylistCreatorPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/discover"
+          element={
+            <ProtectedRoute>
+              <DiscoverPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/duplicate-cleaner"
+          element={
+            <ProtectedRoute>
+              <DuplicateCleanerPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/suggestions"
+          element={
+            <ProtectedRoute>
+              <SuggestionsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/agent-control"
+          element={
+            <ProtectedRoute>
+              <AgentControlPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <AnalyticsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/history"
+          element={
+            <ProtectedRoute>
+              <HistoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <Toaster position="top-right" />
+    </BrowserRouter>
+  );
 }
 
-export default App
+function App() {
+  return (
+    <ErrorBoundary>
+      <KeycloakProvider>
+        <AppContent />
+      </KeycloakProvider>
+    </ErrorBoundary>
+  );
+}
+
+export default App;

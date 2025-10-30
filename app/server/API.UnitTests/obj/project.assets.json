@@ -2126,19 +2126,19 @@
     ]
   },
   "packageFolders": {
-    "/home/mateo/.nuget/packages/": {}
+    "/root/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/mateo/fall2025/frontend/advanced-frontend-final/app/server/API.UnitTests/API.UnitTests.csproj",
+      "projectUniqueName": "/app/API.UnitTests/API.UnitTests.csproj",
       "projectName": "API.UnitTests",
-      "projectPath": "/home/mateo/fall2025/frontend/advanced-frontend-final/app/server/API.UnitTests/API.UnitTests.csproj",
-      "packagesPath": "/home/mateo/.nuget/packages/",
-      "outputPath": "/home/mateo/fall2025/frontend/advanced-frontend-final/app/server/API.UnitTests/obj/",
+      "projectPath": "/app/API.UnitTests/API.UnitTests.csproj",
+      "packagesPath": "/root/.nuget/packages/",
+      "outputPath": "/app/API.UnitTests/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/home/mateo/.nuget/NuGet/NuGet.Config"
+        "/root/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
@@ -2150,8 +2150,8 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "/home/mateo/fall2025/frontend/advanced-frontend-final/app/server/API/API.csproj": {
-              "projectPath": "/home/mateo/fall2025/frontend/advanced-frontend-final/app/server/API/API.csproj"
+            "/app/API/API.csproj": {
+              "projectPath": "/app/API/API.csproj"
             }
           }
         }
@@ -2201,7 +2201,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/nix/store/m6b2yy0lyrwdbv7g62rpr9fw0v71x5ba-dotnet-sdk-9.0.304/share/dotnet/sdk/9.0.304/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/9.0.304/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

@@ -1,7 +1,10 @@
+example-repo/
+
 # Dependencies
 node_modules/
 .pnp
 .pnp.js
+.pnpm-store/
 
 # Testing
 coverage/

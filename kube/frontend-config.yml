@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mateo-spotify-frontend-config
+  namespace: mateo-spotify
+data:
+  VITE_KEYCLOAK_CLIENT_ID: "mateo-spotify-agent"
+  VITE_KEYCLOAK_AUTHORITY: "https://auth-dev.snowse.io/realms/DevRealm"
+  VITE_KEYCLOAK_JWKS_URI: "https://auth-dev.snowse.io/realms/DevRealm/protocol/openid-connect/certs"
+  VITE_API_URL: "http://api.mateo-spotify.duckdns.org"

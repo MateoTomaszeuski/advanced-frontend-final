@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "/home/mateo/fall2025/frontend/advanced-frontend-final/app/server/API/API.csproj": {}
+    "/app/API/API.csproj": {}
   },
   "projects": {
-    "/home/mateo/fall2025/frontend/advanced-frontend-final/app/server/API/API.csproj": {
+    "/app/API/API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/mateo/fall2025/frontend/advanced-frontend-final/app/server/API/API.csproj",
+        "projectUniqueName": "/app/API/API.csproj",
         "projectName": "API",
-        "projectPath": "/home/mateo/fall2025/frontend/advanced-frontend-final/app/server/API/API.csproj",
-        "packagesPath": "/home/mateo/.nuget/packages/",
-        "outputPath": "/home/mateo/fall2025/frontend/advanced-frontend-final/app/server/API/obj/",
+        "projectPath": "/app/API/API.csproj",
+        "packagesPath": "/root/.nuget/packages/",
+        "outputPath": "/app/API/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/home/mateo/.nuget/NuGet/NuGet.Config"
+          "/root/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
@@ -68,7 +68,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/nix/store/m6b2yy0lyrwdbv7g62rpr9fw0v71x5ba-dotnet-sdk-9.0.304/share/dotnet/sdk/9.0.304/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/9.0.304/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
