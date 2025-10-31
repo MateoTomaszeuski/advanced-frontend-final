@@ -1,9 +1,9 @@
 FROM node:20-alpine AS build
 
-ARG VITE_KEYCLOAK_CLIENT_ID
-ARG VITE_KEYCLOAK_AUTHORITY
-ARG VITE_KEYCLOAK_JWKS_URI
-ARG VITE_API_URL
+ARG VITE_KEYCLOAK_CLIENT_ID=mateo-spotify-agent
+ARG VITE_KEYCLOAK_AUTHORITY=https://auth-dev.snowse.io/realms/DevRealm
+ARG VITE_KEYCLOAK_JWKS_URI=https://auth-dev.snowse.io/realms/DevRealm/protocol/openid-connect/certs
+ARG VITE_API_URL=http://api.mateo-spotify.duckdns.org
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
@@ -20,7 +20,11 @@ ENV VITE_KEYCLOAK_AUTHORITY=${VITE_KEYCLOAK_AUTHORITY}
 ENV VITE_KEYCLOAK_JWKS_URI=${VITE_KEYCLOAK_JWKS_URI}
 ENV VITE_API_URL=${VITE_API_URL}
 
-RUN pnpm build
+RUN echo "Building with:" && \
+    echo "VITE_KEYCLOAK_CLIENT_ID=${VITE_KEYCLOAK_CLIENT_ID}" && \
+    echo "VITE_KEYCLOAK_AUTHORITY=${VITE_KEYCLOAK_AUTHORITY}" && \
+    echo "VITE_API_URL=${VITE_API_URL}" && \
+    pnpm build
 
 FROM nginx:alpine
 

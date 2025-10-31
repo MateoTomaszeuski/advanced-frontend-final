@@ -8,3 +8,15 @@ export const config = {
     baseUrl: import.meta.env.VITE_API_URL,
   },
 } as const;
+
+if (import.meta.env.DEV) {
+  console.log('App Configuration:', {
+    keycloak: {
+      clientId: config.keycloak.clientId,
+      authority: config.keycloak.authority,
+    },
+    api: {
+      baseUrl: config.api.baseUrl,
+    },
+  });
+}
