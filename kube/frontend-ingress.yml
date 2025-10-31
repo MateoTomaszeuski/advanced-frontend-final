@@ -5,6 +5,10 @@ metadata:
   namespace: $NAMESPACE
 spec:
   ingressClassName: nginx
+  tls:
+  - hosts:
+    - mateo-spotify.duckdns.org
+    secretName: tls-secret
   rules:
   - host: mateo-spotify.duckdns.org
     http:
