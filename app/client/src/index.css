@@ -11,7 +11,7 @@
   }
 
   #root {
-    @apply h-screen overflow-hidden;
+    @apply min-h-screen;
   }
 }
 
