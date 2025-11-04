@@ -1,15 +1,18 @@
 import { MainLayout } from '../components/layout/MainLayout';
+import { SpotifyConnectionAlert } from '../components/SpotifyConnectionAlert';
 import { useAgentStore } from '../stores/useAgentStore';
 
 export function DashboardPage() {
-  const { status, currentTask, actions } = useAgentStore();
+  const { status, currentTask, recentActions } = useAgentStore();
 
-  const recentActions = actions.slice(-5).reverse();
+  const displayedActions = recentActions.slice(0, 5);
 
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
+
+        <SpotifyConnectionAlert />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
@@ -35,7 +38,7 @@ export function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total Actions</p>
-                <p className="text-2xl font-bold text-gray-900">{actions.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{recentActions.length}</p>
               </div>
               <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -50,7 +53,7 @@ export function DashboardPage() {
               <div>
                 <p className="text-sm text-gray-600">Completed</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {actions.filter(a => a.status === 'completed').length}
+                  {recentActions.filter(a => a.status === 'Completed').length}
                 </p>
               </div>
               <div className="w-12 h-12 rounded-full bg-accent-100 flex items-center justify-center">
@@ -74,26 +77,26 @@ export function DashboardPage() {
             <h2 className="text-xl font-semibold text-gray-900">Recent Activity</h2>
           </div>
           <div className="p-6">
-            {recentActions.length === 0 ? (
+            {displayedActions.length === 0 ? (
               <p className="text-gray-500 text-center py-8">No recent activity</p>
             ) : (
               <ul className="space-y-4">
-                {recentActions.map((action) => (
+                {displayedActions.map((action) => (
                   <li key={action.id} className="flex items-start gap-3 pb-4 border-b border-gray-100 last:border-0">
                     <div className={`w-2 h-2 rounded-full mt-2 ${
-                      action.status === 'completed' ? 'bg-primary-500' :
-                      action.status === 'failed' ? 'bg-red-500' :
+                      action.status === 'Completed' ? 'bg-primary-500' :
+                      action.status === 'Failed' ? 'bg-red-500' :
                       'bg-yellow-500'
                     }`} />
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">{action.description}</p>
+                      <p className="font-medium text-gray-900">{action.actionType}</p>
                       <p className="text-sm text-gray-500">
-                        {new Date(action.timestamp).toLocaleString()}
+                        {new Date(action.createdAt).toLocaleString()}
                       </p>
                     </div>
                     <span className={`text-xs px-2 py-1 rounded-full ${
-                      action.status === 'completed' ? 'bg-primary-100 text-primary-800' :
-                      action.status === 'failed' ? 'bg-red-100 text-red-800' :
+                      action.status === 'Completed' ? 'bg-primary-100 text-primary-800' :
+                      action.status === 'Failed' ? 'bg-red-100 text-red-800' :
                       'bg-yellow-100 text-yellow-800'
                     }`}>
                       {action.status}

@@ -374,6 +374,12 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 - Button components with loading states, icon support, and green color scheme
 - Proper overflow handling for main content area with h-screen and overflow-y-auto
 - Toggle switches in settings with green accent colors
+- Keycloak CORS configuration resolved (Web Origins set to allow frontend origin)
+- Fixed CORS policy blocking on token endpoint (https://auth-dev.snowse.io)
+- Keycloak client configuration validated (Web Origins includes https://mateo-spotify.duckdns.org)
+- TLS/SSL certificates configured for HTTPS on production domain (https://mateo-spotify.duckdns.org)
+- Secure HTTPS communication enabled for all API and authentication requests
+- Kubernetes TLS secret configured with SSL certificates for ingress
 
 
 ---
@@ -401,9 +407,183 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 #### Delivered:
 
 **Rubric Items:**
-
+- 2 custom functions implemented (`createSmartPlaylist`, `discoverNewMusic`)
+- 1+ action(s) can be performed autonomously (both functions run autonomously)
+- Structured output validated with Zod (frontend validation schemas)
+- Network calls - read data (GET Spotify tracks, recommendations, audio features)
+- Network calls - write data (POST create playlist, add tracks to playlist)
+- Unit tests run automatically in pipeline (backend service and repository tests)
+- Data persisted on server (PostgreSQL with Dapper ORM)
 
 **Features:**
+- **Backend Architecture Switch**: Migrated from EF Core to Dapper for better performance and control
+- **Database Schema**: PostgreSQL with init.sql and seed.sql for Docker integration
+  - Users table with Spotify token management
+  - Conversations table for user context
+  - Agent actions table with JSONB for flexible data storage
+  - Database README with schema documentation
+- **JWT Authentication Middleware**: UserContextMiddleware extracts user from Keycloak tokens
+- **User Service**: User creation, retrieval, Spotify token management with authorization checks
+- **AI Integration**:
+  - AIService - Full integration with AI API (gpt-oss-120b model)
+  - AITools - Spotify tool definitions for AI function calling
+  - AI-powered playlist name generation from user prompts
+  - AI-powered search query generation with genre extraction
+  - Fallback to simple string matching if AI fails
+  - Intelligent translation of descriptive words to music genres (upbeat → funk/pop/dance)
+  - Token counting and summarization support for long conversations
+- **Spotify API Service**: Complete integration with OAuth token management
+  - SearchTracksAsync - Search Spotify catalog with logging
+  - GetRecommendationsAsync - AI-powered recommendations
+  - GetAudioFeaturesAsync - Track analysis (energy, tempo, valence)
+  - CreatePlaylistAsync - Playlist creation
+  - AddTracksToPlaylistAsync - Track management
+  - GetCurrentUserIdAsync - User ID retrieval
+  - GetCurrentUserProfileAsync - Full profile with image support
+- **Agent Service**: Core AI functions with intelligent algorithms
+  - `CreateSmartPlaylist()` - AI-powered prompt parsing, multi-query fallback system, audio feature filtering, intelligent playlist naming, track deduplication, ensures requested track count (up to 250 tracks)
+  - `DiscoverNewMusic()` - AI-powered music discovery with intelligent search query generation, multi-search fallback, track deduplication, ensures requested track count (up to 250 tracks), filters already-saved songs
+- **API Controllers**:
+  - ConversationsController - CRUD operations with user isolation, action count aggregation
+  - AgentController - Agent function endpoints with conversation tracking and user authorization
+  - SpotifyController - OAuth code exchange, token management, connection status, profile retrieval, disconnect
+  - ChatController - AI chat endpoint with tool calling support
+  - TestController - Authentication verification endpoints
+- **Dapper Repositories**:
+  - UserRepository - User CRUD with async/await, column mapping
+  - ConversationRepository - Conversation management with action count aggregation
+  - AgentActionRepository - Agent action logging with JSONB serialization/deserialization
+- **Frontend API Integration**:
+  - apiClient.ts - Centralized HTTP client with JWT token injection from sessionStorage, error handling for 401/403
+  - services/api.ts - Type-safe API function wrappers for all endpoints (conversation, agent, spotify, test)
+  - schemas/api.ts - 13 Zod schemas for runtime validation (User, Conversation, AgentAction, Spotify models, PlaylistPreferences)
+  - types/api.ts - TypeScript types exported from Zod schemas
+  - hooks/useAgent.ts - React hook for agent operations with state management, progress tracking, toast notifications
+- **Spotify Connection Alert Component**:
+  - Checks connection status on mount
+  - Displays warning if Spotify not connected
+  - Direct link to connect with OAuth authorization code flow
+  - Yellow alert styling with icon
+- **Playlist Creator Page UI** (PlaylistCreatorPage.tsx):
+  - Natural language prompt input with examples
+  - Number of tracks selector (10, 20, 30, 50, 75, 100, 150, 200, 250)
+  - Advanced options toggle with energy/tempo filters
+  - Agent status display with real-time updates and spinner
+  - Integration with createSmartPlaylist endpoint
+  - Conversation initialization and tracking
+  - Spotify connection check with alert
+  - Clear button to reset form
+  - Tips section with usage guidance
+- **New Music Discovery Page UI** (DiscoverPage.tsx):
+  - Discovery settings panel (limit selection 5-250 tracks)
+  - Results display with track list, artist names, and Spotify links
+  - Latest discovery section showing created playlist details
+  - Integration with discoverNewMusic endpoint
+  - Spotify connection check with alert
+  - "How it works" explanation panel
+  - AI-powered search query generation
+- **Individual Page Components**: Refactored from single OtherPages.tsx to separate files
+  - PlaylistCreatorPage.tsx - Playlist creation with AI
+  - DiscoverPage.tsx - Music discovery
+  - DuplicateCleanerPage.tsx - Duplicate removal (placeholder)
+  - SuggestionsPage.tsx - Music suggestions (placeholder)
+  - AgentControlPage.tsx - Agent control center (placeholder)
+  - AnalyticsPage.tsx - Playlist analytics (placeholder)
+  - HistoryPage.tsx - Activity history (placeholder)
+- **Dashboard Page Enhancements** (DashboardPage.tsx):
+  - Agent status cards with real-time updates
+  - Total actions and completed actions metrics
+  - Recent activity feed showing last 5 actions (fixed to show newest first)
+  - Current task display when agent is processing
+  - Status color coding (idle, processing, error states)
+  - Conversation tracking with current conversation state
+  - Agent action history with recent actions
+  - Real-time status updates (idle, processing, error)
+  - Current task description
+  - Progress tracking (0-100)
+  - localStorage persistence for conversations list
+- **Settings Page Enhancements**:
+  - Spotify profile display with image, display name, email, country
+  - Token expiry display
+  - OAuth authorization code flow with code exchange
+  - Connection status checking
+  - Disconnect functionality
+  - Environment variable configuration for Spotify client ID/redirect URI
+- **Comprehensive Backend Testing**:
+  - **Unit Tests** (TUnit framework):
+    - UserServiceTests - 4 tests (GetOrCreate, GetByEmail, UpdateUser with timestamp)
+    - AgentServiceTests - 3 tests (CreateSmartPlaylist success/failure scenarios, DiscoverNewMusic)
+    - AIServiceTests - 3 tests (token counting, summarization threshold)
+    - UserRepositoryTests - 5 tests with PostgreSQL testcontainer (CRUD operations)
+    - ConversationRepositoryTests - 4 tests with testcontainer (create, get, update, delete)
+  - **Integration Tests** (Docker Compose based):
+    - ConversationsControllerTests - Authentication and CRUD endpoint tests
+    - AgentControllerTests - Authorization verification tests (createSmartPlaylist, discoverNewMusic without auth)
+    - docker-compose.integration-tests.yml - External test database on port 5433
+    - run-integration-tests.sh - Automated test infrastructure management with cleanup
+    - Separate test database instance to avoid conflicts with development
+  - **Testing Infrastructure**:
+    - Moq for service mocking
+    - FluentAssertions for readable test assertions
+    - WebApplicationFactory for integration testing
+    - Docker Compose for test database isolation
+    - Health checks for database readiness
+    - Testcontainers for PostgreSQL in unit tests
+- **Helper Classes**:
+  - PlaylistHelper - Fallback search query generation and playlist naming
+  - SpotifyJsonParser - JSON parsing for Spotify API responses
+  - TrackFilterHelper - Audio feature-based track filtering
+  - ToolExecutionHelper - AI tool execution for chat endpoint
+- **DTOs and Models**:
+  - Agent DTOs (CreateSmartPlaylistRequest, PlaylistPreferences, DiscoverNewMusicRequest, AgentActionResponse)
+  - Chat DTOs (ChatRequestDto, ChatMessageDto)
+  - Spotify DTOs (SpotifyTrack, SpotifyArtist, SpotifyAlbum, AudioFeatures, SpotifyPlaylist, SpotifyUserProfile)
+  - AI Models (AIMessage, AIResponse, AITool, AIToolFunction, AIToolCall, ExecutedToolCall)
+  - Core Models (User, Conversation, AgentAction)
+- **Program.cs Configuration**:
+  - Dependency injection for all services and repositories
+  - JWT Bearer authentication with Keycloak
+  - CORS configuration with environment-based allowed origins
+  - Middleware pipeline (CORS → Authentication → Authorization → UserContext → Controllers)
+  - HttpClient factory for AI and Spotify services
+  - OpenAPI/Swagger in development
+- **Environment Configuration**:
+  - .env.example with all required configuration
+  - Keycloak configuration (Authority, MetadataAddress)
+  - CORS allowed origins
+  - AI API configuration (BaseUrl, Model, ApiKey)
+  - Spotify API configuration (ClientId, ClientSecret)
+- **Error Handling**:
+  - Try-catch blocks in all service methods
+  - Validation in controllers
+  - NotFound responses for missing resources
+  - Forbidden responses for unauthorized access
+  - Proper HTTP status codes throughout
+  - Error logging with ILogger
+- **Authorization & Security**:
+  - User-scoped data access in all endpoints
+  - JWT token verification via [Authorize] attribute
+  - User context injection via middleware
+  - Conversation ownership validation
+  - Agent action ownership validation via conversation
+  - Spotify token expiry checking
+- **Advanced Playlist Features**:
+  - Multi-query fallback system if initial search returns insufficient tracks
+  - Genre word extraction from search queries for better fallback
+  - Track deduplication using HashSet
+  - Ensures requested track count is met (or as close as possible)
+  - Logs each step of the process for debugging
+  - AI-generated playlist metadata with fallback to simple logic
+  - Support for large playlists (up to 250 tracks)
+- **Advanced Music Discovery Features**:
+  - AI analyzes user's top saved tracks to generate intelligent search queries
+  - Multi-search strategy with different query variations
+  - Deduplication across all search results using HashSet
+  - Filters out already-saved tracks to ensure novelty
+  - Fallback to Spotify recommendations API if searches insufficient
+  - Handles users with no saved tracks using AI-generated genre diversity
+  - Multiple batches of recommendations to meet requested track count
+  - Comprehensive logging for debugging and optimization
 
 
 ---

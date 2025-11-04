@@ -10,15 +10,13 @@ import { showToast } from './utils/toast';
 import { LandingPage } from './pages/LandingPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { SettingsPage } from './pages/SettingsPage';
-import {
-  PlaylistCreatorPage,
-  DiscoverPage,
-  DuplicateCleanerPage,
-  SuggestionsPage,
-  AgentControlPage,
-  AnalyticsPage,
-  HistoryPage,
-} from './pages/OtherPages';
+import { PlaylistCreatorPage } from './pages/PlaylistCreatorPage';
+import { DiscoverPage } from './pages/DiscoverPage';
+import { DuplicateCleanerPage } from './pages/DuplicateCleanerPage';
+import { SuggestionsPage } from './pages/SuggestionsPage';
+import { AgentControlPage } from './pages/AgentControlPage';
+import { AnalyticsPage } from './pages/AnalyticsPage';
+import { HistoryPage } from './pages/HistoryPage';
 
 function AppContent() {
   const auth = useAuth();

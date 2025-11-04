@@ -1,0 +1,18 @@
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: spotify-postgres-test
+    environment:
+      - POSTGRES_USER=testuser
+      - POSTGRES_PASSWORD=testpass
+      - POSTGRES_DB=testdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - ../app/db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ../app/db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U testuser -d testdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5

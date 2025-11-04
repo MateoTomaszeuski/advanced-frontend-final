@@ -4,12 +4,10 @@ WORKDIR /src
 
 COPY app/server/Server.sln .
 COPY app/server/API/API.csproj ./API/
-COPY app/server/API.UnitTests/API.UnitTests.csproj ./API.UnitTests/
-COPY app/server/API.IntegrationTests/API.IntegrationTests.csproj ./API.IntegrationTests/
 
-RUN dotnet restore
+RUN dotnet restore API/API.csproj
 
-COPY app/server/ .
+COPY app/server/API/ ./API/
 
 RUN dotnet build API/API.csproj -c Release -o /app/build
 
