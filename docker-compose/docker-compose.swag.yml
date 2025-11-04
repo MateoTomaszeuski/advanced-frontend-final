@@ -9,9 +9,11 @@ services:
       - PGID=1000
       - TZ=America/Denver
       - URL=mateo-spotify.duckdns.org
+      - SUBDOMAINS=wildcard
       - VALIDATION=dns
       - ONLY_SUBDOMAINS=false
       - DNSPLUGIN=duckdns
+      - DUCKDNSTOKEN=${DUCKDNS_TOKEN}
     volumes:
       - ./swag/swag-config:/config
     ports:
