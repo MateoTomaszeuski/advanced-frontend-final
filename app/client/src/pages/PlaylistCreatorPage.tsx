@@ -8,6 +8,7 @@ import { Checkbox } from '../components/forms/Checkbox';
 import { useAgent } from '../hooks/useAgent';
 import { useAgentStore } from '../stores/useAgentStore';
 import { spotifyApi } from '../services/api';
+import { useAuth } from 'react-oidc-context';
 import toast from 'react-hot-toast';
 import type { PlaylistPreferences } from '../types/api';
 
@@ -21,6 +22,7 @@ export function PlaylistCreatorPage() {
   const [useAdvanced, setUseAdvanced] = useState(false);
   const [spotifyConnected, setSpotifyConnected] = useState(false);
   const [checkingConnection, setCheckingConnection] = useState(true);
+  const auth = useAuth();
   
   const { createSmartPlaylist, createConversation, isLoading } = useAgent();
   const { currentConversation, setCurrentConversation } = useAgentStore();
@@ -28,6 +30,11 @@ export function PlaylistCreatorPage() {
   const currentTask = useAgentStore((state) => state.currentTask);
 
   useEffect(() => {
+    if (!auth.isAuthenticated) {
+      setCheckingConnection(false);
+      return;
+    }
+    
     const checkSpotifyConnection = async () => {
       try {
         const status = await spotifyApi.getStatus();
@@ -40,7 +47,7 @@ export function PlaylistCreatorPage() {
       }
     };
     checkSpotifyConnection();
-  }, []);
+  }, [auth.isAuthenticated]);
 
   useEffect(() => {
     const initConversation = async () => {

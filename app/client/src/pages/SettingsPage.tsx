@@ -24,13 +24,14 @@ export function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    if (!auth.isAuthenticated) return;
+    
     const checkSpotifyStatus = async () => {
       try {
         const status = await spotifyApi.getStatus();
         setSpotifyStatus(status);
         updateSpotifyConnection(status.isConnected && status.isTokenValid);
         
-        // If connected, fetch the profile
         if (status.isConnected && status.isTokenValid) {
           try {
             const profile = await spotifyApi.getProfile() as {
@@ -52,7 +53,7 @@ export function SettingsPage() {
       }
     };
     checkSpotifyStatus();
-  }, [updateSpotifyConnection]);
+  }, [auth.isAuthenticated, updateSpotifyConnection]);
 
   useEffect(() => {
     const hash = window.location.hash;

@@ -6,6 +6,7 @@ import { SelectDropdown } from '../components/forms/SelectDropdown';
 import { useAgent } from '../hooks/useAgent';
 import { useAgentStore } from '../stores/useAgentStore';
 import { spotifyApi } from '../services/api';
+import { useAuth } from 'react-oidc-context';
 import toast from 'react-hot-toast';
 import type { AgentActionResult } from '../types/api';
 
@@ -13,6 +14,7 @@ export function DiscoverPage() {
   const [limit, setLimit] = useState('10');
   const [spotifyConnected, setSpotifyConnected] = useState(false);
   const [checkingConnection, setCheckingConnection] = useState(true);
+  const auth = useAuth();
   
   const { discoverNewMusic, createConversation, isLoading } = useAgent();
   const { currentConversation, setCurrentConversation, recentActions } = useAgentStore();
@@ -20,6 +22,11 @@ export function DiscoverPage() {
   const currentTask = useAgentStore((state) => state.currentTask);
 
   useEffect(() => {
+    if (!auth.isAuthenticated) {
+      setCheckingConnection(false);
+      return;
+    }
+    
     const checkSpotifyConnection = async () => {
       try {
         const status = await spotifyApi.getStatus();
@@ -32,7 +39,7 @@ export function DiscoverPage() {
       }
     };
     checkSpotifyConnection();
-  }, []);
+  }, [auth.isAuthenticated]);
 
   useEffect(() => {
     const initConversation = async () => {
