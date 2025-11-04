@@ -15,6 +15,7 @@ public class AgentServiceTests
 {
     private readonly Mock<IAgentActionRepository> _mockActionRepository;
     private readonly Mock<ISpotifyService> _mockSpotifyService;
+    private readonly Mock<IAIService> _mockAIService;
     private readonly Mock<ILogger<AgentService>> _mockLogger;
     private readonly AgentService _agentService;
 
@@ -22,10 +23,12 @@ public class AgentServiceTests
     {
         _mockActionRepository = new Mock<IAgentActionRepository>();
         _mockSpotifyService = new Mock<ISpotifyService>();
+        _mockAIService = new Mock<IAIService>();
         _mockLogger = new Mock<ILogger<AgentService>>();
         _agentService = new AgentService(
             _mockActionRepository.Object,
             _mockSpotifyService.Object,
+            _mockAIService.Object,
             _mockLogger.Object
         );
     }
