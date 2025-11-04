@@ -21,3 +21,17 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: mateo-spotify-backend-config
+        env:
+        - name: AI__ApiKey
+          valueFrom:
+            secretKeyRef:
+              name: mateo-spotify-backend-secret
+              key: AI_API_KEY
+        - name: Spotify__ClientSecret
+          valueFrom:
+            secretKeyRef:
+              name: mateo-spotify-backend-secret
+              key: SPOTIFY_CLIENT_SECRET

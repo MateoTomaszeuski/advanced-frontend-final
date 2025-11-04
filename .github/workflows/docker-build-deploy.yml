@@ -96,11 +96,21 @@ jobs:
       - name: Apply Kubernetes Changes
         env:
           KUBECONFIG: /home/mateo/.kube/config
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
         run: |
           export BUILD_NUMBER=${{ github.run_number }}
           export NAMESPACE=mateo-spotify
           
-          # Apply ConfigMaps first
+          # Apply Secrets first
+          for FILE in kube/*-secret.yml
+          do
+              if [ -f "$FILE" ]; then
+                  cat $FILE | envsubst | kubectl apply -f -
+              fi
+          done
+          
+          # Apply ConfigMaps
           for FILE in kube/*-config.yml
           do
               if [ -f "$FILE" ]; then
@@ -111,7 +121,7 @@ jobs:
           # Apply all other resources
           for FILE in kube/*
           do
-              if [[ ! "$FILE" =~ -config.yml$ ]]; then
+              if [[ ! "$FILE" =~ -config.yml$ ]] && [[ ! "$FILE" =~ -secret.yml$ ]]; then
                   cat $FILE | envsubst | kubectl apply -f -
               fi
           done

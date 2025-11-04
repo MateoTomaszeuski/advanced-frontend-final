@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mateo-spotify-backend-config
+  namespace: $NAMESPACE
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  ASPNETCORE_HTTP_PORTS: "8080"
+  ConnectionStrings__DefaultConnection: "Host=mateo-spotify-database-svc;Port=5432;Database=spotifydb;Username=spotifyuser;Password=spotifypass"
+  Keycloak__Authority: "https://auth-dev.snowse.io/realms/DevRealm"
+  Keycloak__Audience: "account"
+  Keycloak__MetadataAddress: "https://auth-dev.snowse.io/realms/DevRealm/.well-known/openid-configuration"
+  Cors__AllowedOrigins__0: "http://localhost:5173"
+  Cors__AllowedOrigins__1: "https://localhost:5173"
+  Cors__AllowedOrigins__2: "https://127.0.0.1:5173"
+  Cors__AllowedOrigins__3: "https://mateo-spotify.duckdns.org"
+  AI__ApiBaseUrl: "https://ai-snow.reindeer-pinecone.ts.net/api/chat/completions"
+  AI__Model: "gpt-oss-120b"
+  Spotify__ClientId: "83a1fa87b8ff4bff8390fa70d2b95d9c"
