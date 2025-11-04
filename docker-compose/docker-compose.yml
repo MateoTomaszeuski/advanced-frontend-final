@@ -34,11 +34,11 @@ services:
       - Cors__AllowedOrigins__1=https://localhost:5173
       - Cors__AllowedOrigins__2=https://127.0.0.1:5173
       - Cors__AllowedOrigins__3=https://mateo-spotify.duckdns.org
-      - AI__ApiBaseUrl=https://ai-snow.reindeer-pinecone.ts.net/api/chat/completions
-      - AI__Model=gpt-oss-120b
-      - AI__ApiKey=sk-67019917671644c7a1612fa588ddaa6a
-      - Spotify__ClientId=83a1fa87b8ff4bff8390fa70d2b95d9c
-      - Spotify__ClientSecret=7e44118864c64b95b74891225742369b
+      - AI__ApiBaseUrl=${AI_API_BASE_URL}
+      - AI__Model=${AI_MODEL}
+      - AI__ApiKey=${AI_API_KEY}
+      - Spotify__ClientId=${SPOTIFY_CLIENT_ID}
+      - Spotify__ClientSecret=${SPOTIFY_CLIENT_SECRET}
     ports:
       - "8080:8080"
     depends_on:
@@ -63,7 +63,7 @@ services:
       - VITE_KEYCLOAK_AUTHORITY=https://auth-dev.snowse.io/realms/DevRealm
       - VITE_KEYCLOAK_JWKS_URI=https://auth-dev.snowse.io/realms/DevRealm/protocol/openid-connect/certs
       - VITE_API_URL=http://localhost:8080
-      - VITE_SPOTIFY_CLIENT_ID=83a1fa87b8ff4bff8390fa70d2b95d9c
+      - VITE_SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
       - VITE_SPOTIFY_REDIRECT_URI=https://127.0.0.1:5173/settings
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
 
