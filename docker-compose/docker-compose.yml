@@ -23,6 +23,8 @@ services:
     build:
       context: ..
       dockerfile: dockerfiles/Dockerfile.server
+    env_file:
+      - .env
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
@@ -58,13 +60,6 @@ services:
       - backend
     environment:
       - NODE_ENV=development
-      - CI=true
-      - VITE_KEYCLOAK_CLIENT_ID=mateo-spotify-agent
-      - VITE_KEYCLOAK_AUTHORITY=https://auth-dev.snowse.io/realms/DevRealm
-      - VITE_KEYCLOAK_JWKS_URI=https://auth-dev.snowse.io/realms/DevRealm/protocol/openid-connect/certs
-      - VITE_API_URL=http://localhost:8080
-      - VITE_SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
-      - VITE_SPOTIFY_REDIRECT_URI=https://127.0.0.1:5173/settings
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
 
 # volumes:
