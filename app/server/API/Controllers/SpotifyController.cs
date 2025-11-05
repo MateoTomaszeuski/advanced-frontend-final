@@ -47,7 +47,11 @@ public class SpotifyController : ControllerBase
         {
             var clientId = _configuration["Spotify:ClientId"];
             var clientSecret = _configuration["Spotify:ClientSecret"];
-            var redirectUri = request.RedirectUri;
+            var configuredRedirectUri = _configuration["Spotify:RedirectUri"];
+            var redirectUri = string.IsNullOrEmpty(configuredRedirectUri) ? request.RedirectUri : configuredRedirectUri;
+
+            _logger.LogInformation("Using redirect URI: {RedirectUri} (configured: {ConfiguredRedirectUri}, requested: {RequestedRedirectUri})", 
+                redirectUri, configuredRedirectUri, request.RedirectUri);
 
             if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
             {
@@ -70,8 +74,9 @@ public class SpotifyController : ControllerBase
             if (!response.IsSuccessStatusCode)
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError("Spotify token exchange failed: {Error}", errorContent);
-                return BadRequest(new { error = "Failed to exchange authorization code" });
+                _logger.LogError("Spotify token exchange failed with status {StatusCode}. RedirectUri used: {RedirectUri}. Error: {Error}", 
+                    response.StatusCode, redirectUri, errorContent);
+                return BadRequest(new { error = "Failed to exchange authorization code", details = errorContent });
             }
 
             var responseContent = await response.Content.ReadAsStringAsync();

@@ -17,3 +17,4 @@ data:
   AI__ApiBaseUrl: "https://ai-snow.reindeer-pinecone.ts.net/api/chat/completions"
   AI__Model: "gpt-oss-120b"
   Spotify__ClientId: "83a1fa87b8ff4bff8390fa70d2b95d9c"
+  Spotify__RedirectUri: "https://mateo-spotify.duckdns.org/settings"
