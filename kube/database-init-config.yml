@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mateo-spotify-database-init
+  namespace: $NAMESPACE
+data:
+  init.sql: |
+    -- Create database schema for Spotify AI Agent
+
+    -- Users table
+    CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        display_name VARCHAR(255),
+        spotify_access_token TEXT,
+        spotify_refresh_token TEXT,
+        spotify_token_expiry TIMESTAMP,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+    -- Conversations table
+    CREATE TABLE IF NOT EXISTS conversations (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title VARCHAR(500) NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_conversations_user_id ON conversations(user_id);
+    CREATE INDEX IF NOT EXISTS idx_conversations_created_at ON conversations(created_at DESC);
+
+    -- Agent actions table
+    CREATE TABLE IF NOT EXISTS agent_actions (
+        id SERIAL PRIMARY KEY,
+        conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+        action_type VARCHAR(100) NOT NULL,
+        status VARCHAR(50) NOT NULL,
+        input_prompt TEXT,
+        parameters JSONB,
+        result JSONB,
+        error_message TEXT,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        completed_at TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_agent_actions_conversation_id ON agent_actions(conversation_id);
+    CREATE INDEX IF NOT EXISTS idx_agent_actions_action_type ON agent_actions(action_type);
+    CREATE INDEX IF NOT EXISTS idx_agent_actions_status ON agent_actions(status);
+    CREATE INDEX IF NOT EXISTS idx_agent_actions_created_at ON agent_actions(created_at DESC);
+
+    -- Function to update updated_at timestamp
+    CREATE OR REPLACE FUNCTION update_updated_at_column()
+    RETURNS TRIGGER AS $$
+    BEGIN
+        NEW.updated_at = CURRENT_TIMESTAMP;
+        RETURN NEW;
+    END;
+    $$ language 'plpgsql';
+
+    -- Triggers for updated_at
+    DROP TRIGGER IF EXISTS update_users_updated_at ON users;
+    CREATE TRIGGER update_users_updated_at
+        BEFORE UPDATE ON users
+        FOR EACH ROW
+        EXECUTE FUNCTION update_updated_at_column();
+
+    DROP TRIGGER IF EXISTS update_conversations_updated_at ON conversations;
+    CREATE TRIGGER update_conversations_updated_at
+        BEFORE UPDATE ON conversations
+        FOR EACH ROW
+        EXECUTE FUNCTION update_updated_at_column();

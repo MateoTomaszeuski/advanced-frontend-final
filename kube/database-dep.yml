@@ -30,7 +30,12 @@ spec:
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
+        - name: init-script
+          mountPath: /docker-entrypoint-initdb.d
       volumes:
       - name: postgres-storage
         persistentVolumeClaim:
           claimName: mateo-spotify-postgres-pvc
+      - name: init-script
+        configMap:
+          name: mateo-spotify-database-init
