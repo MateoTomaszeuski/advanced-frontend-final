@@ -6,7 +6,7 @@ metadata:
 data:
   ASPNETCORE_ENVIRONMENT: "Production"
   ASPNETCORE_HTTP_PORTS: "8080"
-  ConnectionStrings__DefaultConnection: "Host=mateo-spotify-database-svc;Port=5432;Database=spotifydb;Username=spotifyuser;Password=spotifypass"
+  ConnectionStrings__DefaultConnection: "Host=mateo-spotify-database;Port=5432;Database=spotifydb;Username=spotifyuser;Password=spotifypass"
   Keycloak__Authority: "https://auth-dev.snowse.io/realms/DevRealm"
   Keycloak__Audience: "account"
   Keycloak__MetadataAddress: "https://auth-dev.snowse.io/realms/DevRealm/.well-known/openid-configuration"
