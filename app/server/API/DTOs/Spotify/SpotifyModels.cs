@@ -52,6 +52,16 @@ public record SpotifyPlaylist(
     int TotalTracks
 );
 
+public record SpotifyPlaylistTrack(
+    string Id,
+    string Name,
+    SpotifyArtist[] Artists,
+    SpotifyAlbum Album,
+    string Uri,
+    int Popularity,
+    string AddedAt
+);
+
 public record CreatePlaylistRequest(
     string Name,
     string? Description = null,

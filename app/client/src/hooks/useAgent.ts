@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import type {
   CreateSmartPlaylistRequest,
   DiscoverNewMusicRequest,
+  RemoveDuplicatesResponse,
+  SuggestMusicResponse,
 } from '../types/api';
 
 export function useAgent() {
@@ -109,10 +111,129 @@ export function useAgent() {
     }
   };
 
+  const scanDuplicates = async (conversationId: number, playlistId: string) => {
+    setIsLoading(true);
+    setStatus('processing');
+    setCurrentTask('Scanning for duplicates...');
+    setProgress(0);
+
+    try {
+      setProgress(30);
+      const response = await agentApi.scanDuplicates({ conversationId, playlistId }) as RemoveDuplicatesResponse;
+
+      setProgress(100);
+      setStatus('idle');
+      setCurrentTask(null);
+
+      if (response.totalDuplicateGroups > 0) {
+        toast.success(
+          `Found ${response.totalDuplicateTracks} duplicates in ${response.totalDuplicateGroups} groups`
+        );
+      } else {
+        toast.success('No duplicates found in this playlist');
+      }
+
+      return response;
+    } catch (error) {
+      setStatus('error');
+      setCurrentTask(null);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to scan for duplicates'
+      );
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const confirmRemoveDuplicates = async (
+    conversationId: number,
+    playlistId: string,
+    trackUrisToRemove: string[]
+  ) => {
+    setIsLoading(true);
+    setStatus('processing');
+    setCurrentTask('Removing duplicates...');
+    setProgress(0);
+
+    try {
+      setProgress(30);
+      const response = await agentApi.confirmRemoveDuplicates({
+        conversationId,
+        playlistId,
+        trackUrisToRemove,
+      });
+
+      if (response.status === 'Failed') {
+        throw new Error(response.errorMessage || 'Failed to remove duplicates');
+      }
+
+      setProgress(100);
+      setStatus('idle');
+      setCurrentTask(null);
+
+      const action = await agentApi.getAction(response.actionId);
+      addRecentAction(action);
+
+      toast.success(`Removed ${trackUrisToRemove.length} duplicate tracks!`);
+
+      return response;
+    } catch (error) {
+      setStatus('error');
+      setCurrentTask(null);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to remove duplicates'
+      );
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const suggestMusic = async (
+    conversationId: number,
+    playlistId: string,
+    context: string
+  ) => {
+    setIsLoading(true);
+    setStatus('processing');
+    setCurrentTask('Generating music suggestions...');
+    setProgress(0);
+
+    try {
+      setProgress(30);
+      const response = await agentApi.suggestMusic({
+        conversationId,
+        playlistId,
+        context,
+      }) as SuggestMusicResponse;
+
+      setProgress(100);
+      setStatus('idle');
+      setCurrentTask(null);
+
+      toast.success(`Generated ${response.suggestionCount} suggestions for "${response.playlistName}"`);
+
+      return response;
+    } catch (error) {
+      setStatus('error');
+      setCurrentTask(null);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to generate suggestions'
+      );
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     isLoading,
     createConversation,
     createSmartPlaylist,
     discoverNewMusic,
+    scanDuplicates,
+    confirmRemoveDuplicates,
+    suggestMusic,
   };
 }

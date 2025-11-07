@@ -28,6 +28,15 @@ export const agentApi = {
   discoverNewMusic: (data: DiscoverNewMusicRequest) =>
     apiClient.post<AgentActionResponse>('/api/agent/discover-new-music', data),
 
+  scanDuplicates: (data: { conversationId: number; playlistId: string }) =>
+    apiClient.post('/api/agent/scan-duplicates', data),
+
+  confirmRemoveDuplicates: (data: { conversationId: number; playlistId: string; trackUrisToRemove: string[] }) =>
+    apiClient.post<AgentActionResponse>('/api/agent/confirm-remove-duplicates', data),
+
+  suggestMusic: (data: { conversationId: number; playlistId: string; context: string }) =>
+    apiClient.post('/api/agent/suggest-music', data),
+
   getAction: (actionId: number) =>
     apiClient.get<AgentAction>(`/api/agent/actions/${actionId}`),
 };
@@ -46,6 +55,8 @@ export const spotifyApi = {
     apiClient.get('/api/spotify/profile'),
 
   disconnect: () => apiClient.post('/api/spotify/disconnect'),
+
+  getPlaylists: () => apiClient.get('/api/spotify/playlists'),
 };
 
 export const testApi = {

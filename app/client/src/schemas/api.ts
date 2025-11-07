@@ -85,6 +85,71 @@ export const ConnectSpotifyRequestSchema = z.object({
   expiresIn: z.number().min(1),
 });
 
+export const DuplicateTrackSchema = z.object({
+  id: z.string(),
+  uri: z.string(),
+  albumName: z.string(),
+  releaseDate: z.string().optional(),
+  popularity: z.number(),
+  isRecommendedToKeep: z.boolean(),
+});
+
+export const DuplicateGroupSchema = z.object({
+  trackName: z.string(),
+  artists: z.array(z.string()),
+  duplicates: z.array(DuplicateTrackSchema),
+});
+
+export const RemoveDuplicatesResponseSchema = z.object({
+  playlistId: z.string(),
+  playlistName: z.string(),
+  totalDuplicateGroups: z.number(),
+  totalDuplicateTracks: z.number(),
+  duplicateGroups: z.array(DuplicateGroupSchema),
+});
+
+export const ScanDuplicatesRequestSchema = z.object({
+  conversationId: z.number(),
+  playlistId: z.string().min(1, 'Playlist ID is required'),
+});
+
+export const ConfirmRemoveDuplicatesRequestSchema = z.object({
+  conversationId: z.number(),
+  playlistId: z.string().min(1, 'Playlist ID is required'),
+  trackUrisToRemove: z.array(z.string()),
+});
+
+export const SuggestedTrackSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  artists: z.array(z.string()),
+  uri: z.string(),
+  reason: z.string(),
+  popularity: z.number(),
+});
+
+export const SuggestMusicResponseSchema = z.object({
+  playlistId: z.string(),
+  playlistName: z.string(),
+  context: z.string(),
+  suggestionCount: z.number(),
+  suggestions: z.array(SuggestedTrackSchema),
+});
+
+export const SuggestMusicRequestSchema = z.object({
+  conversationId: z.number(),
+  playlistId: z.string().min(1, 'Playlist ID is required'),
+  context: z.string().min(1, 'Context is required'),
+});
+
+export const SpotifyPlaylistSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  uri: z.string(),
+  totalTracks: z.number(),
+});
+
 export type User = z.infer<typeof UserSchema>;
 export type Conversation = z.infer<typeof ConversationSchema>;
 export type AgentAction = z.infer<typeof AgentActionSchema>;
@@ -96,3 +161,12 @@ export type AgentActionResult = z.infer<typeof AgentActionResultSchema>;
 export type AgentActionResponse = z.infer<typeof AgentActionResponseSchema>;
 export type SpotifyConnectionStatus = z.infer<typeof SpotifyConnectionStatusSchema>;
 export type ConnectSpotifyRequest = z.infer<typeof ConnectSpotifyRequestSchema>;
+export type DuplicateTrack = z.infer<typeof DuplicateTrackSchema>;
+export type DuplicateGroup = z.infer<typeof DuplicateGroupSchema>;
+export type RemoveDuplicatesResponse = z.infer<typeof RemoveDuplicatesResponseSchema>;
+export type ScanDuplicatesRequest = z.infer<typeof ScanDuplicatesRequestSchema>;
+export type ConfirmRemoveDuplicatesRequest = z.infer<typeof ConfirmRemoveDuplicatesRequestSchema>;
+export type SuggestedTrack = z.infer<typeof SuggestedTrackSchema>;
+export type SuggestMusicResponse = z.infer<typeof SuggestMusicResponseSchema>;
+export type SuggestMusicRequest = z.infer<typeof SuggestMusicRequestSchema>;
+export type SpotifyPlaylist = z.infer<typeof SpotifyPlaylistSchema>;

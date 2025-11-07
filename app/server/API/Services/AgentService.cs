@@ -11,6 +11,9 @@ public interface IAgentService
 {
     Task<AgentActionResponse> CreateSmartPlaylistAsync(User user, CreateSmartPlaylistRequest request, int conversationId);
     Task<AgentActionResponse> DiscoverNewMusicAsync(User user, DiscoverNewMusicRequest request, int conversationId);
+    Task<RemoveDuplicatesResponse> ScanForDuplicatesAsync(User user, string playlistId, int conversationId);
+    Task<AgentActionResponse> ConfirmRemoveDuplicatesAsync(User user, ConfirmRemoveDuplicatesRequest request, int conversationId);
+    Task<SuggestMusicResponse> SuggestMusicByContextAsync(User user, SuggestMusicRequest request, int conversationId);
 }
 
 public class AgentService : IAgentService
@@ -65,44 +68,47 @@ public class AgentService : IAgentService
             {
                 new Models.AI.AIMessage("system", @"You are a music expert assistant. Generate a creative and catchy playlist name, and an effective Spotify search query based on the user's description.
 
-IMPORTANT: Spotify search has LIMITED syntax support. Only use these proven search patterns:
-- Genre keywords: 'funk', 'rap', 'trap', 'jazz', 'rock', 'electronic', 'pop'
-- Genre filter: 'genre:rock', 'genre:jazz', 'genre:electronic'
-- Artist names: 'artist:Radiohead', or just 'Radiohead'
-- Track names: 'track:Breathe'
-- Year: 'year:2020'
+SPOTIFY SEARCH API - OFFICIAL SUPPORTED FILTERS:
+When searching for tracks, you can use these field filters:
+- album: 'album:Dookie' or 'album:""Dookie""'
+- artist: 'artist:Radiohead' or 'artist:""Miles Davis""'
+- track: 'track:Breathe' or 'track:""Smells Like Teen Spirit""'
+- year: 'year:2020' or year range 'year:1980-1990'
+- genre: 'genre:rock' 'genre:jazz' 'genre:electronic' 'genre:hip-hop' 'genre:pop' 'genre:indie' 'genre:metal' 'genre:country' 'genre:classical' 'genre:reggae' 'genre:blues' 'genre:soul' 'genre:funk' 'genre:punk' 'genre:folk' 'genre:r-n-b' 'genre:dance' 'genre:latin' 'genre:afrobeat'
+- isrc: 'isrc:USUM71703861' (International Standard Recording Code - rarely needed)
 
-DO NOT use these (they don't work reliably):
-- mood:, energy:, tempo:, instrumentalness:, valence:
-- Complex boolean operators
-- Descriptive adjectives as literal search terms (upbeat, chill, energetic, etc.)
+IMPORTANT RULES:
+1. You can combine filters: 'genre:rock year:2010-2020'
+2. You can use keywords + filters: 'upbeat genre:funk artist:Prince'
+3. Use quotes for multi-word values: 'artist:""Daft Punk""'
+4. Use ONLY ONE genre filter per query - multiple genre filters don't work well
+5. DO NOT use made-up filters like: mood:, energy:, tempo:, valence:, danceability:, instrumentalness:
 
-CRITICAL: Translate descriptive words to actual music characteristics:
-- 'upbeat' → use genres like 'funk', 'pop', 'dance' (NOT the word 'upbeat')
-- 'chill' → use 'indie', 'ambient', 'acoustic' (NOT the word 'chill')
-- 'energetic' → use 'rock', 'electronic', 'punk' (NOT the word 'energetic')
-- 'relaxing' → use 'classical', 'ambient', 'jazz' (NOT the word 'relaxing')
+QUERY BUILDING STRATEGY:
+1. If user mentions specific artists → use 'artist:ArtistName'
+2. If user mentions ONE primary genre → use 'genre:genrename'
+3. If user mentions time period → use 'year:YYYY' or 'year:YYYY-YYYY'
+4. Add descriptive keywords (upbeat, chill, energetic) as regular text alongside filters
+5. Mix keywords with ONE genre filter for best results
 
-For best results:
-1. Extract actual GENRES from the user's request
-2. If user says descriptive words (upbeat, chill, etc.), convert to relevant genres
-3. Include artist names if mentioned
-4. Keep query focused on genres and concrete terms
-
-Examples of GOOD queries:
-- User: 'upbeat funk and pop' → Query: 'funk pop dance'
-- User: 'chill indie music' → Query: 'indie acoustic ambient'
-- User: 'energetic workout music' → Query: 'rock electronic hip-hop'
-- User: 'relaxing piano' → Query: 'classical piano jazz'
-- User: 'funk, rap and argentinian trap' → Query: 'funk rap trap latino'
+Examples of CORRECT queries:
+- User: 'upbeat funk and pop' → Query: 'upbeat dance funk pop genre:funk'
+- User: 'chill indie music' → Query: 'chill mellow acoustic genre:indie'
+- User: 'energetic workout music' → Query: 'energetic workout genre:rock'
+- User: 'relaxing piano from 2010s' → Query: 'relaxing piano genre:classical year:2010-2019'
+- User: 'funk, rap and argentinian trap' → Query: 'funk rap trap latino genre:hip-hop'
+- User: '80s rock hits' → Query: 'hits classic genre:rock year:1980-1989'
+- User: 'songs like Radiohead' → Query: 'alternative rock artist:Radiohead'
 
 Return your response in the following JSON format only:
 {
   ""playlistName"": ""Creative Playlist Name"",
-  ""searchQuery"": ""genres and concrete terms only"",
+  ""searchQuery"": ""keywords and filters combined"",
   ""description"": ""Brief description of the playlist""
-}"),
-                new Models.AI.AIMessage("user", $"Create a playlist for: {request.Prompt}")
+}
+
+IMPORTANT: Each request is unique - provide fresh, creative results even if similar requests were made before."),
+                new Models.AI.AIMessage("user", $"[Request #{DateTime.UtcNow.Ticks}] Create a playlist for: {request.Prompt}")
             };
 
             var aiResponse = await _aiService.GetChatCompletionAsync(aiMessages);
@@ -151,6 +157,7 @@ Return your response in the following JSON format only:
             var requestedTrackCount = request.Preferences?.MaxTracks ?? 20;
             var allTracks = new List<SpotifyTrack>();
             var trackIds = new HashSet<string>();
+            var trackUris = new HashSet<string>();
 
             var initialTracks = await _spotifyService.SearchTracksAsync(
                 user.SpotifyAccessToken,
@@ -160,7 +167,7 @@ Return your response in the following JSON format only:
 
             foreach (var track in initialTracks)
             {
-                if (trackIds.Add(track.Id))
+                if (trackIds.Add(track.Id) && trackUris.Add(track.Uri))
                 {
                     allTracks.Add(track);
                 }
@@ -210,7 +217,7 @@ Return your response in the following JSON format only:
 
                     foreach (var track in additionalTracks)
                     {
-                        if (trackIds.Add(track.Id) && allTracks.Count < requestedTrackCount * 2)
+                        if (trackIds.Add(track.Id) && trackUris.Add(track.Uri) && allTracks.Count < requestedTrackCount * 2)
                         {
                             allTracks.Add(track);
                         }
@@ -233,25 +240,40 @@ Return your response in the following JSON format only:
                 _logger.LogInformation("After filtering by preferences: {Count} tracks", tracks.Length);
             }
 
-            tracks = tracks.Take(requestedTrackCount).ToArray();
+            var finalTracks = new List<SpotifyTrack>();
+            var finalTrackUrisSet = new HashSet<string>();
 
-            _logger.LogInformation("Final track count: {Count} (requested: {Requested})", tracks.Length, requestedTrackCount);
+            foreach (var track in tracks)
+            {
+                if (finalTrackUrisSet.Add(track.Uri))
+                {
+                    finalTracks.Add(track);
+                    if (finalTracks.Count >= requestedTrackCount)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            tracks = finalTracks.ToArray();
+
+            _logger.LogInformation("Final unique track count: {Count} (requested: {Requested})", tracks.Length, requestedTrackCount);
 
             var userId = await _spotifyService.GetCurrentUserIdAsync(user.SpotifyAccessToken);
 
             var playlist = await _spotifyService.CreatePlaylistAsync(
                 user.SpotifyAccessToken,
                 userId,
-                new CreatePlaylistRequest(playlistName, playlistDescription, false)
+                new CreatePlaylistRequest(playlistName, playlistDescription, true)
             );
 
             if (tracks.Length > 0)
             {
-                var trackUris = tracks.Select(t => t.Uri).ToArray();
+                var trackUrisToAdd = tracks.Select(t => t.Uri).ToArray();
                 await _spotifyService.AddTracksToPlaylistAsync(
                     user.SpotifyAccessToken,
                     playlist.Id,
-                    trackUris
+                    trackUrisToAdd
                 );
             }
 
@@ -342,8 +364,10 @@ Return your response in the following JSON format only:
 Return your response in this format:
 {
   ""genres"": [""pop"", ""rock"", ""hip-hop"", ""indie"", ""electronic""]
-}"),
-                    new Models.AI.AIMessage("user", "Generate 5 diverse music genres for music discovery")
+}
+
+IMPORTANT: Provide a unique, diverse mix of genres each time - avoid repeating the same genres."),
+                    new Models.AI.AIMessage("user", $"[Request #{DateTime.UtcNow.Ticks}] Generate 5 diverse music genres for music discovery")
                 };
 
                 var aiResponse = await _aiService.GetChatCompletionAsync(aiMessages);
@@ -396,13 +420,33 @@ Return your response in this format:
                 {
                     new Models.AI.AIMessage("system", @"You are a music expert assistant. Analyze the user's favorite tracks and generate search queries to discover similar but new music.
 
-Generate 3-5 search queries based on the genres and artists. Use actual genres and artist names.
+SPOTIFY SEARCH API - OFFICIAL SUPPORTED FILTERS:
+- album: 'album:""Album Name""'
+- artist: 'artist:""Artist Name""'
+- track: 'track:""Track Name""'
+- year: 'year:2020' or 'year:1980-1990'
+- genre: 'genre:rock' 'genre:jazz' 'genre:electronic' 'genre:hip-hop' 'genre:pop' 'genre:indie' 'genre:metal' etc.
+
+QUERY BUILDING:
+1. Mix keywords with filters for best results
+2. Use artist filters to find similar artists: 'artist:""Similar Artist""'
+3. Use genre filters to explore genres: 'genre:genrename'
+4. Combine multiple filters: 'genre:indie year:2020-2024'
+
+Examples:
+- 'artist:""Arctic Monkeys"" genre:indie genre:rock'
+- 'chill lofi genre:hip-hop genre:electronic'
+- 'upbeat genre:pop year:2020-2024'
+
+Generate 3-5 diverse search queries based on the genres and artists from the user's top tracks.
 
 Return your response in the following JSON format:
 {
-  ""queries"": [""indie rock alternative"", ""electronic dance pop"", ""hip-hop rap""]
-}"),
-                    new Models.AI.AIMessage("user", $"User's top tracks: {string.Join(", ", topSavedTracks.Select(t => $"{t.Name} by {string.Join(", ", t.Artists.Select(a => a.Name))}"))}. Generate search queries to discover similar music.")
+  ""queries"": [""query1"", ""query2"", ""query3""]
+}
+
+IMPORTANT: Generate diverse, unique queries - do not repeat previous suggestions."),
+                    new Models.AI.AIMessage("user", $"[Request #{DateTime.UtcNow.Ticks}] User's top tracks: {string.Join(", ", topSavedTracks.Select(t => $"{t.Name} by {string.Join(", ", t.Artists.Select(a => a.Name))}"))}. Generate search queries to discover similar music.")
                 };
 
                 var aiResponse = await _aiService.GetChatCompletionAsync(aiMessages);
@@ -508,7 +552,7 @@ Return your response in the following JSON format:
             var playlist = await _spotifyService.CreatePlaylistAsync(
                 user.SpotifyAccessToken,
                 userId,
-                new CreatePlaylistRequest(playlistName, playlistDescription, false)
+                new CreatePlaylistRequest(playlistName, playlistDescription, true)
             );
 
             if (newTracks.Length > 0)
@@ -558,5 +602,321 @@ Return your response in the following JSON format:
 
             return new AgentActionResponse(action.Id, action.ActionType, action.Status, null, ex.Message);
         }
+    }
+
+    public async Task<RemoveDuplicatesResponse> ScanForDuplicatesAsync(
+        User user,
+        string playlistId,
+        int conversationId)
+    {
+        if (string.IsNullOrEmpty(user.SpotifyAccessToken))
+        {
+            throw new InvalidOperationException("User has not connected their Spotify account");
+        }
+
+        _logger.LogInformation("Scanning playlist {PlaylistId} for duplicates for user {Email}", playlistId, user.Email);
+
+        var playlist = await _spotifyService.GetPlaylistAsync(user.SpotifyAccessToken, playlistId);
+        var playlistTracks = await _spotifyService.GetPlaylistTracksAsync(user.SpotifyAccessToken, playlistId);
+
+        var duplicateGroups = new List<DuplicateGroup>();
+        var processedTracks = new HashSet<string>();
+
+        foreach (var track in playlistTracks)
+        {
+            if (processedTracks.Contains(track.Id)) continue;
+
+            var normalizedName = NormalizeTrackName(track.Name);
+            var artistNames = track.Artists.Select(a => a.Name.ToLowerInvariant()).OrderBy(n => n).ToArray();
+
+            var duplicates = playlistTracks
+                .Where(t => t.Id != track.Id &&
+                           NormalizeTrackName(t.Name) == normalizedName &&
+                           AreArtistsSimilar(t.Artists.Select(a => a.Name).ToArray(), track.Artists.Select(a => a.Name).ToArray()))
+                .ToArray();
+
+            if (duplicates.Any())
+            {
+                var allVersions = new[] { track }.Concat(duplicates).ToArray();
+                
+                foreach (var t in allVersions)
+                {
+                    processedTracks.Add(t.Id);
+                }
+
+                var recommendedToKeep = allVersions
+                    .OrderByDescending(t => t.Popularity)
+                    .ThenBy(t => t.AddedAt)
+                    .First();
+
+                var duplicateTrackDtos = allVersions.Select(t => new DuplicateTrack(
+                    t.Id,
+                    t.Uri,
+                    t.Album.Name,
+                    ParseReleaseDate(t.AddedAt),
+                    t.Popularity,
+                    t.Id == recommendedToKeep.Id
+                )).ToArray();
+
+                duplicateGroups.Add(new DuplicateGroup(
+                    track.Name,
+                    track.Artists.Select(a => a.Name).ToArray(),
+                    duplicateTrackDtos
+                ));
+            }
+        }
+
+        var totalDuplicateTracks = duplicateGroups.Sum(g => g.Duplicates.Length - 1);
+
+        _logger.LogInformation("Found {GroupCount} duplicate groups with {TrackCount} duplicate tracks",
+            duplicateGroups.Count, totalDuplicateTracks);
+
+        return new RemoveDuplicatesResponse(
+            playlist.Id,
+            playlist.Name,
+            duplicateGroups.Count,
+            totalDuplicateTracks,
+            duplicateGroups.ToArray()
+        );
+    }
+
+    public async Task<AgentActionResponse> ConfirmRemoveDuplicatesAsync(
+        User user,
+        ConfirmRemoveDuplicatesRequest request,
+        int conversationId)
+    {
+        var action = new AgentAction
+        {
+            ConversationId = conversationId,
+            ActionType = "RemoveDuplicates",
+            Status = "Processing",
+            Parameters = JsonSerializer.SerializeToDocument(request),
+            CreatedAt = DateTime.UtcNow
+        };
+
+        action = await _actionRepository.CreateAsync(action);
+
+        try
+        {
+            if (string.IsNullOrEmpty(user.SpotifyAccessToken))
+            {
+                throw new InvalidOperationException("User has not connected their Spotify account");
+            }
+
+            _logger.LogInformation("Removing {Count} duplicate tracks from playlist {PlaylistId} for user {Email}",
+                request.TrackUrisToRemove.Length, request.PlaylistId, user.Email);
+
+            await _spotifyService.RemoveTracksFromPlaylistAsync(
+                user.SpotifyAccessToken,
+                request.PlaylistId,
+                request.TrackUrisToRemove
+            );
+
+            var result = new
+            {
+                playlistId = request.PlaylistId,
+                removedCount = request.TrackUrisToRemove.Length,
+                trackUris = request.TrackUrisToRemove
+            };
+
+            action.Status = "Completed";
+            action.Result = JsonSerializer.SerializeToDocument(result);
+            action.CompletedAt = DateTime.UtcNow;
+            await _actionRepository.UpdateAsync(action);
+
+            _logger.LogInformation("Successfully removed {Count} duplicate tracks from playlist {PlaylistId}",
+                request.TrackUrisToRemove.Length, request.PlaylistId);
+
+            return new AgentActionResponse(action.Id, action.ActionType, action.Status, result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing duplicates from playlist {PlaylistId}", request.PlaylistId);
+
+            action.Status = "Failed";
+            action.ErrorMessage = ex.Message;
+            action.CompletedAt = DateTime.UtcNow;
+            await _actionRepository.UpdateAsync(action);
+
+            return new AgentActionResponse(action.Id, action.ActionType, action.Status, null, ex.Message);
+        }
+    }
+
+    public async Task<SuggestMusicResponse> SuggestMusicByContextAsync(
+        User user,
+        SuggestMusicRequest request,
+        int conversationId)
+    {
+        if (string.IsNullOrEmpty(user.SpotifyAccessToken))
+        {
+            throw new InvalidOperationException("User has not connected their Spotify account");
+        }
+
+        _logger.LogInformation("Generating music suggestions for playlist {PlaylistId} with context: {Context}",
+            request.PlaylistId, request.Context);
+
+        var playlist = await _spotifyService.GetPlaylistAsync(user.SpotifyAccessToken, request.PlaylistId);
+        var playlistTracks = await _spotifyService.GetPlaylistTracksAsync(user.SpotifyAccessToken, request.PlaylistId);
+
+        var topTracks = playlistTracks
+            .OrderByDescending(t => t.Popularity)
+            .Take(10)
+            .ToArray();
+
+        var trackSummary = string.Join(", ", topTracks.Select(t => 
+            $"{t.Name} by {string.Join(", ", t.Artists.Select(a => a.Name))}"));
+
+        var aiMessages = new List<Models.AI.AIMessage>
+        {
+            new Models.AI.AIMessage("system", @"You are a music expert assistant. Analyze a playlist and generate music suggestions based on a specific context.
+
+SPOTIFY SEARCH API - OFFICIAL SUPPORTED FILTERS:
+- album: 'album:""Album Name""'
+- artist: 'artist:""Artist Name""'
+- track: 'track:""Track Name""'
+- year: 'year:2020' or 'year:1980-1990'
+- genre: 'genre:rock' 'genre:jazz' 'genre:electronic' 'genre:hip-hop' 'genre:pop' 'genre:indie' 'genre:metal' 'genre:country' 'genre:classical' 'genre:reggae' 'genre:blues' 'genre:soul' 'genre:funk' 'genre:punk' 'genre:folk' 'genre:r-n-b' 'genre:dance' 'genre:latin' 'genre:afrobeat'
+
+QUERY BUILDING STRATEGY:
+1. Analyze the playlist's style (genres, mood, era)
+2. Match the user's context (e.g., 'workout', 'party', 'study', 'chill')
+3. Combine keywords with filters for best results
+4. Use artist filters to find similar artists
+5. Use genre filters to explore related genres
+6. Add year filters if context suggests a time period
+
+Examples:
+- Context 'workout' + indie rock playlist → 'energetic upbeat genre:rock genre:indie'
+- Context 'party' + electronic playlist → 'dance party genre:electronic genre:dance year:2020-2024'
+- Context 'study' + jazz playlist → 'calm focus genre:jazz genre:classical genre:ambient'
+
+Generate 3-5 search queries that would find music matching the context while being similar to the playlist's style.
+
+Return your response in the following JSON format:
+{
+  ""queries"": [""query1 with filters"", ""query2 with filters""],
+  ""explanation"": ""Brief explanation of the suggestion strategy""
+}
+
+IMPORTANT: Generate diverse, creative queries - each request should yield unique suggestions."),
+            new Models.AI.AIMessage("user", $"[Request #{DateTime.UtcNow.Ticks}] Playlist: {playlist.Name}\nTop tracks: {trackSummary}\nContext: {request.Context}\n\nGenerate search queries to find songs that match this context while fitting the playlist's style.")
+        };
+
+        var aiResponse = await _aiService.GetChatCompletionAsync(aiMessages);
+
+        var searchQueries = new List<string>();
+        var explanation = "AI-generated suggestions based on playlist analysis";
+
+        if (!string.IsNullOrEmpty(aiResponse.Response))
+        {
+            try
+            {
+                var jsonStart = aiResponse.Response.IndexOf('{');
+                var jsonEnd = aiResponse.Response.LastIndexOf('}');
+                if (jsonStart >= 0 && jsonEnd > jsonStart)
+                {
+                    var jsonStr = aiResponse.Response.Substring(jsonStart, jsonEnd - jsonStart + 1);
+                    var aiData = JsonSerializer.Deserialize<JsonElement>(jsonStr);
+                    
+                    var queryArray = aiData.GetProperty("queries");
+                    searchQueries = queryArray.EnumerateArray()
+                        .Select(q => q.GetString() ?? "")
+                        .Where(q => !string.IsNullOrEmpty(q))
+                        .ToList();
+                    
+                    if (aiData.TryGetProperty("explanation", out var exp))
+                    {
+                        explanation = exp.GetString() ?? explanation;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to parse AI response, using fallback");
+            }
+        }
+
+        if (searchQueries.Count == 0)
+        {
+            var topArtists = topTracks
+                .SelectMany(t => t.Artists)
+                .GroupBy(a => a.Name)
+                .OrderByDescending(g => g.Count())
+                .Take(2)
+                .Select(g => g.Key)
+                .ToArray();
+            
+            searchQueries.Add(string.Join(" ", topArtists.Concat(new[] { request.Context })));
+        }
+
+        var allSuggestions = new List<SuggestedTrack>();
+        var existingTrackIds = playlistTracks.Select(t => t.Id).ToHashSet();
+        var suggestionIds = new HashSet<string>();
+
+        foreach (var query in searchQueries)
+        {
+            if (allSuggestions.Count >= 10) break;
+
+            _logger.LogInformation("Searching suggestions with query: '{Query}'", query);
+
+            var searchResults = await _spotifyService.SearchTracksAsync(
+                user.SpotifyAccessToken,
+                query,
+                20
+            );
+
+            foreach (var track in searchResults)
+            {
+                if (!existingTrackIds.Contains(track.Id) && suggestionIds.Add(track.Id))
+                {
+                    allSuggestions.Add(new SuggestedTrack(
+                        track.Id,
+                        track.Name,
+                        track.Artists.Select(a => a.Name).ToArray(),
+                        track.Uri,
+                        $"Matches '{query}' - {explanation}",
+                        track.Popularity
+                    ));
+
+                    if (allSuggestions.Count >= 10) break;
+                }
+            }
+        }
+
+        _logger.LogInformation("Generated {Count} suggestions for playlist {PlaylistId}", 
+            allSuggestions.Count, request.PlaylistId);
+
+        return new SuggestMusicResponse(
+            playlist.Id,
+            playlist.Name,
+            request.Context,
+            allSuggestions.Count,
+            allSuggestions.ToArray()
+        );
+    }
+
+    private static string NormalizeTrackName(string name)
+    {
+        var normalized = name.ToLowerInvariant();
+        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"\s*\(.*?\)\s*", " ");
+        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"\s*\[.*?\]\s*", " ");
+        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"\s+", " ");
+        return normalized.Trim();
+    }
+
+    private static bool AreArtistsSimilar(string[] artists1, string[] artists2)
+    {
+        var set1 = artists1.Select(a => a.ToLowerInvariant()).ToHashSet();
+        var set2 = artists2.Select(a => a.ToLowerInvariant()).ToHashSet();
+        return set1.Overlaps(set2) || set1.SetEquals(set2);
+    }
+
+    private static DateTime? ParseReleaseDate(string dateString)
+    {
+        if (DateTime.TryParse(dateString, out var date))
+        {
+            return date;
+        }
+        return null;
     }
 }

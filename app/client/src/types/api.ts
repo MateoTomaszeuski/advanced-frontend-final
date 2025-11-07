@@ -10,6 +10,15 @@ export type {
   AgentActionResponse,
   SpotifyConnectionStatus,
   ConnectSpotifyRequest,
+  DuplicateTrack,
+  DuplicateGroup,
+  RemoveDuplicatesResponse,
+  ScanDuplicatesRequest,
+  ConfirmRemoveDuplicatesRequest,
+  SuggestedTrack,
+  SuggestMusicResponse,
+  SuggestMusicRequest,
+  SpotifyPlaylist,
 } from '../schemas/api';
 
 export interface CreateConversationRequest {

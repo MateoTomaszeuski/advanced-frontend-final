@@ -194,6 +194,37 @@ public class SpotifyController : ControllerBase
 
         return Ok(new { message = "Spotify account disconnected successfully" });
     }
+
+    [HttpGet("playlists")]
+    public async Task<IActionResult> GetUserPlaylists()
+    {
+        var user = this.GetCurrentUser();
+        if (user == null)
+        {
+            return this.UnauthorizedUser();
+        }
+
+        if (string.IsNullOrEmpty(user.SpotifyAccessToken))
+        {
+            return BadRequest(new { error = "Spotify account not connected" });
+        }
+
+        if (user.SpotifyTokenExpiry.HasValue && user.SpotifyTokenExpiry.Value <= DateTime.UtcNow)
+        {
+            return BadRequest(new { error = "Spotify token expired" });
+        }
+
+        try
+        {
+            var playlists = await _spotifyService.GetUserPlaylistsAsync(user.SpotifyAccessToken);
+            return Ok(playlists);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching user playlists for user: {Email}", user.Email);
+            return StatusCode(500, new { error = "Failed to fetch playlists" });
+        }
+    }
 }
 
 public record ConnectSpotifyRequest(

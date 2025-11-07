@@ -9,10 +9,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - api.mateo-spotify.duckdns.org
+    - mateo-spotify-api.duckdns.org
     secretName: api-tls-secret
   rules:
-  - host: api.mateo-spotify.duckdns.org
+  - host: mateo-spotify-api.duckdns.org
     http:
       paths:
       - path: /

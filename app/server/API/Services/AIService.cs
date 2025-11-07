@@ -114,7 +114,9 @@ public class AIService : IAIService
                     }
 
                     return msg;
-                }).ToList()
+                }).ToList(),
+                ["temperature"] = 0.9,
+                ["top_p"] = 0.95
             };
 
             if (tools != null && tools.Count > 0)

@@ -130,6 +130,107 @@ public class AgentController : ControllerBase
             action.CompletedAt
         });
     }
+
+    [HttpPost("scan-duplicates")]
+    public async Task<IActionResult> ScanDuplicates([FromBody] ScanDuplicatesWithConversationRequest request)
+    {
+        var user = this.GetCurrentUser();
+        if (user == null)
+        {
+            return this.UnauthorizedUser();
+        }
+
+        _logger.LogInformation("ScanDuplicates request from user: {Email} for playlist: {PlaylistId}", 
+            user.Email, request.PlaylistId);
+
+        var conversation = await _conversationRepository.GetByIdAsync(request.ConversationId);
+        if (conversation == null || conversation.UserId != user.Id)
+        {
+            return BadRequest(new { error = "Invalid conversation" });
+        }
+
+        try
+        {
+            var result = await _agentService.ScanForDuplicatesAsync(
+                user,
+                request.PlaylistId,
+                request.ConversationId
+            );
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error scanning for duplicates");
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpPost("confirm-remove-duplicates")]
+    public async Task<IActionResult> ConfirmRemoveDuplicates([FromBody] ConfirmRemoveDuplicatesWithConversationRequest request)
+    {
+        var user = this.GetCurrentUser();
+        if (user == null)
+        {
+            return this.UnauthorizedUser();
+        }
+
+        _logger.LogInformation("ConfirmRemoveDuplicates request from user: {Email}", user.Email);
+
+        var conversation = await _conversationRepository.GetByIdAsync(request.ConversationId);
+        if (conversation == null || conversation.UserId != user.Id)
+        {
+            return BadRequest(new { error = "Invalid conversation" });
+        }
+
+        var result = await _agentService.ConfirmRemoveDuplicatesAsync(
+            user,
+            new ConfirmRemoveDuplicatesRequest(request.PlaylistId, request.TrackUrisToRemove),
+            request.ConversationId
+        );
+
+        if (result.Status == "Failed")
+        {
+            return BadRequest(result);
+        }
+
+        return Ok(result);
+    }
+
+    [HttpPost("suggest-music")]
+    public async Task<IActionResult> SuggestMusic([FromBody] SuggestMusicWithConversationRequest request)
+    {
+        var user = this.GetCurrentUser();
+        if (user == null)
+        {
+            return this.UnauthorizedUser();
+        }
+
+        _logger.LogInformation("SuggestMusic request from user: {Email} for playlist: {PlaylistId}", 
+            user.Email, request.PlaylistId);
+
+        var conversation = await _conversationRepository.GetByIdAsync(request.ConversationId);
+        if (conversation == null || conversation.UserId != user.Id)
+        {
+            return BadRequest(new { error = "Invalid conversation" });
+        }
+
+        try
+        {
+            var result = await _agentService.SuggestMusicByContextAsync(
+                user,
+                new SuggestMusicRequest(request.PlaylistId, request.Context),
+                request.ConversationId
+            );
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error suggesting music");
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }
 
 public record CreateSmartPlaylistWithConversationRequest(
@@ -142,4 +243,21 @@ public record DiscoverNewMusicWithConversationRequest(
     int ConversationId,
     int Limit = 10,
     string[]? SourcePlaylistIds = null
+);
+
+public record ScanDuplicatesWithConversationRequest(
+    int ConversationId,
+    string PlaylistId
+);
+
+public record ConfirmRemoveDuplicatesWithConversationRequest(
+    int ConversationId,
+    string PlaylistId,
+    string[] TrackUrisToRemove
+);
+
+public record SuggestMusicWithConversationRequest(
+    int ConversationId,
+    string PlaylistId,
+    string Context
 );

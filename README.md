@@ -611,9 +611,161 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 #### Delivered:
 
 **Rubric Items:**
-
+- 2 additional custom functions (`ScanForDuplicatesAsync`, `ConfirmRemoveDuplicatesAsync`, `SuggestMusicByContextAsync`)
+- 1+ action(s) require user confirmation to perform (duplicate removal requires user to select which tracks to remove)
+- 1+ action(s) automatically adjust UI when performed (scan results update UI, suggestions display dynamically)
+- Toasts / global notifications for agent actions (customized with green Spotify theme)
+- Error handling for API requests (persistent error toasts with manual dismiss)
 
 **Features:**
+- **Enhanced Toast System**:
+  - Custom styled toasts matching Spotify green theme
+  - Success toasts: green background (#065f46), auto-dismiss after 4s
+  - Error toasts: red background (#991b1b), persistent (require manual close)
+  - Loading toasts: dark green background (#064e3b)
+  - All toasts use white text and consistent icon theming
+- **Backend DTOs**:
+  - `RemoveDuplicatesDto.cs`: DuplicateGroup, DuplicateTrack, RemoveDuplicatesResponse, ConfirmRemoveDuplicatesRequest
+  - `SuggestMusicDto.cs`: SuggestMusicRequest, SuggestedTrack, SuggestMusicResponse
+- **Spotify Service Methods**:
+  - `GetPlaylistAsync()`: Fetch individual playlist metadata
+  - `GetPlaylistTracksAsync()`: Retrieve all tracks from a playlist with pagination
+  - `RemoveTracksFromPlaylistAsync()`: Delete tracks from playlist
+  - `GetUserPlaylistsAsync()`: List all user playlists with pagination
+  - Added `SpotifyPlaylistTrack` model with addedAt timestamp
+- **Agent Service Methods**:
+  - `ScanForDuplicatesAsync()`: Intelligent duplicate detection
+    - Normalizes track names (removes parentheses, brackets, extra spaces)
+    - Fuzzy artist matching using set overlap
+    - Groups duplicates by track name + artists
+    - Recommends version to keep based on popularity and add date
+    - Returns detailed duplicate groups with album info
+  - `ConfirmRemoveDuplicatesAsync()`: User-confirmed duplicate removal
+    - Removes selected track URIs from playlist
+    - Logs action to database
+    - Returns removal confirmation
+  - `SuggestMusicByContextAsync()`: AI-powered contextual recommendations
+    - Analyzes top 10 tracks from playlist
+    - Uses AI to generate search queries based on context
+    - Filters out tracks already in playlist
+    - Provides reasoning for each suggestion
+    - Returns up to 10 suggestions with metadata
+- **Backend Endpoints** (AgentController):
+  - `POST /api/agent/scan-duplicates`: Scan playlist for duplicates (returns scan results without modifying playlist)
+  - `POST /api/agent/confirm-remove-duplicates`: Remove selected duplicates after user confirmation
+  - `POST /api/agent/suggest-music`: Generate contextual music suggestions
+  - `GET /api/spotify/playlists`: Retrieve user's Spotify playlists
+- **Frontend Schemas & Types**:
+  - `DuplicateTrackSchema`, `DuplicateGroupSchema`, `RemoveDuplicatesResponseSchema`
+  - `ScanDuplicatesRequestSchema`, `ConfirmRemoveDuplicatesRequestSchema`
+  - `SuggestedTrackSchema`, `SuggestMusicResponseSchema`, `SuggestMusicRequestSchema`
+  - `SpotifyPlaylistSchema` for playlist metadata
+  - All schemas exported as TypeScript types
+- **Frontend API Functions**:
+  - `agentApi.scanDuplicates()`: Scan for duplicates
+  - `agentApi.confirmRemoveDuplicates()`: Confirm duplicate removal
+  - `agentApi.suggestMusic()`: Get music suggestions
+  - `spotifyApi.getPlaylists()`: Fetch user playlists
+- **useAgent Hook Enhancements**:
+  - `scanDuplicates()`: Scans playlist, shows success toast with duplicate count
+  - `confirmRemoveDuplicates()`: Removes tracks, shows success toast with count
+  - `suggestMusic()`: Generates suggestions, shows success toast with count
+  - All methods include loading states, progress tracking, and error handling
+  - Custom toast messages for each operation
+- **Duplicate Cleaner Page** (DuplicateCleanerPage.tsx):
+  - Playlist selector dropdown with track counts
+  - Scan button with loading state
+  - Duplicate groups display:
+    - Each group shows track name and artists
+    - Individual duplicate cards with:
+      - Album name
+      - Popularity score
+      - Added date
+      - Recommended badge (green highlight)
+      - Checkbox for selection (disabled for recommended track)
+  - "Select Recommended" button (selects all non-recommended tracks)
+  - "Remove Selected" button with count badge
+  - Scan results summary (duplicate groups and track counts)
+  - No duplicates found message
+  - "How it works" info panel
+  - Spotify connection alert
+  - Full conversation tracking
+- **Music Suggestions Page** (SuggestionsPage.tsx):
+  - Playlist selector dropdown
+  - Context/description text input with helper text
+  - Quick context example buttons:
+    - "more upbeat and energetic"
+    - "similar but more chill"
+    - "different artists with same vibe"
+    - "newer releases in the same genre"
+    - "deeper cuts and b-sides"
+  - Generate button with loading state
+  - Suggestions display:
+    - Track name and artists
+    - AI-generated reason for each suggestion
+    - Popularity score
+    - "Play" button linking to Spotify URI
+    - Hover effects with green border
+  - Empty state for no suggestions
+  - "How it works" info panel
+  - Spotify connection alert
+  - Full conversation tracking
+- **Helper Methods**:
+  - `NormalizeTrackName()`: Removes parentheses, brackets, and extra whitespace for duplicate matching
+  - `AreArtistsSimilar()`: Uses set overlap to match artist combinations
+  - `ParseReleaseDate()`: Safely parses date strings with fallback
+- **UI/UX Improvements**:
+  - Consistent green Spotify theme throughout
+  - Loading states with spinners
+  - Disabled states for invalid actions
+  - Hover effects and transitions
+  - Info panels with usage tips
+  - Responsive layouts
+  - Proper error boundaries
+- **Error Handling**:
+  - Try-catch blocks in all async operations
+  - Detailed error logging with ILogger
+  - User-friendly error messages in toasts
+  - Persistent error toasts requiring manual dismissal
+  - Graceful fallbacks for API failures
+- **Bug Fixes**:
+  - Fixed infinite conversation creation loop in DuplicateCleanerPage and SuggestionsPage (useEffect with empty deps + mounted flag)
+  - Removed auto-rescan after duplicate removal (manual rescan with button)
+  - Added "Sync with Spotify" buttons to refresh playlist lists without page reload
+  - Fixed duplicate tracks in smart playlists with three-layer deduplication strategy:
+    - trackIds HashSet for ID-based deduplication
+    - trackUris HashSet for URI-based deduplication
+    - Final loop with finalTrackUrisSet to enforce exact track count
+  - Fixed playlist creation with multiple genre filters returning 0 results (changed to single genre filter with keyword mixing)
+  - Fixed 400 Bad Request when adding >100 tracks to playlist (implemented batching with 100-track limit per request)
+  - Fixed missing playlists in dropdown - playlists created by app were private (changed CreatePlaylistRequest Public parameter from false to true)
+- **Spotify API Improvements**:
+  - Updated `GetUserPlaylistsAsync()` to include explicit offset parameter: `?limit=50&offset=0`
+  - Added comprehensive logging to playlist fetching with batch counts and totals
+  - Implemented batching in `AddTracksToPlaylistAsync()` to respect Spotify's 100-track limit per request
+  - Logs each batch addition with batch number for debugging
+- **AI Service Enhancements**:
+  - Added temperature (0.9) and top_p (0.95) parameters to increase response diversity
+  - Added unique request identifiers using `DateTime.UtcNow.Ticks` to prevent caching
+  - Added explicit anti-repetition instructions to all AI prompts
+  - Updated all AI prompts with official Spotify Search API filter documentation:
+    - Corrected filter usage: album, artist, track, year, genre, isrc
+    - Changed strategy to use only ONE genre filter per query (multiple filters don't work reliably)
+    - Keywords can be mixed with filters: `'upbeat dance genre:funk'`
+    - Year ranges supported: `'year:1980-1990'`
+    - Quotes for multi-word values: `'artist:"Daft Punk"'`
+  - Query examples updated to reflect correct Spotify syntax
+- **UI/UX Improvements**:
+  - Enhanced Duplicate Cleaner page with clearer labeling:
+    - Added "Song:" label before track name
+    - Added "Found in X albums:" subtitle to clarify duplicate versions
+    - Improved visual hierarchy with uppercase labels
+  - Debug logging added to track playlist fetching through the system
+  - Console logs for diagnosing playlist count issues
+- **Backend Configuration**:
+  - Updated Kubernetes ingress to use `mateo-spotify-api.duckdns.org` domain
+  - Backend ingress now routes HTTPS traffic to backend service
+  - TLS secret configuration updated for new domain
 
 
 ---
