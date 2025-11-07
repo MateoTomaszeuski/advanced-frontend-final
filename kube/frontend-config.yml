@@ -7,6 +7,6 @@ data:
   VITE_KEYCLOAK_CLIENT_ID: "mateo-spotify-agent"
   VITE_KEYCLOAK_AUTHORITY: "https://auth-dev.snowse.io/realms/DevRealm"
   VITE_KEYCLOAK_JWKS_URI: "https://auth-dev.snowse.io/realms/DevRealm/protocol/openid-connect/certs"
-  VITE_API_URL: "https://api.mateo-spotify.duckdns.org"
+  VITE_API_URL: "https://mateo-spotify-api.duckdns.org"
   VITE_SPOTIFY_CLIENT_ID: "83a1fa87b8ff4bff8390fa70d2b95d9c"
   VITE_SPOTIFY_REDIRECT_URI: "https://mateo-spotify.duckdns.org/settings"
