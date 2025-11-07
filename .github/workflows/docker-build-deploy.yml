@@ -55,6 +55,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Load environment variables
+        run: |
+          set -a
+          source app/client/.env.production
+          set +a
+          echo "VITE_KEYCLOAK_CLIENT_ID=$VITE_KEYCLOAK_CLIENT_ID" >> $GITHUB_ENV
+          echo "VITE_KEYCLOAK_AUTHORITY=$VITE_KEYCLOAK_AUTHORITY" >> $GITHUB_ENV
+          echo "VITE_KEYCLOAK_JWKS_URI=$VITE_KEYCLOAK_JWKS_URI" >> $GITHUB_ENV
+          echo "VITE_API_URL=$VITE_API_URL" >> $GITHUB_ENV
+          echo "VITE_SPOTIFY_CLIENT_ID=$VITE_SPOTIFY_CLIENT_ID" >> $GITHUB_ENV
+          echo "VITE_SPOTIFY_REDIRECT_URI=$VITE_SPOTIFY_REDIRECT_URI" >> $GITHUB_ENV
+
+      - name: Generate Kubernetes config from .env
+        run: |
+          chmod +x scripts/generate-kube-config.sh
+          ./scripts/generate-kube-config.sh
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -64,12 +81,12 @@ jobs:
       - name: Build frontend image
         run: |
           docker buildx build --platform linux/amd64 \
-          --build-arg VITE_KEYCLOAK_CLIENT_ID=mateo-spotify-agent \
-          --build-arg VITE_KEYCLOAK_AUTHORITY=https://auth-dev.snowse.io/realms/DevRealm \
-          --build-arg VITE_KEYCLOAK_JWKS_URI=https://auth-dev.snowse.io/realms/DevRealm/protocol/openid-connect/certs \
-          --build-arg VITE_API_URL=https://api.mateo-spotify.duckdns.org \
-          --build-arg VITE_SPOTIFY_CLIENT_ID=83a1fa87b8ff4bff8390fa70d2b95d9c \
-          --build-arg VITE_SPOTIFY_REDIRECT_URI=https://mateo-spotify.duckdns.org/settings \
+          --build-arg VITE_KEYCLOAK_CLIENT_ID=${{ env.VITE_KEYCLOAK_CLIENT_ID }} \
+          --build-arg VITE_KEYCLOAK_AUTHORITY=${{ env.VITE_KEYCLOAK_AUTHORITY }} \
+          --build-arg VITE_KEYCLOAK_JWKS_URI=${{ env.VITE_KEYCLOAK_JWKS_URI }} \
+          --build-arg VITE_API_URL=${{ env.VITE_API_URL }} \
+          --build-arg VITE_SPOTIFY_CLIENT_ID=${{ env.VITE_SPOTIFY_CLIENT_ID }} \
+          --build-arg VITE_SPOTIFY_REDIRECT_URI=${{ env.VITE_SPOTIFY_REDIRECT_URI }} \
           -f ./dockerfiles/Dockerfile.client \
           -t ${{ secrets.DOCKER_USERNAME }}/spotify-frontend:${{ github.run_number }} \
           .
