@@ -73,6 +73,11 @@ jobs:
           ./scripts/generate-kube-config.sh
 
       - name: Log in to Docker Hub
+        run: |
+          chmod +x scripts/generate-kube-config.sh
+          ./scripts/generate-kube-config.sh
+
+      - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
