@@ -4,9 +4,9 @@ import { config } from '../config';
 
 const getRedirectUri = () => {
   if (import.meta.env.DEV) {
-    return 'https://127.0.0.1:5173';
+    return 'https://127.0.0.1:5173/';
   }
-  return window.location.origin;
+  return window.location.origin + '/';
 };
 
 const oidcConfig: AuthProviderProps = {
@@ -18,6 +18,7 @@ const oidcConfig: AuthProviderProps = {
   scope: 'openid profile email',
   automaticSilentRenew: true,
   loadUserInfo: true,
+  monitorSession: false,
 };
 
 interface KeycloakProviderProps {

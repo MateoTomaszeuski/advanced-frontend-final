@@ -32,10 +32,23 @@ export function Header() {
             </p>
             <p className="text-xs text-gray-500">{auth.user?.profile?.email}</p>
           </div>
-          <Button
+                    <Button
             variant="ghost"
-            size="sm"
-            onClick={() => auth.signoutRedirect()}
+            onClick={async () => {
+              try {
+                // Remove user from session
+                await auth.removeUser();
+                // Clear session storage
+                sessionStorage.clear();
+                // Redirect to home
+                window.location.href = '/';
+              } catch (error) {
+                console.error('Logout error:', error);
+                // Force clear and redirect
+                sessionStorage.clear();
+                window.location.href = '/';
+              }
+            }}
           >
             Logout
           </Button>

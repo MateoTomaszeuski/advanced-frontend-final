@@ -54,6 +54,14 @@ public class SpotifyService : ISpotifyService
     {
         SetAuthorizationHeader(accessToken);
         var response = await _httpClient.GetAsync($"{SpotifyApiBaseUrl}/me");
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            _logger.LogError("Spotify profile request failed with status {StatusCode}. Token length: {TokenLength}. Error: {Error}", 
+                response.StatusCode, accessToken?.Length ?? 0, errorContent);
+        }
+        
         response.EnsureSuccessStatusCode();
 
         var content = await response.Content.ReadAsStringAsync();
@@ -108,6 +116,14 @@ public class SpotifyService : ISpotifyService
         var url = $"{SpotifyApiBaseUrl}/search?q={encodedQuery}&type=track&limit={limit}";
 
         var response = await _httpClient.GetAsync(url);
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            _logger.LogError("Spotify search request failed with status {StatusCode}. Query: {Query}. Token length: {TokenLength}. Error: {Error}", 
+                response.StatusCode, query, accessToken?.Length ?? 0, errorContent);
+        }
+        
         response.EnsureSuccessStatusCode();
 
         var content = await response.Content.ReadAsStringAsync();

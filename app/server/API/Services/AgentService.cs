@@ -37,6 +37,19 @@ public class AgentService : IAgentService
         _trackFilterHelper = new TrackFilterHelper(spotifyService);
     }
 
+    private void ValidateSpotifyToken(User user)
+    {
+        if (string.IsNullOrEmpty(user.SpotifyAccessToken))
+        {
+            throw new InvalidOperationException("User has not connected their Spotify account");
+        }
+
+        if (user.SpotifyTokenExpiry.HasValue && user.SpotifyTokenExpiry.Value <= DateTime.UtcNow)
+        {
+            throw new InvalidOperationException("Spotify access token has expired. Please reconnect your Spotify account");
+        }
+    }
+
     public async Task<AgentActionResponse> CreateSmartPlaylistAsync(
         User user,
         CreateSmartPlaylistRequest request,
@@ -56,10 +69,7 @@ public class AgentService : IAgentService
 
         try
         {
-            if (string.IsNullOrEmpty(user.SpotifyAccessToken))
-            {
-                throw new InvalidOperationException("User has not connected their Spotify account");
-            }
+            ValidateSpotifyToken(user);
 
             _logger.LogInformation("Creating smart playlist for user {Email} with prompt: {Prompt}",
                 user.Email, request.Prompt);
@@ -90,15 +100,18 @@ QUERY BUILDING STRATEGY:
 3. If user mentions time period → use 'year:YYYY' or 'year:YYYY-YYYY'
 4. Add descriptive keywords (upbeat, chill, energetic) as regular text alongside filters
 5. Mix keywords with ONE genre filter for best results
+6. AVOID using the same keywords repeatedly - be creative and use synonyms
 
 Examples of CORRECT queries:
-- User: 'upbeat funk and pop' → Query: 'upbeat dance funk pop genre:funk'
-- User: 'chill indie music' → Query: 'chill mellow acoustic genre:indie'
-- User: 'energetic workout music' → Query: 'energetic workout genre:rock'
-- User: 'relaxing piano from 2010s' → Query: 'relaxing piano genre:classical year:2010-2019'
-- User: 'funk, rap and argentinian trap' → Query: 'funk rap trap latino genre:hip-hop'
-- User: '80s rock hits' → Query: 'hits classic genre:rock year:1980-1989'
-- User: 'songs like Radiohead' → Query: 'alternative rock artist:Radiohead'
+- User: 'upbeat funk and pop' → Query: 'energetic dance party genre:funk'
+- User: 'chill indie music' → Query: 'mellow acoustic relaxing genre:indie'
+- User: 'energetic workout music' → Query: 'high energy powerful genre:rock'
+- User: 'relaxing piano from 2010s' → Query: 'peaceful ambient piano genre:classical year:2010-2019'
+- User: 'funk, rap and argentinian trap' → Query: 'funky hip hop latino genre:hip-hop'
+- User: '80s rock hits' → Query: 'classic anthems genre:rock year:1980-1989'
+- User: 'songs like Radiohead' → Query: 'alternative atmospheric artist:Radiohead'
+
+IMPORTANT: Use DIVERSE keywords, not just the user's exact words. Think of synonyms and related concepts.
 
 Return your response in the following JSON format only:
 {
@@ -170,7 +183,12 @@ IMPORTANT: Each request is unique - provide fresh, creative results even if simi
             foreach (var track in initialTracks)
             {
                 var trackKey = $"{NormalizeTrackName(track.Name)}|{string.Join(",", track.Artists.Select(a => a.Name.ToLowerInvariant()).OrderBy(n => n))}";
-                if (trackIds.Add(track.Id) && trackUris.Add(track.Uri) && trackNameArtistSet.Add(trackKey))
+                
+                // Check if we already have a track with a similar title
+                bool hasSimilarTitle = allTracks.Any(existingTrack => 
+                    AreTitlesSimilar(existingTrack.Name, track.Name));
+                
+                if (!hasSimilarTitle && trackIds.Add(track.Id) && trackUris.Add(track.Uri) && trackNameArtistSet.Add(trackKey))
                 {
                     allTracks.Add(track);
                 }
@@ -204,7 +222,12 @@ IMPORTANT: Each request is unique - provide fresh, creative results even if simi
                     foreach (var track in additionalTracks)
                     {
                         var trackKey = $"{NormalizeTrackName(track.Name)}|{string.Join(",", track.Artists.Select(a => a.Name.ToLowerInvariant()).OrderBy(n => n))}";
-                        if (trackIds.Add(track.Id) && trackUris.Add(track.Uri) && trackNameArtistSet.Add(trackKey))
+                        
+                        // Check if we already have a track with a similar title
+                        bool hasSimilarTitle = allTracks.Any(existingTrack => 
+                            AreTitlesSimilar(existingTrack.Name, track.Name));
+                        
+                        if (!hasSimilarTitle && trackIds.Add(track.Id) && trackUris.Add(track.Uri) && trackNameArtistSet.Add(trackKey))
                         {
                             allTracks.Add(track);
                             tracksFoundInThisQuery++;
@@ -386,10 +409,7 @@ IMPORTANT: Generate creative alternatives - think outside the box!"),
 
         try
         {
-            if (string.IsNullOrEmpty(user.SpotifyAccessToken))
-            {
-                throw new InvalidOperationException("User has not connected their Spotify account");
-            }
+            ValidateSpotifyToken(user);
 
             _logger.LogInformation("Discovering new music for user {Email}, requested: {Limit} tracks", user.Email, request.Limit);
 
@@ -400,6 +420,8 @@ IMPORTANT: Generate creative alternatives - think outside the box!"),
 
             var allDiscoveredTracks = new List<SpotifyTrack>();
             var discoveredTrackIds = new HashSet<string>();
+            var discoveredTrackUris = new HashSet<string>();
+            var discoveredTrackNameArtistSet = new HashSet<string>();
 
             var topSavedTracks = savedTracks
                 .OrderByDescending(t => t.Popularity)
@@ -459,7 +481,17 @@ IMPORTANT: Provide a unique, diverse mix of genres each time - avoid repeating t
 
                     foreach (var track in searchResults)
                     {
-                        if (!savedTrackIds.Contains(track.Id) && discoveredTrackIds.Add(track.Id))
+                        var trackKey = $"{NormalizeTrackName(track.Name)}|{string.Join(",", track.Artists.Select(a => a.Name.ToLowerInvariant()).OrderBy(n => n))}";
+                        
+                        // Check for similar titles
+                        bool hasSimilarTitle = allDiscoveredTracks.Any(existingTrack => 
+                            AreTitlesSimilar(existingTrack.Name, track.Name));
+                        
+                        if (!savedTrackIds.Contains(track.Id) 
+                            && !hasSimilarTitle
+                            && discoveredTrackIds.Add(track.Id)
+                            && discoveredTrackUris.Add(track.Uri)
+                            && discoveredTrackNameArtistSet.Add(trackKey))
                         {
                             allDiscoveredTracks.Add(track);
                             if (allDiscoveredTracks.Count >= request.Limit * 2) break;
@@ -565,7 +597,17 @@ IMPORTANT: Generate diverse, unique queries - do not repeat previous suggestions
                         var tracksFoundInThisQuery = 0;
                         foreach (var track in searchResults)
                         {
-                            if (!savedTrackIds.Contains(track.Id) && discoveredTrackIds.Add(track.Id))
+                            var trackKey = $"{NormalizeTrackName(track.Name)}|{string.Join(",", track.Artists.Select(a => a.Name.ToLowerInvariant()).OrderBy(n => n))}";
+                            
+                            // Check for similar titles
+                            bool hasSimilarTitle = allDiscoveredTracks.Any(existingTrack => 
+                                AreTitlesSimilar(existingTrack.Name, track.Name));
+                            
+                            if (!savedTrackIds.Contains(track.Id)
+                                && !hasSimilarTitle
+                                && discoveredTrackIds.Add(track.Id)
+                                && discoveredTrackUris.Add(track.Uri)
+                                && discoveredTrackNameArtistSet.Add(trackKey))
                             {
                                 allDiscoveredTracks.Add(track);
                                 tracksFoundInThisQuery++;
@@ -742,10 +784,7 @@ IMPORTANT: Generate diverse alternatives - these must be tracks the user likely 
         string playlistId,
         int conversationId)
     {
-        if (string.IsNullOrEmpty(user.SpotifyAccessToken))
-        {
-            throw new InvalidOperationException("User has not connected their Spotify account");
-        }
+        ValidateSpotifyToken(user);
 
         _logger.LogInformation("Scanning playlist {PlaylistId} for duplicates for user {Email}", playlistId, user.Email);
 
@@ -831,10 +870,7 @@ IMPORTANT: Generate diverse alternatives - these must be tracks the user likely 
 
         try
         {
-            if (string.IsNullOrEmpty(user.SpotifyAccessToken))
-            {
-                throw new InvalidOperationException("User has not connected their Spotify account");
-            }
+            ValidateSpotifyToken(user);
 
             _logger.LogInformation("Removing {Count} duplicate tracks from playlist {PlaylistId} for user {Email}",
                 request.TrackUrisToRemove.Length, request.PlaylistId, user.Email);
@@ -880,10 +916,7 @@ IMPORTANT: Generate diverse alternatives - these must be tracks the user likely 
         SuggestMusicRequest request,
         int conversationId)
     {
-        if (string.IsNullOrEmpty(user.SpotifyAccessToken))
-        {
-            throw new InvalidOperationException("User has not connected their Spotify account");
-        }
+        ValidateSpotifyToken(user);
 
         _logger.LogInformation("Generating music suggestions for playlist {PlaylistId} with context: {Context}",
             request.PlaylistId, request.Context);
@@ -1106,10 +1139,39 @@ IMPORTANT: Generate creative alternatives that match the context!"),
     private static string NormalizeTrackName(string name)
     {
         var normalized = name.ToLowerInvariant();
+        // Remove parentheses and brackets content
         normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"\s*\(.*?\)\s*", " ");
         normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"\s*\[.*?\]\s*", " ");
+        // Remove common words that don't add meaning
+        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"\b(the|a|an|my|your|our)\b", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        // Remove special characters and punctuation except spaces
+        normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"[^\w\s]", " ");
+        // Collapse multiple spaces
         normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"\s+", " ");
         return normalized.Trim();
+    }
+
+    private static bool AreTitlesSimilar(string title1, string title2)
+    {
+        var normalized1 = NormalizeTrackName(title1);
+        var normalized2 = NormalizeTrackName(title2);
+        
+        // Check if titles are identical after normalization
+        if (normalized1 == normalized2) return true;
+        
+        // Check if one title contains the other (for cases like "Feel Good" vs "Feeling Good")
+        var words1 = normalized1.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var words2 = normalized2.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        
+        // If titles share more than 60% of their words, consider them similar
+        if (words1.Length > 0 && words2.Length > 0)
+        {
+            var commonWords = words1.Intersect(words2).Count();
+            var similarity = (double)commonWords / Math.Min(words1.Length, words2.Length);
+            return similarity > 0.6;
+        }
+        
+        return false;
     }
 
     private static bool AreArtistsSimilar(string[] artists1, string[] artists2)
