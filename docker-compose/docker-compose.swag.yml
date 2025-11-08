@@ -11,6 +11,7 @@ services:
       - URL=mateo-spotify-api.duckdns.org
       - VALIDATION=dns
       - ONLY_SUBDOMAINS=false
+      - EXTRA_DOMAINS=mateo-spotify.duckdns.org
       - DNSPLUGIN=duckdns
       - DUCKDNSTOKEN=${DUCKDNS_TOKEN}
     volumes:
