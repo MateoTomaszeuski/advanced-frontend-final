@@ -2,7 +2,8 @@ namespace API.DTOs.Agent;
 
 public record SuggestMusicRequest(
     string PlaylistId,
-    string Context
+    string Context,
+    int Limit = 10
 );
 
 public record SuggestedTrack(

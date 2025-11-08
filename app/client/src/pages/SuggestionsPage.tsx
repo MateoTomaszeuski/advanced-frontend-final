@@ -6,14 +6,18 @@ import { TextInput } from '../components/forms/TextInput';
 import { Button } from '../components/forms/Button';
 import { useAgent } from '../hooks/useAgent';
 import { spotifyApi } from '../services/api';
+import toast from 'react-hot-toast';
 import type { SpotifyPlaylist, SuggestMusicResponse } from '../types/api';
 
 export function SuggestionsPage() {
   const [playlists, setPlaylists] = useState<SpotifyPlaylist[]>([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState('');
   const [context, setContext] = useState('');
+  const [limit, setLimit] = useState('10');
   const [suggestions, setSuggestions] = useState<SuggestMusicResponse | null>(null);
   const [conversationId, setConversationId] = useState<number | null>(null);
+  const [selectedTracks, setSelectedTracks] = useState<Set<string>>(new Set());
+  const [isAdding, setIsAdding] = useState(false);
 
   const { isLoading, createConversation, suggestMusic } = useAgent();
 
@@ -62,11 +66,51 @@ export function SuggestionsPage() {
     if (!selectedPlaylist || !context || !conversationId) return;
 
     try {
-      const result = await suggestMusic(conversationId, selectedPlaylist, context);
+      const result = await suggestMusic(conversationId, selectedPlaylist, context, parseInt(limit));
       setSuggestions(result);
+      setSelectedTracks(new Set());
     } catch (error) {
       console.error('Generate failed:', error);
     }
+  };
+
+  const toggleTrackSelection = (trackUri: string) => {
+    setSelectedTracks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(trackUri)) {
+        newSet.delete(trackUri);
+      } else {
+        newSet.add(trackUri);
+      }
+      return newSet;
+    });
+  };
+
+  const handleAddToPlaylist = async () => {
+    if (!selectedPlaylist || selectedTracks.size === 0) return;
+
+    setIsAdding(true);
+    try {
+      await spotifyApi.addTracksToPlaylist(selectedPlaylist, Array.from(selectedTracks));
+      toast.success(`Added ${selectedTracks.size} tracks to playlist!`);
+      setSelectedTracks(new Set());
+    } catch (error) {
+      console.error('Failed to add tracks:', error);
+      toast.error('Failed to add tracks to playlist');
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (!suggestions) return;
+    
+    const allTrackUris = suggestions.suggestions.map(track => track.uri);
+    setSelectedTracks(new Set(allTrackUris));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedTracks(new Set());
   };
 
   const playlistOptions = playlists.map((p) => ({
@@ -126,6 +170,20 @@ export function SuggestionsPage() {
               helperText="Describe what kind of music you're looking for"
             />
 
+            <SelectDropdown
+              label="Number of Suggestions"
+              value={limit}
+              onChange={(e) => setLimit(e.target.value)}
+              options={[
+                { value: '5', label: '5 suggestions' },
+                { value: '10', label: '10 suggestions' },
+                { value: '15', label: '15 suggestions' },
+                { value: '20', label: '20 suggestions' },
+                { value: '30', label: '30 suggestions' },
+                { value: '50', label: '50 suggestions' },
+              ]}
+            />
+
             <div className="flex flex-wrap gap-2">
               {contextExamples.map((example) => (
                 <button
@@ -151,12 +209,48 @@ export function SuggestionsPage() {
 
         {suggestions && suggestions.suggestionCount > 0 && (
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Suggestions for "{suggestions.playlistName}"
-            </h2>
-            <p className="text-sm text-gray-600 mb-4">
-              Context: <span className="italic">{suggestions.context}</span>
-            </p>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Suggestions for "{suggestions.playlistName}"
+              </h2>
+              <div className="flex items-center gap-2">
+                {selectedTracks.size > 0 && (
+                  <Button
+                    onClick={handleAddToPlaylist}
+                    disabled={isAdding}
+                    isLoading={isAdding}
+                    variant="primary"
+                    size="sm"
+                  >
+                    Add {selectedTracks.size} to Playlist
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-gray-600">
+                Context: <span className="italic">{suggestions.context}</span>
+              </p>
+              <div className="flex items-center gap-2">
+                {selectedTracks.size === suggestions.suggestions.length ? (
+                  <Button
+                    onClick={handleDeselectAll}
+                    variant="ghost"
+                    size="sm"
+                  >
+                    Deselect All
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleSelectAll}
+                    variant="ghost"
+                    size="sm"
+                  >
+                    Select All
+                  </Button>
+                )}
+              </div>
+            </div>
 
             <div className="space-y-3">
               {suggestions.suggestions.map((track) => (
@@ -164,6 +258,12 @@ export function SuggestionsPage() {
                   key={track.id}
                   className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-green-300 transition-colors"
                 >
+                  <input
+                    type="checkbox"
+                    checked={selectedTracks.has(track.uri)}
+                    onChange={() => toggleTrackSelection(track.uri)}
+                    className="mt-1 h-5 w-5 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  />
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-900 truncate">{track.name}</h3>
                     <p className="text-sm text-gray-600 truncate">

@@ -158,16 +158,19 @@ IMPORTANT: Each request is unique - provide fresh, creative results even if simi
             var allTracks = new List<SpotifyTrack>();
             var trackIds = new HashSet<string>();
             var trackUris = new HashSet<string>();
+            var trackNameArtistSet = new HashSet<string>();
 
+            var searchLimit = Math.Min(50, requestedTrackCount);
             var initialTracks = await _spotifyService.SearchTracksAsync(
                 user.SpotifyAccessToken,
                 searchQuery,
-                Math.Min(50, requestedTrackCount * 2)
+                searchLimit
             );
 
             foreach (var track in initialTracks)
             {
-                if (trackIds.Add(track.Id) && trackUris.Add(track.Uri))
+                var trackKey = $"{NormalizeTrackName(track.Name)}|{string.Join(",", track.Artists.Select(a => a.Name.ToLowerInvariant()).OrderBy(n => n))}";
+                if (trackIds.Add(track.Id) && trackUris.Add(track.Uri) && trackNameArtistSet.Add(trackKey))
                 {
                     allTracks.Add(track);
                 }
@@ -175,55 +178,103 @@ IMPORTANT: Each request is unique - provide fresh, creative results even if simi
 
             _logger.LogInformation("Initial search returned {Count} unique tracks", allTracks.Count);
 
-            if (allTracks.Count < requestedTrackCount)
+            var searchIterations = 0;
+            var maxSearchIterations = Math.Max(20, (requestedTrackCount / 10));
+            var currentSearchQueries = new List<string> { searchQuery };
+            
+            while (allTracks.Count < requestedTrackCount && searchIterations < maxSearchIterations)
             {
-                _logger.LogInformation("Need {Missing} more tracks, searching with broader queries", requestedTrackCount - allTracks.Count);
+                searchIterations++;
+                _logger.LogInformation("Search iteration {Iteration}/{MaxIterations}: Need {Missing} more tracks", 
+                    searchIterations, maxSearchIterations, requestedTrackCount - allTracks.Count);
 
-                var searchWords = searchQuery.Split(new[] { ' ', ',', '-' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Where(w => !string.IsNullOrWhiteSpace(w) && w.Length > 2)
-                    .ToArray();
-
-                var fallbackQueries = new List<string>();
-                
-                if (searchWords.Length > 2)
-                {
-                    fallbackQueries.Add(string.Join(" ", searchWords.Take(2)));
-                }
-                
-                var genreWords = searchWords.Where(w => !w.Contains("genre:") && 
-                    (w.Contains("funk") || w.Contains("rap") || w.Contains("trap") || w.Contains("rock") || 
-                     w.Contains("pop") || w.Contains("jazz") || w.Contains("indie") || w.Contains("electronic") ||
-                     w.Contains("hip") || w.Contains("latino") || w.Contains("reggaeton") || w.Contains("dance")))
-                    .ToArray();
-                
-                if (genreWords.Any())
-                {
-                    fallbackQueries.Add(string.Join(" ", genreWords));
-                }
-                
-                fallbackQueries.Add(searchWords.FirstOrDefault() ?? request.Prompt);
-
-                foreach (var fallbackQuery in fallbackQueries.Distinct())
+                foreach (var query in currentSearchQueries.ToList())
                 {
                     if (allTracks.Count >= requestedTrackCount) break;
 
-                    _logger.LogInformation("Trying fallback query: '{Query}'", fallbackQuery);
+                    _logger.LogInformation("Trying query: '{Query}'", query);
 
                     var additionalTracks = await _spotifyService.SearchTracksAsync(
                         user.SpotifyAccessToken,
-                        fallbackQuery,
-                        Math.Min(50, (requestedTrackCount - allTracks.Count) * 2)
+                        query,
+                        searchLimit
                     );
 
+                    var tracksFoundInThisQuery = 0;
                     foreach (var track in additionalTracks)
                     {
-                        if (trackIds.Add(track.Id) && trackUris.Add(track.Uri) && allTracks.Count < requestedTrackCount * 2)
+                        var trackKey = $"{NormalizeTrackName(track.Name)}|{string.Join(",", track.Artists.Select(a => a.Name.ToLowerInvariant()).OrderBy(n => n))}";
+                        if (trackIds.Add(track.Id) && trackUris.Add(track.Uri) && trackNameArtistSet.Add(trackKey))
                         {
                             allTracks.Add(track);
+                            tracksFoundInThisQuery++;
+                            if (allTracks.Count >= requestedTrackCount) break;
                         }
                     }
 
-                    _logger.LogInformation("After fallback query '{Query}': {Count} unique tracks", fallbackQuery, allTracks.Count);
+                    _logger.LogInformation("After query '{Query}': found {NewTracks} new tracks, total {Count} unique tracks", 
+                        query, tracksFoundInThisQuery, allTracks.Count);
+                }
+
+                if (allTracks.Count < requestedTrackCount && searchIterations % 3 == 0 && searchIterations < maxSearchIterations)
+                {
+                    _logger.LogInformation("Still need {Missing} more tracks after {Iterations} iterations. Asking AI for new search queries...", 
+                        requestedTrackCount - allTracks.Count, searchIterations);
+
+                    var aiAdaptMessages = new List<Models.AI.AIMessage>
+                    {
+                        new Models.AI.AIMessage("system", @"You are a music expert assistant helping to find more tracks for a playlist.
+
+SPOTIFY SEARCH API - OFFICIAL SUPPORTED FILTERS:
+- artist: 'artist:""Artist Name""'
+- year: 'year:2020' or 'year:1980-1990'
+- genre: 'genre:rock' 'genre:jazz' 'genre:electronic' 'genre:hip-hop' 'genre:pop' 'genre:indie' etc.
+
+The initial search isn't returning enough unique tracks. Generate 3-5 DIFFERENT search queries that:
+1. Use broader or alternative keywords
+2. Explore related genres or styles
+3. Include different time periods
+4. Try different artist combinations
+
+Return your response in this JSON format:
+{
+  ""queries"": [""query1"", ""query2"", ""query3""]
+}
+
+IMPORTANT: Generate creative alternatives - think outside the box!"),
+                        new Models.AI.AIMessage("user", $"[Request #{DateTime.UtcNow.Ticks}] Original prompt: {request.Prompt}\nCurrent queries: {string.Join(", ", currentSearchQueries)}\nFound {allTracks.Count} tracks so far, need {requestedTrackCount} total.\n\nGenerate alternative search queries to find more diverse tracks.")
+                    };
+
+                    try
+                    {
+                        var aiAdaptResponse = await _aiService.GetChatCompletionAsync(aiAdaptMessages);
+                        
+                        if (!string.IsNullOrEmpty(aiAdaptResponse.Response))
+                        {
+                            var jsonStart = aiAdaptResponse.Response.IndexOf('{');
+                            var jsonEnd = aiAdaptResponse.Response.LastIndexOf('}');
+                            if (jsonStart >= 0 && jsonEnd > jsonStart)
+                            {
+                                var jsonStr = aiAdaptResponse.Response.Substring(jsonStart, jsonEnd - jsonStart + 1);
+                                var aiData = JsonSerializer.Deserialize<JsonElement>(jsonStr);
+                                var newQueries = aiData.GetProperty("queries").EnumerateArray()
+                                    .Select(q => q.GetString() ?? "")
+                                    .Where(q => !string.IsNullOrEmpty(q))
+                                    .ToList();
+                                
+                                if (newQueries.Any())
+                                {
+                                    currentSearchQueries = newQueries;
+                                    _logger.LogInformation("AI generated {Count} new search queries: {Queries}", 
+                                        newQueries.Count, string.Join(", ", newQueries));
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to get AI adaptation, continuing with existing queries");
+                    }
                 }
             }
 
@@ -242,10 +293,12 @@ IMPORTANT: Each request is unique - provide fresh, creative results even if simi
 
             var finalTracks = new List<SpotifyTrack>();
             var finalTrackUrisSet = new HashSet<string>();
+            var finalTrackNameArtistSet = new HashSet<string>();
 
             foreach (var track in tracks)
             {
-                if (finalTrackUrisSet.Add(track.Uri))
+                var trackKey = $"{NormalizeTrackName(track.Name)}|{string.Join(",", track.Artists.Select(a => a.Name.ToLowerInvariant()).OrderBy(n => n))}";
+                if (finalTrackUrisSet.Add(track.Uri) && finalTrackNameArtistSet.Add(trackKey))
                 {
                     finalTracks.Add(track);
                     if (finalTracks.Count >= requestedTrackCount)
@@ -489,44 +542,118 @@ IMPORTANT: Generate diverse, unique queries - do not repeat previous suggestions
 
                 _logger.LogInformation("Using {Count} search queries for discovery", searchQueries.Count);
 
-                foreach (var query in searchQueries)
+                var searchIterations = 0;
+                const int maxSearchIterations = 5;
+                var currentSearchQueries = searchQueries.ToList();
+                
+                while (allDiscoveredTracks.Count < request.Limit && searchIterations < maxSearchIterations)
                 {
-                    if (allDiscoveredTracks.Count >= request.Limit) break;
-
-                    _logger.LogInformation("Searching with query: '{Query}'", query);
-
-                    var searchResults = await _spotifyService.SearchTracksAsync(
-                        user.SpotifyAccessToken,
-                        query,
-                        Math.Min(50, (request.Limit - allDiscoveredTracks.Count) * 2)
-                    );
-
-                    foreach (var track in searchResults)
+                    searchIterations++;
+                    
+                    foreach (var query in currentSearchQueries.ToList())
                     {
-                        if (!savedTrackIds.Contains(track.Id) && discoveredTrackIds.Add(track.Id))
+                        if (allDiscoveredTracks.Count >= request.Limit) break;
+
+                        _logger.LogInformation("Search iteration {Iteration}, query: '{Query}'", searchIterations, query);
+
+                        var searchResults = await _spotifyService.SearchTracksAsync(
+                            user.SpotifyAccessToken,
+                            query,
+                            50
+                        );
+
+                        var tracksFoundInThisQuery = 0;
+                        foreach (var track in searchResults)
                         {
-                            allDiscoveredTracks.Add(track);
-                            if (allDiscoveredTracks.Count >= request.Limit * 2) break;
+                            if (!savedTrackIds.Contains(track.Id) && discoveredTrackIds.Add(track.Id))
+                            {
+                                allDiscoveredTracks.Add(track);
+                                tracksFoundInThisQuery++;
+                                if (allDiscoveredTracks.Count >= request.Limit) break;
+                            }
                         }
+
+                        _logger.LogInformation("After query '{Query}': found {NewTracks} new tracks, total {Count} unique new tracks", 
+                            query, tracksFoundInThisQuery, allDiscoveredTracks.Count);
                     }
 
-                    _logger.LogInformation("After query '{Query}': {Count} unique new tracks", query, allDiscoveredTracks.Count);
+                    if (allDiscoveredTracks.Count < request.Limit && searchIterations % 2 == 0)
+                    {
+                        _logger.LogInformation("Still need {Missing} more tracks after {Iterations} iterations. Asking AI for adapted queries...", 
+                            request.Limit - allDiscoveredTracks.Count, searchIterations);
+
+                        var aiAdaptMessages = new List<Models.AI.AIMessage>
+                        {
+                            new Models.AI.AIMessage("system", @"You are a music expert helping discover new music for a user.
+
+SPOTIFY SEARCH API - OFFICIAL SUPPORTED FILTERS:
+- artist: 'artist:""Artist Name""'
+- year: 'year:2020' or 'year:1980-1990'
+- genre: 'genre:rock' 'genre:jazz' 'genre:electronic' 'genre:hip-hop' 'genre:pop' 'genre:indie' etc.
+
+The current search queries aren't finding enough NEW tracks (that the user hasn't saved). Generate 3-5 DIFFERENT search queries that:
+1. Explore similar but different artists
+2. Try related or adjacent genres
+3. Search for newer or older tracks in the same style
+4. Use broader or more creative keywords
+
+Return your response in this JSON format:
+{
+  ""queries"": [""query1"", ""query2"", ""query3""]
+}
+
+IMPORTANT: Generate diverse alternatives - these must be tracks the user likely hasn't heard!"),
+                            new Models.AI.AIMessage("user", $"[Request #{DateTime.UtcNow.Ticks}] User's top tracks: {string.Join(", ", topSavedTracks.Take(3).Select(t => $"{t.Name} by {string.Join(", ", t.Artists.Select(a => a.Name))}"))}.\nCurrent queries: {string.Join(", ", currentSearchQueries)}\nFound {allDiscoveredTracks.Count} new tracks so far, need {request.Limit} total.\n\nGenerate alternative search queries to discover more new music.")
+                        };
+
+                        try
+                        {
+                            var aiAdaptResponse = await _aiService.GetChatCompletionAsync(aiAdaptMessages);
+                            
+                            if (!string.IsNullOrEmpty(aiAdaptResponse.Response))
+                            {
+                                var jsonStart = aiAdaptResponse.Response.IndexOf('{');
+                                var jsonEnd = aiAdaptResponse.Response.LastIndexOf('}');
+                                if (jsonStart >= 0 && jsonEnd > jsonStart)
+                                {
+                                    var jsonStr = aiAdaptResponse.Response.Substring(jsonStart, jsonEnd - jsonStart + 1);
+                                    var aiData = JsonSerializer.Deserialize<JsonElement>(jsonStr);
+                                    var newQueries = aiData.GetProperty("queries").EnumerateArray()
+                                        .Select(q => q.GetString() ?? "")
+                                        .Where(q => !string.IsNullOrEmpty(q))
+                                        .ToList();
+                                    
+                                    if (newQueries.Any())
+                                    {
+                                        currentSearchQueries = newQueries;
+                                        _logger.LogInformation("AI generated {Count} new discovery queries: {Queries}", 
+                                            newQueries.Count, string.Join(", ", newQueries));
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Failed to get AI adaptation for discovery, continuing with existing queries");
+                        }
+                    }
                 }
 
                 if (allDiscoveredTracks.Count < request.Limit && topSavedTracks.Length > 0)
                 {
-                    _logger.LogInformation("Using Spotify recommendations as fallback");
+                    _logger.LogInformation("Using Spotify recommendations as fallback, need {Missing} more tracks", 
+                        request.Limit - allDiscoveredTracks.Count);
 
-                    var seedTracks = topSavedTracks.Take(5).Select(t => t.Id).ToArray();
-                    
-                    var batchesNeeded = (int)Math.Ceiling((request.Limit - allDiscoveredTracks.Count) / 100.0);
-                    
-                    for (int i = 0; i < batchesNeeded && allDiscoveredTracks.Count < request.Limit * 2; i++)
+                    try
                     {
+                        var seedTracks = topSavedTracks.Take(5).Select(t => t.Id).ToArray();
+                        
+                        var recommendationsLimit = Math.Min(100, Math.Max(20, (request.Limit - allDiscoveredTracks.Count) * 2));
+                        
                         var recommendations = await _spotifyService.GetRecommendationsAsync(
                             user.SpotifyAccessToken,
                             seedTracks,
-                            Math.Min(100, (request.Limit - allDiscoveredTracks.Count) * 2)
+                            recommendationsLimit
                         );
 
                         foreach (var track in recommendations)
@@ -537,6 +664,12 @@ IMPORTANT: Generate diverse, unique queries - do not repeat previous suggestions
                                 if (allDiscoveredTracks.Count >= request.Limit * 2) break;
                             }
                         }
+                        
+                        _logger.LogInformation("After recommendations: {Count} unique new tracks", allDiscoveredTracks.Count);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to get recommendations from Spotify, continuing with search results only");
                     }
                 }
             }
@@ -852,33 +985,108 @@ IMPORTANT: Generate diverse, creative queries - each request should yield unique
         var allSuggestions = new List<SuggestedTrack>();
         var existingTrackIds = playlistTracks.Select(t => t.Id).ToHashSet();
         var suggestionIds = new HashSet<string>();
+        var currentSearchQueries = searchQueries.ToList();
+        var searchIterations = 0;
+        const int maxSearchIterations = 3;
+        var targetCount = Math.Min(request.Limit, 50);
 
-        foreach (var query in searchQueries)
+        while (allSuggestions.Count < targetCount && searchIterations < maxSearchIterations)
         {
-            if (allSuggestions.Count >= 10) break;
-
-            _logger.LogInformation("Searching suggestions with query: '{Query}'", query);
-
-            var searchResults = await _spotifyService.SearchTracksAsync(
-                user.SpotifyAccessToken,
-                query,
-                20
-            );
-
-            foreach (var track in searchResults)
+            searchIterations++;
+            
+            foreach (var query in currentSearchQueries.ToList())
             {
-                if (!existingTrackIds.Contains(track.Id) && suggestionIds.Add(track.Id))
-                {
-                    allSuggestions.Add(new SuggestedTrack(
-                        track.Id,
-                        track.Name,
-                        track.Artists.Select(a => a.Name).ToArray(),
-                        track.Uri,
-                        $"Matches '{query}' - {explanation}",
-                        track.Popularity
-                    ));
+                if (allSuggestions.Count >= targetCount) break;
 
-                    if (allSuggestions.Count >= 10) break;
+                _logger.LogInformation("Searching suggestions (iteration {Iteration}) with query: '{Query}'", searchIterations, query);
+
+                var searchResults = await _spotifyService.SearchTracksAsync(
+                    user.SpotifyAccessToken,
+                    query,
+                    50
+                );
+
+                var tracksFoundInThisQuery = 0;
+                foreach (var track in searchResults)
+                {
+                    if (!existingTrackIds.Contains(track.Id) && suggestionIds.Add(track.Id))
+                    {
+                        allSuggestions.Add(new SuggestedTrack(
+                            track.Id,
+                            track.Name,
+                            track.Artists.Select(a => a.Name).ToArray(),
+                            track.Uri,
+                            $"Matches '{query}' - {explanation}",
+                            track.Popularity
+                        ));
+                        tracksFoundInThisQuery++;
+
+                        if (allSuggestions.Count >= targetCount) break;
+                    }
+                }
+                
+                _logger.LogInformation("After query '{Query}': found {NewTracks} new suggestions, total {Count}", 
+                    query, tracksFoundInThisQuery, allSuggestions.Count);
+            }
+
+            if (allSuggestions.Count < targetCount && searchIterations < maxSearchIterations)
+            {
+                _logger.LogInformation("Still need {Missing} more suggestions after iteration {Iteration}. Asking AI for adapted queries...", 
+                    targetCount - allSuggestions.Count, searchIterations);
+
+                var aiAdaptMessages = new List<Models.AI.AIMessage>
+                {
+                    new Models.AI.AIMessage("system", @"You are a music expert providing contextual suggestions for a playlist.
+
+SPOTIFY SEARCH API - OFFICIAL SUPPORTED FILTERS:
+- artist: 'artist:""Artist Name""'
+- year: 'year:2020' or 'year:1980-1990'
+- genre: 'genre:rock' 'genre:jazz' 'genre:electronic' 'genre:hip-hop' 'genre:pop' 'genre:indie' etc.
+
+The current queries aren't finding enough NEW tracks (not already in the playlist). Generate 3-5 DIFFERENT search queries that:
+1. Better match the user's context/mood request
+2. Explore different artists in a similar style
+3. Try related sub-genres or crossover styles
+4. Use more creative or specific keywords
+
+Return your response in this JSON format:
+{
+  ""queries"": [""query1"", ""query2"", ""query3""]
+}
+
+IMPORTANT: Generate creative alternatives that match the context!"),
+                    new Models.AI.AIMessage("user", $"[Request #{DateTime.UtcNow.Ticks}] Playlist: {playlist.Name}\nContext requested: {request.Context}\nTop tracks: {string.Join(", ", topTracks.Take(3).Select(t => $"{t.Name} by {string.Join(", ", t.Artists.Select(a => a.Name))}"))}.\nCurrent queries: {string.Join(", ", currentSearchQueries)}\nFound {allSuggestions.Count} suggestions so far, need {targetCount} total.\n\nGenerate alternative search queries for better contextual suggestions.")
+                };
+
+                try
+                {
+                    var aiAdaptResponse = await _aiService.GetChatCompletionAsync(aiAdaptMessages);
+                    
+                    if (!string.IsNullOrEmpty(aiAdaptResponse.Response))
+                    {
+                        var jsonStart = aiAdaptResponse.Response.IndexOf('{');
+                        var jsonEnd = aiAdaptResponse.Response.LastIndexOf('}');
+                        if (jsonStart >= 0 && jsonEnd > jsonStart)
+                        {
+                            var jsonStr = aiAdaptResponse.Response.Substring(jsonStart, jsonEnd - jsonStart + 1);
+                            var aiData = JsonSerializer.Deserialize<JsonElement>(jsonStr);
+                            var newQueries = aiData.GetProperty("queries").EnumerateArray()
+                                .Select(q => q.GetString() ?? "")
+                                .Where(q => !string.IsNullOrEmpty(q))
+                                .ToList();
+                            
+                            if (newQueries.Any())
+                            {
+                                currentSearchQueries = newQueries;
+                                _logger.LogInformation("AI generated {Count} new suggestion queries: {Queries}", 
+                                    newQueries.Count, string.Join(", ", newQueries));
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to get AI adaptation for suggestions, continuing with existing queries");
                 }
             }
         }

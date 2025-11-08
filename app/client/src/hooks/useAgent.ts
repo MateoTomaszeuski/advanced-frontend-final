@@ -193,7 +193,8 @@ export function useAgent() {
   const suggestMusic = async (
     conversationId: number,
     playlistId: string,
-    context: string
+    context: string,
+    limit: number = 10
   ) => {
     setIsLoading(true);
     setStatus('processing');
@@ -206,6 +207,7 @@ export function useAgent() {
         conversationId,
         playlistId,
         context,
+        limit,
       }) as SuggestMusicResponse;
 
       setProgress(100);

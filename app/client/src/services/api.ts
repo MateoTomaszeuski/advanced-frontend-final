@@ -34,11 +34,14 @@ export const agentApi = {
   confirmRemoveDuplicates: (data: { conversationId: number; playlistId: string; trackUrisToRemove: string[] }) =>
     apiClient.post<AgentActionResponse>('/api/agent/confirm-remove-duplicates', data),
 
-  suggestMusic: (data: { conversationId: number; playlistId: string; context: string }) =>
+  suggestMusic: (data: { conversationId: number; playlistId: string; context: string; limit?: number }) =>
     apiClient.post('/api/agent/suggest-music', data),
 
   getAction: (actionId: number) =>
     apiClient.get<AgentAction>(`/api/agent/actions/${actionId}`),
+
+  getRecentPlaylists: (limit?: number) =>
+    apiClient.get(`/api/agent/recent-playlists${limit ? `?limit=${limit}` : ''}`),
 };
 
 export const spotifyApi = {
@@ -57,6 +60,9 @@ export const spotifyApi = {
   disconnect: () => apiClient.post('/api/spotify/disconnect'),
 
   getPlaylists: () => apiClient.get('/api/spotify/playlists'),
+
+  addTracksToPlaylist: (playlistId: string, trackUris: string[]) =>
+    apiClient.post(`/api/spotify/playlists/${playlistId}/tracks`, { trackUris }),
 };
 
 export const testApi = {

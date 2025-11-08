@@ -12,6 +12,7 @@ public interface IAgentActionRepository
     Task<AgentAction> CreateAsync(AgentAction action);
     Task UpdateAsync(AgentAction action);
     Task DeleteAsync(int id);
+    Task<IEnumerable<AgentAction>> GetRecentPlaylistCreationsAsync(int userId, int limit);
 }
 
 public class AgentActionRepository : IAgentActionRepository
@@ -100,6 +101,29 @@ public class AgentActionRepository : IAgentActionRepository
         
         const string sql = "DELETE FROM agent_actions WHERE id = @Id";
         await connection.ExecuteAsync(sql, new { Id = id });
+    }
+
+    public async Task<IEnumerable<AgentAction>> GetRecentPlaylistCreationsAsync(int userId, int limit)
+    {
+        using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+        
+        const string sql = @"
+            SELECT aa.id as Id, aa.conversation_id as ConversationId,
+                   aa.action_type as ActionType, aa.status as Status,
+                   aa.input_prompt as InputPrompt, aa.parameters as Parameters,
+                   aa.result as Result, aa.error_message as ErrorMessage,
+                   aa.created_at as CreatedAt, aa.completed_at as CompletedAt
+            FROM agent_actions aa
+            INNER JOIN conversations c ON aa.conversation_id = c.id
+            WHERE c.user_id = @UserId
+                AND aa.action_type IN ('CreateSmartPlaylist', 'DiscoverNewMusic')
+                AND aa.status = 'Completed'
+                AND aa.result IS NOT NULL
+            ORDER BY aa.created_at DESC
+            LIMIT @Limit";
+
+        var actions = await connection.QueryAsync<AgentActionDto>(sql, new { UserId = userId, Limit = limit });
+        return actions.Select(a => a.ToAgentAction());
     }
 }
 

@@ -225,6 +225,37 @@ public class SpotifyController : ControllerBase
             return StatusCode(500, new { error = "Failed to fetch playlists" });
         }
     }
+
+    [HttpPost("playlists/{playlistId}/tracks")]
+    public async Task<IActionResult> AddTracksToPlaylist(string playlistId, [FromBody] AddTracksRequest request)
+    {
+        var user = this.GetCurrentUser();
+        if (user == null)
+        {
+            return this.UnauthorizedUser();
+        }
+
+        if (string.IsNullOrEmpty(user.SpotifyAccessToken))
+        {
+            return BadRequest(new { error = "Spotify account not connected" });
+        }
+
+        if (user.SpotifyTokenExpiry.HasValue && user.SpotifyTokenExpiry.Value <= DateTime.UtcNow)
+        {
+            return BadRequest(new { error = "Spotify token expired" });
+        }
+
+        try
+        {
+            await _spotifyService.AddTracksToPlaylistAsync(user.SpotifyAccessToken, playlistId, request.TrackUris);
+            return Ok(new { message = $"Successfully added {request.TrackUris.Length} tracks to playlist" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding tracks to playlist {PlaylistId} for user: {Email}", playlistId, user.Email);
+            return StatusCode(500, new { error = "Failed to add tracks to playlist" });
+        }
+    }
 }
 
 public record ConnectSpotifyRequest(
@@ -244,4 +275,8 @@ public record SpotifyTokenResponse(
     int expires_in,
     string? refresh_token,
     string scope
+);
+
+public record AddTracksRequest(
+    string[] TrackUris
 );

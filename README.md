@@ -793,9 +793,84 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 #### Delivered:
 
 **Rubric Items:**
-
+- Agentic loop runs until task complete or user intervention required (smart playlist creation runs iterative search loop until track count met)
+- LLM decisions and actions persisted and can be inspected (all agent actions logged to database with JSONB data)
 
 **Features:**
+- **Agentic Loop Implementation**:
+  - Smart playlist creation uses iterative search strategy with AI-driven query adaptation
+  - Loop continues until requested track count is met or maximum iterations reached
+  - AI generates new search queries every 3 iterations when track count insufficient
+  - Dynamic iteration limits based on requested track count: `Math.Max(20, requestedTrackCount / 10)`
+  - Example: 250-track request gets 25 iterations (previously hardcoded at 10)
+  - AI analyzes current tracks and generates diverse alternative search strategies mid-process
+- **Triple-Layer Deduplication System**:
+  - Track ID HashSet for Spotify ID-based deduplication
+  - Track URI HashSet for URI-based deduplication
+  - Track Name + Artist HashSet with normalization for semantic duplicate detection
+  - `NormalizeTrackName()` removes parentheses, brackets, extra spaces
+  - `AreArtistsSimilar()` uses set overlap matching for artist combinations
+  - Prevents duplicate songs with same title from different albums
+- **AI-Driven Query Adaptation for All Features**:
+  - Smart playlists: AI adapts search queries every 3 iterations if track count insufficient
+  - Music discovery: AI generates intelligent search queries based on user's saved tracks
+  - Music suggestions: AI adapts queries every 3 iterations based on playlist context
+  - All features use temperature=0.9 and top_p=0.95 for creative diversity
+  - Anti-caching with unique request identifiers using timestamps
+- **Recent Playlists History**:
+  - Added `GetRecentPlaylistCreationsAsync()` to AgentActionRepository
+  - Backend endpoint: `GET /api/agent/recent-playlists` (returns last 10 playlists)
+  - SQL joins agent_actions with conversations, filters by user_id and action types
+  - Frontend integration in PlaylistCreatorPage.tsx with "Recent Playlists" section
+  - Displays playlist name, track count, created date, and "Open in Spotify" links
+  - Auto-refreshes after creating new playlists
+- **Configurable Music Suggestions**:
+  - Added `Limit` parameter to SuggestMusicDto (5-50 tracks)
+  - Frontend limit selector with predefined options (5, 10, 15, 20, 30, 40, 50)
+  - Backend respects limit parameter and generates appropriate number of suggestions
+  - AI adapts search strategy based on requested quantity
+- **Batch Add-to-Playlist Functionality**:
+  - Added checkbox selection system to music suggestions page
+  - "Add to Playlist" button with selected track count badge
+  - Backend endpoint: `POST /api/spotify/add-tracks-to-playlist`
+  - Frontend API function: `spotifyApi.addTracksToPlaylist(playlistId, trackUris)`
+  - Success toast shows count of tracks added
+  - Checkbox states managed with Set<string> for efficient lookups
+- **Select All/Deselect All for Bulk Operations**:
+  - Toggle button that switches between "Select All" and "Deselect All" based on selection state
+  - `handleSelectAll()` creates Set from all track URIs
+  - `handleDeselectAll()` clears Set
+  - Button placed next to context description for easy access
+  - Enables quick selection of 20-50 suggestions without manual clicking
+- **Bug Fixes**:
+  - Fixed smart playlist creation returning only 12 tracks for 250-track requests (dynamic iteration limits)
+  - Fixed duplicate tracks with same title appearing in playlists (triple deduplication)
+  - Fixed music discovery 404 errors (improved error handling in recommendations API)
+  - Fixed iteration limit bottleneck (changed from const 10 to dynamic based on track count)
+  - Backend container restart required for iteration limit fix to take effect
+- **AI Integration Improvements**:
+  - Added explicit anti-repetition instructions to all AI prompts
+  - Updated prompts with official Spotify Search API filter documentation
+  - Corrected filter usage: only ONE genre filter per query (multiple don't work)
+  - Keywords can be mixed with filters: `'upbeat dance genre:funk'`
+  - Year ranges supported: `'year:1980-1990'`
+  - Quotes for multi-word values: `'artist:"Daft Punk"'`
+- **Enhanced Error Handling**:
+  - Try-catch blocks around Spotify recommendations API calls
+  - Graceful fallbacks when AI query generation fails
+  - Persistent error toasts requiring manual dismissal
+  - Comprehensive logging at each step of agentic loop
+- **Database Persistence**:
+  - All agent actions logged to `agent_actions` table with JSONB data
+  - Conversation tracking for all agent operations
+  - Action history viewable on Dashboard (recent activity feed)
+  - Recent playlists query with SQL joins for metadata retrieval
+- **UX Improvements**:
+  - Loading states with spinners during agentic loop execution
+  - Progress tracking (though currently not granular iteration-by-iteration)
+  - Success toasts with custom green Spotify theme
+  - Clear feedback on track counts and duplicate removal
+  - Select All/Deselect All for convenient bulk operations
 
 
 ---

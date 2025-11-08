@@ -219,7 +219,7 @@ public class AgentController : ControllerBase
         {
             var result = await _agentService.SuggestMusicByContextAsync(
                 user,
-                new SuggestMusicRequest(request.PlaylistId, request.Context),
+                new SuggestMusicRequest(request.PlaylistId, request.Context, request.Limit),
                 request.ConversationId
             );
 
@@ -229,6 +229,37 @@ public class AgentController : ControllerBase
         {
             _logger.LogError(ex, "Error suggesting music");
             return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpGet("recent-playlists")]
+    public async Task<IActionResult> GetRecentlyCreatedPlaylists([FromQuery] int limit = 10)
+    {
+        var user = this.GetCurrentUser();
+        if (user == null)
+        {
+            return this.UnauthorizedUser();
+        }
+
+        _logger.LogInformation("GetRecentlyCreatedPlaylists request from user: {Email}", user.Email);
+
+        try
+        {
+            var actions = await _actionRepository.GetRecentPlaylistCreationsAsync(user.Id, limit);
+            
+            return Ok(actions.Select(a => new
+            {
+                a.Id,
+                a.ActionType,
+                a.InputPrompt,
+                Result = a.Result,
+                a.CreatedAt
+            }));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting recent playlists");
+            return StatusCode(500, new { error = "Failed to fetch recent playlists" });
         }
     }
 }
@@ -259,5 +290,6 @@ public record ConfirmRemoveDuplicatesWithConversationRequest(
 public record SuggestMusicWithConversationRequest(
     int ConversationId,
     string PlaylistId,
-    string Context
+    string Context,
+    int Limit = 10
 );
