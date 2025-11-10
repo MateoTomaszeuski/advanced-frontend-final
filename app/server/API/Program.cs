@@ -95,7 +95,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseMiddleware<UserContextMiddleware>();
-
+app.MapGet("/", () => "API is running!");
 app.MapControllers().RequireAuthorization();
 
 app.Run();

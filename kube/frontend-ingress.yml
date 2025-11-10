@@ -8,7 +8,7 @@ spec:
   tls:
   - hosts:
     - mateo-spotify.duckdns.org
-    secretName: api-tls-secret
+    secretName: frontend-tls-secret
   rules:
   - host: mateo-spotify.duckdns.org
     http:
