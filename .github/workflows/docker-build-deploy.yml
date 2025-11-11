@@ -1,55 +1,17 @@
 name: Build and Deploy Docker Images & Apply Kubernetes Changes
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+  workflow_run:
+    workflows: ["Tests"]
+    types:
+      - completed
     branches:
       - main
 
 jobs:
-  lint-and-test:
-    runs-on: self-hosted
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Install frontend dependencies
-        run: cd app/client && pnpm install --frozen-lockfile
-
-      - name: Run ESLint
-        run: cd app/client && pnpm lint
-
-      - name: Set DOTNET_ROOT
-        run: |
-          DOTNET_PATH=$(readlink -f $(which dotnet))
-          DOTNET_DIR=$(dirname $DOTNET_PATH)
-          echo "DOTNET_ROOT=$DOTNET_DIR" >> $GITHUB_ENV
-
-      - name: Restore backend dependencies
-        run: cd app/server && dotnet restore
-
-      - name: Build backend
-        run: cd app/server && dotnet build --no-restore
-
-      - name: Run backend tests
-        run: cd app/server && dotnet test --no-build --verbosity normal
-
   build-and-push:
-    needs: lint-and-test
     runs-on: self-hosted
-    if: github.event_name != 'pull_request'
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event != 'pull_request' }}
     
     steps:
       - name: Checkout code

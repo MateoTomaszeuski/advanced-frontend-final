@@ -18,6 +18,7 @@ export const ConversationSchema = z.object({
 
 export const AgentActionSchema = z.object({
   id: z.number(),
+  conversationId: z.number(),
   actionType: z.string(),
   status: z.enum(['Processing', 'Completed', 'Failed', 'AwaitingApproval']),
   inputPrompt: z.string().optional(),

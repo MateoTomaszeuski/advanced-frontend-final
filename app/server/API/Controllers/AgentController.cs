@@ -262,6 +262,68 @@ public class AgentController : ControllerBase
             return StatusCode(500, new { error = "Failed to fetch recent playlists" });
         }
     }
+
+    [HttpGet("history")]
+    public async Task<IActionResult> GetHistory([FromQuery] string? actionType = null, [FromQuery] string? status = null, [FromQuery] int limit = 50)
+    {
+        var user = this.GetCurrentUser();
+        if (user == null)
+        {
+            return this.UnauthorizedUser();
+        }
+
+        _logger.LogInformation("GetHistory request for user: {Email}", user.Email);
+
+        try
+        {
+            var allConversations = await _conversationRepository.GetAllByUserIdAsync(user.Id);
+            var conversationIds = allConversations.Select(c => c.Id).ToHashSet();
+
+            var allActions = new List<Models.AgentAction>();
+
+            foreach (var convId in conversationIds)
+            {
+                var actions = await _actionRepository.GetAllByConversationIdAsync(convId);
+                allActions.AddRange(actions);
+            }
+
+            var filteredActions = allActions.AsEnumerable();
+
+            if (!string.IsNullOrEmpty(actionType))
+            {
+                filteredActions = filteredActions.Where(a => a.ActionType.Equals(actionType, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrEmpty(status))
+            {
+                filteredActions = filteredActions.Where(a => a.Status.Equals(status, StringComparison.OrdinalIgnoreCase));
+            }
+
+            var result = filteredActions
+                .OrderByDescending(a => a.CreatedAt)
+                .Take(limit)
+                .Select(a => new
+                {
+                    a.Id,
+                    a.ConversationId,
+                    a.ActionType,
+                    a.Status,
+                    a.InputPrompt,
+                    a.Parameters,
+                    a.Result,
+                    a.ErrorMessage,
+                    a.CreatedAt,
+                    a.CompletedAt
+                });
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting action history");
+            return StatusCode(500, new { error = "Failed to fetch action history" });
+        }
+    }
 }
 
 public record CreateSmartPlaylistWithConversationRequest(

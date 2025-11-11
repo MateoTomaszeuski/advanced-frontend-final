@@ -8,6 +8,7 @@ public interface IConversationRepository
 {
     Task<Conversation?> GetByIdAsync(int id);
     Task<IEnumerable<Conversation>> GetByUserIdAsync(int userId);
+    Task<IEnumerable<Conversation>> GetAllByUserIdAsync(int userId);
     Task<Conversation> CreateAsync(Conversation conversation);
     Task UpdateAsync(Conversation conversation);
     Task DeleteAsync(int id);
@@ -48,6 +49,20 @@ public class ConversationRepository : IConversationRepository
             WHERE c.user_id = @UserId
             GROUP BY c.id, c.user_id, c.title, c.created_at, c.updated_at
             ORDER BY c.updated_at DESC";
+
+        return await connection.QueryAsync<Conversation>(sql, new { UserId = userId });
+    }
+
+    public async Task<IEnumerable<Conversation>> GetAllByUserIdAsync(int userId)
+    {
+        using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+        
+        const string sql = @"
+            SELECT id as Id, user_id as UserId, title as Title,
+                   created_at as CreatedAt, updated_at as UpdatedAt
+            FROM conversations
+            WHERE user_id = @UserId
+            ORDER BY created_at DESC";
 
         return await connection.QueryAsync<Conversation>(sql, new { UserId = userId });
     }

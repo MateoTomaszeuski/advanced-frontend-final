@@ -20,6 +20,7 @@ public class AgentService : IAgentService
 {
     private readonly IAgentActionRepository _actionRepository;
     private readonly ISpotifyService _spotifyService;
+    private readonly ISpotifyTokenService _tokenService;
     private readonly IAIService _aiService;
     private readonly ILogger<AgentService> _logger;
     private readonly TrackFilterHelper _trackFilterHelper;
@@ -27,27 +28,21 @@ public class AgentService : IAgentService
     public AgentService(
         IAgentActionRepository actionRepository,
         ISpotifyService spotifyService,
+        ISpotifyTokenService tokenService,
         IAIService aiService,
         ILogger<AgentService> logger)
     {
         _actionRepository = actionRepository;
         _spotifyService = spotifyService;
+        _tokenService = tokenService;
         _aiService = aiService;
         _logger = logger;
         _trackFilterHelper = new TrackFilterHelper(spotifyService);
     }
 
-    private void ValidateSpotifyToken(User user)
+    private async Task<string> GetValidAccessTokenAsync(User user)
     {
-        if (string.IsNullOrEmpty(user.SpotifyAccessToken))
-        {
-            throw new InvalidOperationException("User has not connected their Spotify account");
-        }
-
-        if (user.SpotifyTokenExpiry.HasValue && user.SpotifyTokenExpiry.Value <= DateTime.UtcNow)
-        {
-            throw new InvalidOperationException("Spotify access token has expired. Please reconnect your Spotify account");
-        }
+        return await _tokenService.GetValidAccessTokenAsync(user);
     }
 
     public async Task<AgentActionResponse> CreateSmartPlaylistAsync(
@@ -69,7 +64,7 @@ public class AgentService : IAgentService
 
         try
         {
-            ValidateSpotifyToken(user);
+            var accessToken = await GetValidAccessTokenAsync(user);
 
             _logger.LogInformation("Creating smart playlist for user {Email} with prompt: {Prompt}",
                 user.Email, request.Prompt);
@@ -175,7 +170,7 @@ IMPORTANT: Each request is unique - provide fresh, creative results even if simi
 
             var searchLimit = Math.Min(50, requestedTrackCount);
             var initialTracks = await _spotifyService.SearchTracksAsync(
-                user.SpotifyAccessToken,
+                accessToken,
                 searchQuery,
                 searchLimit
             );
@@ -213,7 +208,7 @@ IMPORTANT: Each request is unique - provide fresh, creative results even if simi
                     _logger.LogInformation("Trying query: '{Query}'", query);
 
                     var additionalTracks = await _spotifyService.SearchTracksAsync(
-                        user.SpotifyAccessToken,
+                        accessToken,
                         query,
                         searchLimit
                     );
@@ -306,7 +301,7 @@ IMPORTANT: Generate creative alternatives - think outside the box!"),
             if (request.Preferences != null)
             {
                 tracks = await _trackFilterHelper.FilterByPreferencesAsync(
-                    user.SpotifyAccessToken, 
+                    accessToken, 
                     tracks, 
                     request.Preferences
                 );
@@ -335,10 +330,10 @@ IMPORTANT: Generate creative alternatives - think outside the box!"),
 
             _logger.LogInformation("Final unique track count: {Count} (requested: {Requested})", tracks.Length, requestedTrackCount);
 
-            var userId = await _spotifyService.GetCurrentUserIdAsync(user.SpotifyAccessToken);
+            var userId = await _spotifyService.GetCurrentUserIdAsync(accessToken);
 
             var playlist = await _spotifyService.CreatePlaylistAsync(
-                user.SpotifyAccessToken,
+                accessToken,
                 userId,
                 new CreatePlaylistRequest(playlistName, playlistDescription, true)
             );
@@ -347,7 +342,7 @@ IMPORTANT: Generate creative alternatives - think outside the box!"),
             {
                 var trackUrisToAdd = tracks.Select(t => t.Uri).ToArray();
                 await _spotifyService.AddTracksToPlaylistAsync(
-                    user.SpotifyAccessToken,
+                    accessToken,
                     playlist.Id,
                     trackUrisToAdd
                 );
@@ -409,11 +404,11 @@ IMPORTANT: Generate creative alternatives - think outside the box!"),
 
         try
         {
-            ValidateSpotifyToken(user);
+            var accessToken = await GetValidAccessTokenAsync(user);
 
             _logger.LogInformation("Discovering new music for user {Email}, requested: {Limit} tracks", user.Email, request.Limit);
 
-            var savedTracks = await _spotifyService.GetUserSavedTracksAsync(user.SpotifyAccessToken, 50);
+            var savedTracks = await _spotifyService.GetUserSavedTracksAsync(accessToken, 50);
             var savedTrackIds = savedTracks.Select(t => t.Id).ToHashSet();
 
             _logger.LogInformation("User has {Count} saved tracks", savedTrackIds.Count);
@@ -474,7 +469,7 @@ IMPORTANT: Provide a unique, diverse mix of genres each time - avoid repeating t
                     if (allDiscoveredTracks.Count >= request.Limit) break;
 
                     var searchResults = await _spotifyService.SearchTracksAsync(
-                        user.SpotifyAccessToken,
+                        accessToken,
                         $"genre:{genre}",
                         Math.Min(50, (request.Limit - allDiscoveredTracks.Count) * 2)
                     );
@@ -589,7 +584,7 @@ IMPORTANT: Generate diverse, unique queries - do not repeat previous suggestions
                         _logger.LogInformation("Search iteration {Iteration}, query: '{Query}'", searchIterations, query);
 
                         var searchResults = await _spotifyService.SearchTracksAsync(
-                            user.SpotifyAccessToken,
+                            accessToken,
                             query,
                             50
                         );
@@ -693,7 +688,7 @@ IMPORTANT: Generate diverse alternatives - these must be tracks the user likely 
                         var recommendationsLimit = Math.Min(100, Math.Max(20, (request.Limit - allDiscoveredTracks.Count) * 2));
                         
                         var recommendations = await _spotifyService.GetRecommendationsAsync(
-                            user.SpotifyAccessToken,
+                            accessToken,
                             seedTracks,
                             recommendationsLimit
                         );
@@ -720,12 +715,12 @@ IMPORTANT: Generate diverse alternatives - these must be tracks the user likely 
 
             _logger.LogInformation("Final discovery: {Count} unique new tracks (requested: {Requested})", newTracks.Length, request.Limit);
 
-            var userId = await _spotifyService.GetCurrentUserIdAsync(user.SpotifyAccessToken);
+            var userId = await _spotifyService.GetCurrentUserIdAsync(accessToken);
             var playlistName = $"Discover Weekly - {DateTime.UtcNow:MMM dd, yyyy}";
             var playlistDescription = "AI-generated music discovery based on your listening habits";
 
             var playlist = await _spotifyService.CreatePlaylistAsync(
-                user.SpotifyAccessToken,
+                accessToken,
                 userId,
                 new CreatePlaylistRequest(playlistName, playlistDescription, true)
             );
@@ -734,7 +729,7 @@ IMPORTANT: Generate diverse alternatives - these must be tracks the user likely 
             {
                 var trackUris = newTracks.Select(t => t.Uri).ToArray();
                 await _spotifyService.AddTracksToPlaylistAsync(
-                    user.SpotifyAccessToken,
+                    accessToken,
                     playlist.Id,
                     trackUris
                 );
@@ -784,12 +779,12 @@ IMPORTANT: Generate diverse alternatives - these must be tracks the user likely 
         string playlistId,
         int conversationId)
     {
-        ValidateSpotifyToken(user);
+        var accessToken = await GetValidAccessTokenAsync(user);
 
         _logger.LogInformation("Scanning playlist {PlaylistId} for duplicates for user {Email}", playlistId, user.Email);
 
-        var playlist = await _spotifyService.GetPlaylistAsync(user.SpotifyAccessToken, playlistId);
-        var playlistTracks = await _spotifyService.GetPlaylistTracksAsync(user.SpotifyAccessToken, playlistId);
+        var playlist = await _spotifyService.GetPlaylistAsync(accessToken, playlistId);
+        var playlistTracks = await _spotifyService.GetPlaylistTracksAsync(accessToken, playlistId);
 
         var duplicateGroups = new List<DuplicateGroup>();
         var processedTracks = new HashSet<string>();
@@ -870,13 +865,13 @@ IMPORTANT: Generate diverse alternatives - these must be tracks the user likely 
 
         try
         {
-            ValidateSpotifyToken(user);
+            var accessToken = await GetValidAccessTokenAsync(user);
 
             _logger.LogInformation("Removing {Count} duplicate tracks from playlist {PlaylistId} for user {Email}",
                 request.TrackUrisToRemove.Length, request.PlaylistId, user.Email);
 
             await _spotifyService.RemoveTracksFromPlaylistAsync(
-                user.SpotifyAccessToken,
+                accessToken,
                 request.PlaylistId,
                 request.TrackUrisToRemove
             );
@@ -916,13 +911,13 @@ IMPORTANT: Generate diverse alternatives - these must be tracks the user likely 
         SuggestMusicRequest request,
         int conversationId)
     {
-        ValidateSpotifyToken(user);
+        var accessToken = await GetValidAccessTokenAsync(user);
 
         _logger.LogInformation("Generating music suggestions for playlist {PlaylistId} with context: {Context}",
             request.PlaylistId, request.Context);
 
-        var playlist = await _spotifyService.GetPlaylistAsync(user.SpotifyAccessToken, request.PlaylistId);
-        var playlistTracks = await _spotifyService.GetPlaylistTracksAsync(user.SpotifyAccessToken, request.PlaylistId);
+        var playlist = await _spotifyService.GetPlaylistAsync(accessToken, request.PlaylistId);
+        var playlistTracks = await _spotifyService.GetPlaylistTracksAsync(accessToken, request.PlaylistId);
 
         var topTracks = playlistTracks
             .OrderByDescending(t => t.Popularity)
@@ -1034,7 +1029,7 @@ IMPORTANT: Generate diverse, creative queries - each request should yield unique
                 _logger.LogInformation("Searching suggestions (iteration {Iteration}) with query: '{Query}'", searchIterations, query);
 
                 var searchResults = await _spotifyService.SearchTracksAsync(
-                    user.SpotifyAccessToken,
+                    accessToken,
                     query,
                     50
                 );

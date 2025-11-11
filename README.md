@@ -795,8 +795,68 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 **Rubric Items:**
 - Agentic loop runs until task complete or user intervention required (smart playlist creation runs iterative search loop until track count met)
 - LLM decisions and actions persisted and can be inspected (all agent actions logged to database with JSONB data)
+- Unit tests run automatically in pipeline (backend service and repository tests)
 
 **Features:**
+- **Spotify Token Refresh & Persistence**:
+  - SpotifyTokenService - Centralized token validation and refresh logic
+  - RefreshAccessTokenAsync() - Automatic token renewal using refresh_token
+  - GetValidAccessTokenAsync() - Validates token expiry (5-minute buffer) and auto-refreshes if needed
+  - Token persistence in database - Stores access_token, refresh_token, and token_expiry
+  - All Spotify API calls automatically use fresh tokens without user intervention
+  - Users no longer need to reconnect Spotify after token expiry
+  - Graceful error handling with clear messages if reconnection needed
+  - SpotifyController updated to use token service for all endpoints
+  - AgentService updated to use token service for all agent functions
+- **Agent Control Center Page** (AgentControlPage.tsx):
+  - Real-time agent status display (idle, processing, awaiting-approval, error)
+  - Current task description with live updates
+  - Progress percentage with visual progress bar
+  - Active conversation details (ID, title, created date, action count)
+  - Recent actions list with expandable details (last 10 actions)
+  - Action type badges with color coding
+  - Status indicators with appropriate styling
+  - Detailed action logs with timestamps
+  - Error message display for failed actions
+  - Collapsible JSON result viewer with syntax highlighting
+  - All conversations list with action count aggregation
+  - Active conversation highlighting
+  - Refresh functionality to reload data
+  - Responsive layout with grid system
+- **Activity History Page** (HistoryPage.tsx):
+  - Comprehensive chronological log of all agent actions
+  - Filtering by action type (CreateSmartPlaylist, DiscoverNewMusic, etc.)
+  - Filtering by status (Processing, Completed, Failed, AwaitingApproval)
+  - Combined filter support with clear filters button
+  - Action count display with filter results
+  - Color-coded action type badges (purple, blue, yellow, red, green)
+  - Color-coded status indicators
+  - Conversation ID linking for context
+  - Duration calculation and display (mm:ss format)
+  - Start and completion timestamps
+  - Error message display in highlighted boxes
+  - Collapsible parameters viewer (JSON formatted)
+  - Collapsible result viewer (JSON formatted)
+  - Refresh button for manual reload
+  - Loading states with spinner animation
+  - Empty state messages for no results
+  - Hover effects for better UX
+- **Backend Enhancements**:
+  - GET /api/agent/history endpoint with query parameters
+  - Action type filtering support
+  - Status filtering support
+  - Configurable limit parameter (default 50, max 100)
+  - User-scoped action retrieval (only shows user's own actions)
+  - AgentActionRepository.GetAllByConversationIdAsync() method
+  - ConversationRepository.GetAllByUserIdAsync() method
+  - Efficient database queries with joins
+  - Comprehensive error logging
+- **Frontend API Integration**:
+  - agentApi.getHistory() with optional filter parameters
+  - Type-safe API calls with Zod validation
+  - AgentAction schema updated to include conversationId
+  - Query parameter building for filters
+  - Error handling for failed requests
 - **Agentic Loop Implementation**:
   - Smart playlist creation uses iterative search strategy with AI-driven query adaptation
   - Loop continues until requested track count is met or maximum iterations reached
@@ -860,17 +920,24 @@ An intelligent Spotify management assistant that automates playlist creation, mu
   - Graceful fallbacks when AI query generation fails
   - Persistent error toasts requiring manual dismissal
   - Comprehensive logging at each step of agentic loop
+  - InvalidOperationException for token refresh failures with clear messages
 - **Database Persistence**:
   - All agent actions logged to `agent_actions` table with JSONB data
   - Conversation tracking for all agent operations
   - Action history viewable on Dashboard (recent activity feed)
   - Recent playlists query with SQL joins for metadata retrieval
+  - Token storage in users table with automatic updates
 - **UX Improvements**:
   - Loading states with spinners during agentic loop execution
   - Progress tracking (though currently not granular iteration-by-iteration)
   - Success toasts with custom green Spotify theme
   - Clear feedback on track counts and duplicate removal
   - Select All/Deselect All for convenient bulk operations
+  - Real-time status updates in Agent Control Center
+  - Filterable and searchable action history
+  - Color-coded visual indicators throughout
+  - Responsive design for all new pages
+  - Hover effects and smooth transitions
 
 
 ---

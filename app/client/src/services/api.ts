@@ -42,6 +42,15 @@ export const agentApi = {
 
   getRecentPlaylists: (limit?: number) =>
     apiClient.get(`/api/agent/recent-playlists${limit ? `?limit=${limit}` : ''}`),
+
+  getHistory: (params?: { actionType?: string; status?: string; limit?: number }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.actionType) queryParams.append('actionType', params.actionType);
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    const queryString = queryParams.toString();
+    return apiClient.get<AgentAction[]>(`/api/agent/history${queryString ? `?${queryString}` : ''}`);
+  },
 };
 
 export const spotifyApi = {

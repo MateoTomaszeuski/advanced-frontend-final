@@ -9,6 +9,7 @@ public interface IAgentActionRepository
 {
     Task<AgentAction?> GetByIdAsync(int id);
     Task<IEnumerable<AgentAction>> GetByConversationIdAsync(int conversationId);
+    Task<IEnumerable<AgentAction>> GetAllByConversationIdAsync(int conversationId);
     Task<AgentAction> CreateAsync(AgentAction action);
     Task UpdateAsync(AgentAction action);
     Task DeleteAsync(int id);
@@ -57,6 +58,11 @@ public class AgentActionRepository : IAgentActionRepository
 
         var actions = await connection.QueryAsync<AgentActionDto>(sql, new { ConversationId = conversationId });
         return actions.Select(a => a.ToAgentAction());
+    }
+
+    public async Task<IEnumerable<AgentAction>> GetAllByConversationIdAsync(int conversationId)
+    {
+        return await GetByConversationIdAsync(conversationId);
     }
 
     public async Task<AgentAction> CreateAsync(AgentAction action)

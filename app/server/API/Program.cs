@@ -18,6 +18,7 @@ builder.Services.AddScoped<IAgentActionRepository, AgentActionRepository>();
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAgentService, AgentService>();
+builder.Services.AddScoped<ISpotifyTokenService, SpotifyTokenService>();
 builder.Services.AddHttpClient<ISpotifyService, SpotifyService>();
 builder.Services.AddHttpClient<IAIService, AIService>();
 builder.Services.AddHttpClient(); // Add general HttpClient factory

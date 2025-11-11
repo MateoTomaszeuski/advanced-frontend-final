@@ -14,6 +14,7 @@ public class SpotifyController : ControllerBase
 {
     private readonly IUserService _userService;
     private readonly ISpotifyService _spotifyService;
+    private readonly ISpotifyTokenService _tokenService;
     private readonly ILogger<SpotifyController> _logger;
     private readonly IConfiguration _configuration;
     private readonly HttpClient _httpClient;
@@ -21,12 +22,14 @@ public class SpotifyController : ControllerBase
     public SpotifyController(
         IUserService userService,
         ISpotifyService spotifyService,
+        ISpotifyTokenService tokenService,
         ILogger<SpotifyController> logger,
         IConfiguration configuration,
         IHttpClientFactory httpClientFactory)
     {
         _userService = userService;
         _spotifyService = spotifyService;
+        _tokenService = tokenService;
         _logger = logger;
         _configuration = configuration;
         _httpClient = httpClientFactory.CreateClient();
@@ -153,20 +156,16 @@ public class SpotifyController : ControllerBase
             return this.UnauthorizedUser();
         }
 
-        if (string.IsNullOrEmpty(user.SpotifyAccessToken))
-        {
-            return BadRequest(new { error = "Spotify account not connected" });
-        }
-
-        if (user.SpotifyTokenExpiry.HasValue && user.SpotifyTokenExpiry.Value <= DateTime.UtcNow)
-        {
-            return BadRequest(new { error = "Spotify token expired" });
-        }
-
         try
         {
-            var profile = await _spotifyService.GetCurrentUserProfileAsync(user.SpotifyAccessToken);
+            var accessToken = await _tokenService.GetValidAccessTokenAsync(user);
+            var profile = await _spotifyService.GetCurrentUserProfileAsync(accessToken);
             return Ok(profile);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Spotify token issue for user: {Email}", user.Email);
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -204,20 +203,16 @@ public class SpotifyController : ControllerBase
             return this.UnauthorizedUser();
         }
 
-        if (string.IsNullOrEmpty(user.SpotifyAccessToken))
-        {
-            return BadRequest(new { error = "Spotify account not connected" });
-        }
-
-        if (user.SpotifyTokenExpiry.HasValue && user.SpotifyTokenExpiry.Value <= DateTime.UtcNow)
-        {
-            return BadRequest(new { error = "Spotify token expired" });
-        }
-
         try
         {
-            var playlists = await _spotifyService.GetUserPlaylistsAsync(user.SpotifyAccessToken);
+            var accessToken = await _tokenService.GetValidAccessTokenAsync(user);
+            var playlists = await _spotifyService.GetUserPlaylistsAsync(accessToken);
             return Ok(playlists);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Spotify token issue for user: {Email}", user.Email);
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -235,20 +230,16 @@ public class SpotifyController : ControllerBase
             return this.UnauthorizedUser();
         }
 
-        if (string.IsNullOrEmpty(user.SpotifyAccessToken))
-        {
-            return BadRequest(new { error = "Spotify account not connected" });
-        }
-
-        if (user.SpotifyTokenExpiry.HasValue && user.SpotifyTokenExpiry.Value <= DateTime.UtcNow)
-        {
-            return BadRequest(new { error = "Spotify token expired" });
-        }
-
         try
         {
-            await _spotifyService.AddTracksToPlaylistAsync(user.SpotifyAccessToken, playlistId, request.TrackUris);
+            var accessToken = await _tokenService.GetValidAccessTokenAsync(user);
+            await _spotifyService.AddTracksToPlaylistAsync(accessToken, playlistId, request.TrackUris);
             return Ok(new { message = $"Successfully added {request.TrackUris.Length} tracks to playlist" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Spotify token issue for user: {Email}", user.Email);
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {

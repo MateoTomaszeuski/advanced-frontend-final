@@ -1,0 +1,95 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  Backend_Tests:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set DOTNET_ROOT
+        run: |
+          DOTNET_PATH=$(readlink -f $(which dotnet))
+          DOTNET_DIR=$(dirname $DOTNET_PATH)
+          echo "DOTNET_ROOT=$DOTNET_DIR" >> $GITHUB_ENV
+
+      - name: Restore backend dependencies
+        run: cd app/server && dotnet restore
+
+      - name: Build backend
+        run: cd app/server && dotnet build --no-restore
+
+      - name: Run backend tests
+        run: cd app/server && dotnet test --no-build --verbosity normal
+
+  Integration_Tests:
+    runs-on: self-hosted
+    needs: [Backend_Tests]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clean up existing containers
+        run: |
+          docker compose -f docker-compose/docker-compose.integration-tests.yml down -v || true
+
+      - name: Start integration test environment
+        run: docker compose -f docker-compose/docker-compose.integration-tests.yml up -d
+
+      - name: Wait for services to be ready
+        run: sleep 10
+
+      - name: Set DOTNET_ROOT
+        run: |
+          DOTNET_PATH=$(readlink -f $(which dotnet))
+          DOTNET_DIR=$(dirname $DOTNET_PATH)
+          echo "DOTNET_ROOT=$DOTNET_DIR" >> $GITHUB_ENV
+
+      - name: Run integration tests
+        run: cd app/server && dotnet test --filter "FullyQualifiedName~IntegrationTests" --verbosity normal
+
+      - name: Clean up integration test environment
+        if: always()
+        run: docker compose -f docker-compose/docker-compose.integration-tests.yml down -v
+
+  Frontend_Linting:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install frontend dependencies
+        run: cd app/client && pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        run: cd app/client && pnpm lint
+
+  Frontend_Tests:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install frontend dependencies
+        run: cd app/client && pnpm install --frozen-lockfile
+
+      - name: Run frontend tests
+        run: cd app/client && pnpm test --run
