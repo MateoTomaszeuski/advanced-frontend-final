@@ -1,3 +1,7 @@
+networks:
+  integration_tests_network:
+    driver: bridge
+
 services:
   postgres-test:
     image: postgres:16-alpine
@@ -16,3 +20,21 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - integration_tests_network
+
+  api-test:
+    build:
+      context: ..
+      dockerfile: dockerfiles/Dockerfile.server
+    container_name: spotify-api-test
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres-test;Port=5432;Database=testdb;Username=testuser;Password=testpass
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    networks:
+      - integration_tests_network

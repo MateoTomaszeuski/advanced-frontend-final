@@ -7,67 +7,74 @@ on:
   pull_request:
 
 jobs:
-  Backend_Tests:
+  Backend_Linting_and_Warns:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set DOTNET_ROOT
+      - name: Check linting and warns
         run: |
-          DOTNET_PATH=$(readlink -f $(which dotnet))
-          DOTNET_DIR=$(dirname $DOTNET_PATH)
-          echo "DOTNET_ROOT=$DOTNET_DIR" >> $GITHUB_ENV
+          docker build \
+            -f dockerfiles/check.Dockerfile \
+            -t linting_and_warns_container \
+            .
 
-      - name: Restore backend dependencies
-        run: cd app/server && dotnet restore
+      - name: Remove linting image
+        if: always()
+        run: docker rmi linting_and_warns_container -f || true
 
-      - name: Build backend
-        run: cd app/server && dotnet build --no-restore
-
-      - name: Run backend tests
-        run: cd app/server && dotnet test --no-build --verbosity normal
-
-  Integration_Tests:
+  Backend_Tests:
     runs-on: self-hosted
-    needs: [Backend_Tests]
+    needs: [Backend_Linting_and_Warns]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and run unit tests
+        run: |
+          docker build \
+            -f dockerfiles/tests.Dockerfile \
+            -t test_container \
+            .
+          docker run --rm test_container
+
+      - name: Remove test image
+        if: always()
+        run: docker rmi test_container -f || true
+
+  Backend_Integration_Tests:
+    runs-on: self-hosted
+    needs: [Backend_Linting_and_Warns, Backend_Tests]
     steps:
       - uses: actions/checkout@v4
 
       - name: Clean up existing containers
         run: |
           docker compose -f docker-compose/docker-compose.integration-tests.yml down -v || true
+          docker rmi integration_test_container || true
 
-      - name: Start integration test environment
-        run: docker compose -f docker-compose/docker-compose.integration-tests.yml up -d
+      - name: Spin up Api and Database
+        run: docker compose -f docker-compose/docker-compose.integration-tests.yml up -d --build
 
-      - name: Wait for services to be ready
-        run: sleep 10
-
-      - name: Set DOTNET_ROOT
+      - name: Build C# integration Tests
         run: |
-          DOTNET_PATH=$(readlink -f $(which dotnet))
-          DOTNET_DIR=$(dirname $DOTNET_PATH)
-          echo "DOTNET_ROOT=$DOTNET_DIR" >> $GITHUB_ENV
+          docker build \
+            -f dockerfiles/integration-tests.Dockerfile \
+            -t integration_test_container \
+            .
 
-      - name: Run integration tests
-        run: cd app/server && dotnet test --filter "FullyQualifiedName~IntegrationTests" --verbosity normal
+      - name: Run C# integration tests
+        run: docker run --rm --network docker-compose_integration_tests_network integration_test_container
 
-      - name: Clean up integration test environment
+      - name: Clean up containers
         if: always()
-        run: docker compose -f docker-compose/docker-compose.integration-tests.yml down -v
+        run: |
+          docker compose -f docker-compose/docker-compose.integration-tests.yml down -v || true
+          docker rmi integration_test_container || true
 
   Frontend_Linting:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Enable Corepack
-        run: corepack enable
 
       - name: Install frontend dependencies
         run: cd app/client && pnpm install --frozen-lockfile
@@ -77,19 +84,29 @@ jobs:
 
   Frontend_Tests:
     runs-on: self-hosted
+    needs: [Backend_Integration_Tests]
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Clean up existing containers
+        run: |
+          docker compose -f docker-compose/docker-compose.integration-tests.yml down -v || true
 
-      - name: Enable Corepack
-        run: corepack enable
+      - name: Spin up Api and Database
+        run: docker compose -f docker-compose/docker-compose.integration-tests.yml up -d --build
 
-      - name: Install frontend dependencies
-        run: cd app/client && pnpm install --frozen-lockfile
+      - name: Build frontend test container
+        run: |
+          docker build \
+            -f dockerfiles/client-test.Dockerfile \
+            -t client_test_container \
+            .
 
       - name: Run frontend tests
-        run: cd app/client && pnpm test --run
+        run: docker run --rm --network docker-compose_integration_tests_network client_test_container
+
+      - name: Clean up containers
+        if: always()
+        run: |
+          docker compose -f docker-compose/docker-compose.integration-tests.yml down -v || true
+          docker rmi client_test_container || true
