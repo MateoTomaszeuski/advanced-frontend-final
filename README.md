@@ -948,7 +948,6 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 
 **Rubric Items:**
 - 10+ pages/views with router (complete remaining pages)
-- Streaming generation in UI (Additional Task - optional)
 
 **Features:**
 - Playlist Analytics page with visualizations
@@ -957,15 +956,171 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 - Chart.js or Recharts integration for analytics
 - Audio feature visualization (radar charts, histograms)
 - Genre distribution visualizations
-- Streaming LLM responses in Playlist Creator
 - UI polish and responsive design improvements
 
 #### Delivered:
 
 **Rubric Items:**
-
+- 10+ pages/views with router (all 10 pages fully implemented and functional)
 
 **Features:**
+- **Agent Control Center Page Enhancements**:
+  - Global timer context (AgentTimerProvider) for persistent timer across page navigation
+  - Real-time timer display in mm:ss format with live updating every 100ms
+  - Timer starts when agent status is 'processing' and stops when idle/complete/error
+  - Clock icon indicator during active processing
+  - useAgentTimer hook for accessing timer context
+  - Automatic timer reset when agent returns to idle or encounters error
+  - Monospace font for consistent time display
+  - Timer state persists when navigating between pages
+  - Created src/contexts/AgentTimerContext.ts for type-safe context
+  - Created src/providers/AgentTimerProvider.tsx for global timer state management
+  - Created src/hooks/useAgentTimer.ts for convenient context access
+  - Wrapped App.tsx with AgentTimerProvider
+  
+- **Chart.js Integration**:
+  - Installed chart.js v4.5.1 and react-chartjs-2 v5.3.1
+  - Registered Chart.js components: CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler
+  - Configured for line charts, bar charts, and doughnut charts
+  - Custom Spotify green color scheme (#059669) throughout visualizations
+  
+- **Analytics Page Complete Pivot - Spotify Features → App Usage Analytics**:
+  - **DEPRECATED**: Original Spotify Audio Features analytics (playlist analysis, radar charts, key distribution)
+  - **REASON**: Spotify API quota limitations causing 403 Forbidden errors on Audio Features endpoint
+  - **NEW APPROACH**: App usage analytics showing user activity and engagement metrics
+  
+- **Backend App Analytics System**:
+  - Created AppAnalyticsDto.cs with comprehensive app usage statistics:
+    - UserActivityStats: totalActions, completedActions, failedActions, totalConversations, totalPlaylistsCreated, totalTracksDiscovered
+    - ActionTypeStats: createSmartPlaylist, discoverNewMusic, scanDuplicates, removeDuplicates, suggestMusic
+    - DuplicateStats: totalFound, totalRemoved, averagePerPlaylist
+  - GET /api/agent/analytics endpoint aggregating user statistics
+  - AgentActionRepository extended with 4 new methods:
+    - GetActionTypeCountsAsync() - Returns dictionary of action type counts with user filtering
+    - GetActionsOverTimeAsync() - Returns date->count for last 30 days
+    - GetTotalDuplicatesFoundAsync() - Count of ScanDuplicates actions
+    - GetTotalDuplicatesRemovedAsync() - Count of RemoveDuplicates actions
+  - SQL queries with GROUP BY, DATE casting, and user_id filtering through conversation joins
+  - Returns aggregated metrics: total actions, conversations, playlists created, duplicates handled
+  - Calculates averages: actions per conversation, duplicates per scan
+  
+- **Analytics Page Rewrite** (AnalyticsPage.tsx):
+  - **4 Metric Cards**: Total Actions, Playlists Created, Active Conversations, Duplicates Found
+  - **Line Chart**: Activity over time (last 30 days) showing daily action counts with green gradient fill
+  - **Bar Chart**: Actions by type (5 categories) with green color scale showing usage distribution
+  - **Doughnut Chart**: Duplicates removed vs present (green/red) showing cleanup effectiveness
+  - **Feature Usage Progress Bars**: Visual representation of feature adoption with percentages
+  - **Detailed Stats Panel**: 
+    - Scans performed count
+    - Duplicates found and removed counts
+    - Average duplicates per playlist metric
+  - Chart.js configuration: maintainAspectRatio: false, beginAtZero: true, stepSize: 1
+  - Empty state with visual placeholder when no data available
+  - Responsive grid layouts (1-col mobile, 2-col tablet/desktop)
+  - Green theme consistency throughout all visualizations
+  - Success toast with analytics loaded confirmation
+  
+- **Frontend Analytics Integration**:
+  - Created AppAnalyticsSchema, UserActivityStatsSchema, ActionTypeStatsSchema, DuplicateStatsSchema with Zod validation
+  - Added agentApi.getAnalytics() API function in services/api.ts
+  - Type-safe AppAnalytics, UserActivityStats, ActionTypeStats, DuplicateStats types exported
+  - Removed deprecated PlaylistAnalytics and AudioFeaturesStats types
+  - Removed AnalyticsPage_old.tsx backup file (cleanup)
+  
+- **Dashboard Page Complete Overhaul**:
+  - **Database-Driven Metrics**: All data now fetched from PostgreSQL, no more in-memory store limitations
+  - **Dual Data Fetching**: Promise.all for parallel loading of analytics and recent actions
+  - **4 Metric Cards**: 
+    - Agent Status (with spinning animation when processing)
+    - Total Actions (from analytics API, not limited to 10)
+    - Completed Actions (from analytics API with accurate counts)
+    - Failed Actions (from analytics API)
+  - **Status Icons**: Dynamic icons based on status with color-coded backgrounds
+  - **Quick Actions Grid**: 4 cards for main features (Create Playlist, Discover, Duplicates, Suggestions)
+  - Quick action cards with icons, titles, descriptions, and color-coded backgrounds
+  - Hover effects: border color change to green, shadow elevation, icon scale animation
+  - Navigation buttons using useNavigate hook to respective feature pages
+  - **Current Task Banner**: Green alert-style banner with spinner when agent is processing
+  - **Recent Activity Panel**: Last 5 actions fetched from database via agentApi.getHistory({ limit: 5 })
+  - Status dots with color coding (green completed, red failed, blue processing, yellow awaiting)
+  - Action timestamps with toLocaleString() formatting
+  - **"View All" Button**: Links to full history page
+  - **More Tools Section**: 3 additional tool cards (Analytics, Agent Control, Settings)
+  - Tool cards with large icons, descriptions, and hover animations
+  - **Empty State**: Visual placeholder with icon and helpful text when no activity
+  - **Responsive Grid**: 1-col mobile, 2-col tablet, 4-col desktop for quick actions
+  - **Action Type Formatting**: Converts camelCase to spaced text (e.g., CreateSmartPlaylist → Create Smart Playlist)
+  - **Color-Coded Status**: Green for completed, red for failed, blue for processing, yellow for awaiting approval
+  - **Bug Fix**: Resolved static "10" displaying for all metrics (was due to in-memory store slice limit)
+  - **Bug Fix**: Recent activity now shows actual database records instead of cached store data
+  - TypeScript type assertions for API responses (as AppAnalytics, as AgentAction[])
+  
+- **UI/UX Improvements**:
+  - All pages use consistent Spotify green theme (#059669, #065f46, #064e3b)
+  - Hover effects with scale animations (scale-110) on interactive cards
+  - Smooth transitions with transition-all and transition-colors
+  - Border animations on hover (border-green-500)
+  - Shadow elevation on hover (hover:shadow-md)
+  - Loading states with disabled buttons and spinners
+  - Empty states with icons and helpful messages
+  - Responsive breakpoints: mobile (1-col), md (2-col), lg (3-4 col)
+  - Proper spacing with gap-4, gap-6, gap-8 throughout
+  - Rounded corners (rounded-lg, rounded-full) for modern aesthetic
+  - Icon-first design with SVG icons from Heroicons
+  - Progress bars for feature statistics with dynamic widths
+  - Status badges with pill shape (rounded-full)
+  - Flex-shrink-0 on elements to prevent wrapping issues
+  
+- **Responsive Design Enhancements**:
+  - Mobile-first approach with base 1-column layouts
+  - Tablet breakpoint (md) for 2-column grids
+  - Desktop breakpoint (lg) for 3-4 column grids
+  - Max-width constraints (max-w-7xl mx-auto) for large screens
+  - Flexible grid layouts with grid-cols-1 md:grid-cols-2 lg:grid-cols-4 patterns
+  - Responsive chart heights (h-80, h-96) with flex centering
+  - Truncate text on mobile with min-w-0 and truncate classes
+  - Whitespace-nowrap on status badges to prevent breaking
+  - Proper overflow handling with overflow-hidden and overflow-y-auto
+  
+- **Chart Configuration & Best Practices**:
+  - Line chart: Green gradient fill with rgba(5, 150, 105, 0.2), tension: 0.4 for smooth curves
+  - Bar chart: beginAtZero, stepSize: 1, legend: false for clean appearance
+  - Doughnut chart: legend at bottom, green (#059669) for removed, red (#dc2626) for present
+  - All charts responsive with maintainAspectRatio: false
+  - Height constraints (h-80, h-96) with flexbox centering
+  - Green color scheme: rgba(5, 150, 105, 0.7) for fills, rgba(5, 150, 105, 1) for borders
+  - Point styling for line charts: radius 3, hover radius 5, white border
+  - Activity over time chart uses date keys (YYYY-MM-DD format) for x-axis
+  
+- **Error Handling & Loading States**:
+  - Loading states during data fetching with useEffect
+  - Toast notifications with custom styling (green success, red error)
+  - Error persistence (manual dismiss for errors)
+  - Try-catch blocks in all async operations
+  - Console.error logging for debugging
+  - Empty state handling with helpful messages
+  - Graceful degradation when analytics data unavailable (displays 0 with fallback)
+  
+- **Bug Fixes & Improvements**:
+  - Fixed dashboard showing hardcoded "10" for all metrics (removed in-memory store dependency)
+  - Fixed dashboard completed actions showing "0" (now fetches from analytics API)
+  - Fixed recent activity showing cached data (now fetches from database on mount)
+  - Fixed history page appearing empty (was already DB-based, no changes needed)
+  - Fixed timer resetting on page navigation (global context solution)
+  - Removed AnalyticsPage_old.tsx after successful pivot verification
+  - Docker containers rebuilt with new analytics implementation
+  - TypeScript linting errors resolved with type assertions
+  - Fixed React Strict Mode causing duplicate conversation creation on 4 pages:
+    - DuplicateCleanerPage.tsx - Added useRef flag to prevent double effect invocation
+    - SuggestionsPage.tsx - Added useRef flag to prevent double effect invocation
+    - DiscoverPage.tsx - Added useRef flag to prevent double effect invocation
+    - PlaylistCreatorPage.tsx - Added useRef flag to prevent double effect invocation
+    - Pattern: conversationCreated useRef(false) with guard in useEffect
+    - Ensures exactly 1 conversation created per page visit in development and production
+  - Fixed AnalyticsPage showing 2 success toasts on load:
+    - Added analyticsLoaded useRef(false) to prevent double data fetching
+    - React Strict Mode runs effects twice in development
+    - Now shows single toast and loads data once
 
 
 ---

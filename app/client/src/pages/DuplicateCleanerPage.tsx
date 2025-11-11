@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { SpotifyConnectionAlert } from '../components/SpotifyConnectionAlert';
 import { SelectDropdown } from '../components/forms/SelectDropdown';
@@ -13,6 +13,7 @@ export function DuplicateCleanerPage() {
   const [scanResult, setScanResult] = useState<RemoveDuplicatesResponse | null>(null);
   const [selectedToRemove, setSelectedToRemove] = useState<Set<string>>(new Set());
   const [conversationId, setConversationId] = useState<number | null>(null);
+  const conversationCreated = useRef(false);
 
   const { isLoading, createConversation, scanDuplicates, confirmRemoveDuplicates } = useAgent();
 
@@ -30,6 +31,9 @@ export function DuplicateCleanerPage() {
     let mounted = true;
 
     const init = async () => {
+      if (conversationCreated.current) return;
+      conversationCreated.current = true;
+
       try {
         const conversation = await createConversation('Duplicate Cleaner Session');
         if (mounted) {
@@ -37,6 +41,7 @@ export function DuplicateCleanerPage() {
         }
       } catch (error) {
         console.error('Failed to create conversation:', error);
+        conversationCreated.current = false;
       }
 
       try {

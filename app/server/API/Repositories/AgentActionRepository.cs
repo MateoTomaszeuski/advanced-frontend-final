@@ -1,4 +1,4 @@
-using API.Data;
+    using API.Data;
 using API.Models;
 using Dapper;
 using System.Text.Json;
@@ -14,6 +14,10 @@ public interface IAgentActionRepository
     Task UpdateAsync(AgentAction action);
     Task DeleteAsync(int id);
     Task<IEnumerable<AgentAction>> GetRecentPlaylistCreationsAsync(int userId, int limit);
+    Task<Dictionary<string, int>> GetActionTypeCountsAsync(int userId);
+    Task<Dictionary<string, int>> GetActionsOverTimeAsync(int userId, int days);
+    Task<int> GetTotalDuplicatesFoundAsync(int userId);
+    Task<int> GetTotalDuplicatesRemovedAsync(int userId);
 }
 
 public class AgentActionRepository : IAgentActionRepository
@@ -130,6 +134,75 @@ public class AgentActionRepository : IAgentActionRepository
 
         var actions = await connection.QueryAsync<AgentActionDto>(sql, new { UserId = userId, Limit = limit });
         return actions.Select(a => a.ToAgentAction());
+    }
+
+    public async Task<Dictionary<string, int>> GetActionTypeCountsAsync(int userId)
+    {
+        using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+        
+        const string sql = @"
+            SELECT aa.action_type, COUNT(*) as count
+            FROM agent_actions aa
+            INNER JOIN conversations c ON aa.conversation_id = c.id
+            WHERE c.user_id = @UserId AND aa.status = 'Completed'
+            GROUP BY aa.action_type";
+
+        var results = await connection.QueryAsync<(string action_type, int count)>(sql, new { UserId = userId });
+        return results.ToDictionary(r => r.action_type, r => r.count);
+    }
+
+    public async Task<Dictionary<string, int>> GetActionsOverTimeAsync(int userId, int days)
+    {
+        using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+        
+        var sql = $@"
+            SELECT DATE(aa.created_at) as date, COUNT(*) as count
+            FROM agent_actions aa
+            INNER JOIN conversations c ON aa.conversation_id = c.id
+            WHERE c.user_id = @UserId 
+                AND aa.created_at >= NOW() - INTERVAL '{days} days'
+                AND aa.status = 'Completed'
+            GROUP BY DATE(aa.created_at)
+            ORDER BY date";
+
+        var results = await connection.QueryAsync<(DateTime date, int count)>(sql, new { UserId = userId });
+        return results.ToDictionary(r => r.date.ToString("yyyy-MM-dd"), r => r.count);
+    }
+
+    public async Task<int> GetTotalDuplicatesFoundAsync(int userId)
+    {
+        using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+        
+        const string sql = @"
+            SELECT COALESCE(SUM(
+                CAST(COALESCE(result->>'totalDuplicates', '0') AS INTEGER)
+            ), 0) as total
+            FROM agent_actions aa
+            INNER JOIN conversations c ON aa.conversation_id = c.id
+            WHERE c.user_id = @UserId 
+                AND aa.action_type = 'ScanDuplicates'
+                AND aa.status = 'Completed'
+                AND aa.result IS NOT NULL";
+
+        return await connection.ExecuteScalarAsync<int>(sql, new { UserId = userId });
+    }
+
+    public async Task<int> GetTotalDuplicatesRemovedAsync(int userId)
+    {
+        using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+        
+        const string sql = @"
+            SELECT COALESCE(SUM(
+                CAST(COALESCE(result->>'removedCount', '0') AS INTEGER)
+            ), 0) as total
+            FROM agent_actions aa
+            INNER JOIN conversations c ON aa.conversation_id = c.id
+            WHERE c.user_id = @UserId 
+                AND aa.action_type = 'RemoveDuplicates'
+                AND aa.status = 'Completed'
+                AND aa.result IS NOT NULL";
+
+        return await connection.ExecuteScalarAsync<int>(sql, new { UserId = userId });
     }
 }
 

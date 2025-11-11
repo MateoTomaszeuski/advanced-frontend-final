@@ -1,19 +1,21 @@
 import { MainLayout } from '../components/layout/MainLayout';
 import { useAgentStore } from '../stores/useAgentStore';
-import { useEffect, useState, useCallback } from 'react';
-import { conversationApi } from '../services/api';
-import type { Conversation } from '../types/api';
+import { conversationApi, agentApi } from '../services/api';
+import { useState, useEffect, useCallback } from 'react';
+import type { Conversation, AgentAction } from '../types/api';
+import { useAgentTimer } from '../hooks/useAgentTimer';
+import { showToast } from '../utils/toast';
 
 export function AgentControlPage() {
   const {
     status,
     currentTask,
-    progress,
     recentActions,
     currentConversation,
     setConversations,
   } = useAgentStore();
 
+  const { elapsedTime } = useAgentTimer();
   const [loading, setLoading] = useState(true);
   const [allConversations, setAllConversations] = useState<Conversation[]>([]);
 
@@ -24,6 +26,9 @@ export function AgentControlPage() {
       setConversations(convs);
     } catch (error) {
       console.error('Failed to load conversations:', error);
+      showToast.error(
+        error instanceof Error ? error.message : 'Failed to load conversations'
+      );
     } finally {
       setLoading(false);
     }
@@ -32,6 +37,12 @@ export function AgentControlPage() {
   useEffect(() => {
     loadConversations();
   }, [loadConversations]);
+
+  const formatElapsedTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -106,15 +117,16 @@ export function AgentControlPage() {
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Progress</h3>
-            <div className="space-y-2">
-              <p className="text-2xl font-bold text-gray-900">{progress}%</p>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+            <h3 className="text-sm font-medium text-gray-500 mb-2">Time Elapsed</h3>
+            <div className="flex items-center gap-3">
+              <p className="text-2xl font-bold text-gray-900 font-mono">
+                {formatElapsedTime(elapsedTime)}
+              </p>
+              {status === 'processing' && (
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
             </div>
           </div>
         </div>

@@ -212,10 +212,35 @@ public class SpotifyService : ISpotifyService
     {
         SetAuthorizationHeader(accessToken);
 
+        // Spotify API allows max 100 track IDs per request
+        if (trackIds.Length > 100)
+        {
+            _logger.LogWarning("Received {Count} track IDs, but Spotify API max is 100. Processing in batches.", trackIds.Length);
+            var allFeatures = new List<AudioFeatures>();
+            
+            for (int i = 0; i < trackIds.Length; i += 100)
+            {
+                var batch = trackIds.Skip(i).Take(100).ToArray();
+                var batchFeatures = await GetAudioFeaturesAsync(accessToken, batch);
+                allFeatures.AddRange(batchFeatures);
+            }
+            
+            return allFeatures.ToArray();
+        }
+
         var ids = string.Join(",", trackIds);
         var url = $"{SpotifyApiBaseUrl}/audio-features?ids={ids}";
 
+        _logger.LogInformation("Fetching audio features for {Count} tracks", trackIds.Length);
         var response = await _httpClient.GetAsync(url);
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            _logger.LogError("Spotify audio features request failed with status {StatusCode}. Error: {Error}", 
+                response.StatusCode, errorContent);
+        }
+        
         response.EnsureSuccessStatusCode();
 
         var content = await response.Content.ReadAsStringAsync();

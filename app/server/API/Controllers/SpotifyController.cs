@@ -247,6 +247,167 @@ public class SpotifyController : ControllerBase
             return StatusCode(500, new { error = "Failed to add tracks to playlist" });
         }
     }
+
+    [HttpGet("playlists/{playlistId}/analytics")]
+    public async Task<IActionResult> GetPlaylistAnalytics(string playlistId)
+    {
+        var user = this.GetCurrentUser();
+        if (user == null)
+        {
+            return this.UnauthorizedUser();
+        }
+
+        try
+        {
+            var accessToken = await _tokenService.GetValidAccessTokenAsync(user);
+            
+            // Get playlist details
+            var playlist = await _spotifyService.GetPlaylistAsync(accessToken, playlistId);
+            var tracks = await _spotifyService.GetPlaylistTracksAsync(accessToken, playlistId);
+            
+            if (tracks.Length == 0)
+            {
+                return BadRequest(new { error = "Playlist has no tracks" });
+            }
+
+            // Get audio features for all tracks - with graceful degradation
+            var trackIds = tracks.Select(t => t.Id).ToArray();
+            
+            try
+            {
+                var audioFeatures = await _spotifyService.GetAudioFeaturesAsync(accessToken, trackIds);
+
+                if (audioFeatures.Length == 0)
+                {
+                    throw new InvalidOperationException("No audio features returned");
+                }
+
+                // Calculate aggregate statistics
+                var avgDanceability = audioFeatures.Average(af => af.Danceability);
+                var avgEnergy = audioFeatures.Average(af => af.Energy);
+                var avgValence = audioFeatures.Average(af => af.Valence);
+                var avgAcousticness = audioFeatures.Average(af => af.Acousticness);
+                var avgInstrumentalness = audioFeatures.Average(af => af.Instrumentalness);
+                var avgLiveness = audioFeatures.Average(af => af.Liveness);
+                var avgSpeechiness = audioFeatures.Average(af => af.Speechiness);
+                var avgTempo = audioFeatures.Average(af => af.Tempo);
+                var avgLoudness = audioFeatures.Average(af => af.Loudness);
+                
+                var minTempo = audioFeatures.Min(af => af.Tempo);
+                var maxTempo = audioFeatures.Max(af => af.Tempo);
+                var minEnergy = audioFeatures.Min(af => af.Energy);
+                var maxEnergy = audioFeatures.Max(af => af.Energy);
+
+                // Key distribution
+                var keyDistribution = audioFeatures
+                    .GroupBy(af => af.Key)
+                    .ToDictionary(g => g.Key, g => g.Count());
+
+                // Mode distribution
+                var modeDistribution = audioFeatures
+                    .GroupBy(af => af.Mode)
+                    .ToDictionary(g => g.Key, g => g.Count());
+
+                // Genre distribution (simplified - would need artist data for full genre info)
+                var genres = new Dictionary<string, int>();
+
+                // Decade distribution based on album release dates
+                var decadeDistribution = new Dictionary<string, int>();
+
+                var analytics = new API.DTOs.Spotify.PlaylistAnalyticsResponse(
+                    playlist.Id,
+                    playlist.Name,
+                    tracks.Length,
+                    new API.DTOs.Spotify.AudioFeaturesStats(
+                        avgDanceability,
+                        avgEnergy,
+                        avgValence,
+                        avgAcousticness,
+                        avgInstrumentalness,
+                        avgLiveness,
+                        avgSpeechiness,
+                        avgTempo,
+                        avgLoudness,
+                        minTempo,
+                        maxTempo,
+                        minEnergy,
+                        maxEnergy
+                    ),
+                    genres,
+                    keyDistribution,
+                    modeDistribution,
+                    decadeDistribution
+                );
+
+                return Ok(analytics);
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                _logger.LogWarning(ex, "Spotify Audio Features API returned 403 - using basic analytics only");
+                
+                // Return basic analytics without audio features
+                var basicAnalytics = new API.DTOs.Spotify.PlaylistAnalyticsResponse(
+                    playlist.Id,
+                    playlist.Name,
+                    tracks.Length,
+                    new API.DTOs.Spotify.AudioFeaturesStats(
+                        0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, // Default values for audio features
+                        120.0f, -5.0f, // Default tempo and loudness
+                        60.0f, 180.0f, // Default min/max tempo
+                        0.0f, 1.0f // Default min/max energy
+                    ),
+                    new Dictionary<string, int>(), // Empty genres
+                    new Dictionary<int, int>(), // Empty key distribution
+                    new Dictionary<int, int>(), // Empty mode distribution
+                    new Dictionary<string, int>() // Empty decade distribution
+                );
+                
+                return StatusCode(403, new { 
+                    error = "Spotify Audio Features API access denied",
+                    message = "Your Spotify Developer account needs extended quota approval to access audio features. The Audio Features API is restricted for new developer apps.",
+                    details = "To enable full analytics: 1) Visit the Spotify Developer Dashboard, 2) Select your app, 3) Request a quota extension for the Audio Features API, 4) Explain your use case (educational project).",
+                    fallback = basicAnalytics
+                });
+            }
+            catch (Exception innerEx)
+            {
+                _logger.LogWarning(innerEx, "Failed to fetch audio features - returning basic analytics");
+                
+                // Return basic analytics without audio features
+                var basicAnalytics = new API.DTOs.Spotify.PlaylistAnalyticsResponse(
+                    playlist.Id,
+                    playlist.Name,
+                    tracks.Length,
+                    new API.DTOs.Spotify.AudioFeaturesStats(
+                        0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+                        120.0f, -5.0f,
+                        60.0f, 180.0f,
+                        0.0f, 1.0f
+                    ),
+                    new Dictionary<string, int>(),
+                    new Dictionary<int, int>(),
+                    new Dictionary<int, int>(),
+                    new Dictionary<string, int>()
+                );
+                
+                return StatusCode(503, new { 
+                    error = "Audio features temporarily unavailable",
+                    message = "Unable to fetch audio features at this time. Showing basic playlist information only.",
+                    fallback = basicAnalytics
+                });
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Spotify token issue for user: {Email}", user.Email);
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching playlist analytics for playlist {PlaylistId} for user: {Email}", playlistId, user.Email);
+            return StatusCode(500, new { error = "Failed to fetch playlist analytics" });
+        }
+    }
 }
 
 public record ConnectSpotifyRequest(

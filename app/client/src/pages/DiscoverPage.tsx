@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { SpotifyConnectionAlert } from '../components/SpotifyConnectionAlert';
 import { Button } from '../components/forms/Button';
@@ -14,6 +14,7 @@ export function DiscoverPage() {
   const [limit, setLimit] = useState('10');
   const [spotifyConnected, setSpotifyConnected] = useState(false);
   const [checkingConnection, setCheckingConnection] = useState(true);
+  const conversationCreated = useRef(false);
   const auth = useAuth();
   
   const { discoverNewMusic, createConversation, isLoading } = useAgent();
@@ -43,17 +44,19 @@ export function DiscoverPage() {
 
   useEffect(() => {
     const initConversation = async () => {
-      if (!currentConversation && spotifyConnected) {
+      if (!currentConversation && spotifyConnected && !conversationCreated.current) {
+        conversationCreated.current = true;
         try {
           const conv = await createConversation('Music Discovery');
           setCurrentConversation(conv);
         } catch (error) {
           console.error('Failed to create conversation:', error);
+          conversationCreated.current = false;
         }
       }
     };
     initConversation();
-  }, [currentConversation, createConversation, setCurrentConversation, spotifyConnected]);
+  }, [currentConversation, spotifyConnected, createConversation, setCurrentConversation]);
 
   const handleDiscover = async () => {
     if (!currentConversation) {

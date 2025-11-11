@@ -42,31 +42,56 @@ class ApiClient {
 
     const url = `${this.baseUrl}${endpoint}`;
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('Unauthorized - please sign in again');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        
+        if (response.status === 401) {
+          throw new Error('Your session has expired. Please sign in again.');
+        }
+
+        if (response.status === 403) {
+          throw new Error('You do not have permission to perform this action.');
+        }
+
+        if (response.status === 404) {
+          throw new Error('The requested resource was not found.');
+        }
+
+        if (response.status === 500) {
+          throw new Error('A server error occurred. Please try again later.');
+        }
+
+        if (response.status === 400) {
+          const message = errorData?.error || errorData?.message || 'Invalid request. Please check your input and try again.';
+          throw new Error(message);
+        }
+
+        const message = errorData?.error || errorData?.message || 'An unexpected error occurred. Please try again.';
+        throw new Error(message);
       }
 
-      if (response.status === 403) {
-        throw new Error('Forbidden - you do not have access to this resource');
+      if (response.status === 204) {
+        return {} as T;
       }
 
-      const errorData = await response.json().catch(() => null);
-      throw new Error(
-        errorData?.error || errorData?.message || `HTTP ${response.status}`
-      );
+      return response.json();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      
+      if (typeof error === 'string') {
+        throw new Error(error);
+      }
+      
+      throw new Error('Network error. Please check your connection and try again.');
     }
-
-    if (response.status === 204) {
-      return {} as T;
-    }
-
-    return response.json();
   }
 
   async get<T>(endpoint: string): Promise<T> {

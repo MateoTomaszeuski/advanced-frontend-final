@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { SpotifyConnectionAlert } from '../components/SpotifyConnectionAlert';
 import { SelectDropdown } from '../components/forms/SelectDropdown';
@@ -18,6 +18,7 @@ export function SuggestionsPage() {
   const [conversationId, setConversationId] = useState<number | null>(null);
   const [selectedTracks, setSelectedTracks] = useState<Set<string>>(new Set());
   const [isAdding, setIsAdding] = useState(false);
+  const conversationCreated = useRef(false);
 
   const { isLoading, createConversation, suggestMusic } = useAgent();
 
@@ -35,6 +36,9 @@ export function SuggestionsPage() {
     let mounted = true;
 
     const init = async () => {
+      if (conversationCreated.current) return;
+      conversationCreated.current = true;
+
       try {
         const conversation = await createConversation('Music Suggestions Session');
         if (mounted) {
@@ -42,6 +46,7 @@ export function SuggestionsPage() {
         }
       } catch (error) {
         console.error('Failed to create conversation:', error);
+        conversationCreated.current = false;
       }
 
       try {

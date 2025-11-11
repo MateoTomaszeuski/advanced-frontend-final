@@ -321,7 +321,78 @@ public class AgentController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting action history");
-            return StatusCode(500, new { error = "Failed to fetch action history" });
+            return StatusCode(500, new { error = "Failed to get recent playlists" });
+        }
+    }
+
+    [HttpGet("analytics")]
+    public async Task<IActionResult> GetAppAnalytics()
+    {
+        var user = this.GetCurrentUser();
+        if (user == null)
+        {
+            return this.UnauthorizedUser();
+        }
+
+        _logger.LogInformation("GetAppAnalytics request from user: {Email}", user.Email);
+
+        try
+        {
+            // Get action type counts
+            var actionTypeCounts = await _actionRepository.GetActionTypeCountsAsync(user.Id);
+            
+            // Get actions over time (last 30 days)
+            var actionsOverTime = await _actionRepository.GetActionsOverTimeAsync(user.Id, 30);
+            
+            // Get total conversations
+            var conversations = await _conversationRepository.GetAllByUserIdAsync(user.Id);
+            var totalConversations = conversations.Count();
+            
+            // Calculate totals
+            var totalActions = actionTypeCounts.Values.Sum();
+            var smartPlaylists = actionTypeCounts.GetValueOrDefault("CreateSmartPlaylist", 0);
+            var musicDiscovery = actionTypeCounts.GetValueOrDefault("DiscoverNewMusic", 0);
+            var duplicateScans = actionTypeCounts.GetValueOrDefault("ScanDuplicates", 0);
+            var duplicateRemovals = actionTypeCounts.GetValueOrDefault("RemoveDuplicates", 0);
+            var musicSuggestions = actionTypeCounts.GetValueOrDefault("SuggestMusicByContext", 0);
+            
+            // Get duplicate stats
+            var totalDuplicatesFound = await _actionRepository.GetTotalDuplicatesFoundAsync(user.Id);
+            var totalDuplicatesRemoved = await _actionRepository.GetTotalDuplicatesRemovedAsync(user.Id);
+            var avgDuplicates = duplicateScans > 0 ? (double)totalDuplicatesFound / duplicateScans : 0;
+            
+            var analytics = new API.DTOs.Analytics.AppAnalyticsResponse(
+                UserActivity: new API.DTOs.Analytics.UserActivityStats(
+                    TotalActions: totalActions,
+                    CompletedActions: totalActions,
+                    FailedActions: 0,
+                    TotalConversations: totalConversations,
+                    TotalPlaylistsCreated: smartPlaylists + musicDiscovery,
+                    TotalTracksDiscovered: musicDiscovery * 10 // Estimate
+                ),
+                ActionTypes: new API.DTOs.Analytics.ActionTypeStats(
+                    SmartPlaylists: smartPlaylists,
+                    MusicDiscovery: musicDiscovery,
+                    DuplicateScans: duplicateScans,
+                    DuplicateRemovals: duplicateRemovals,
+                    MusicSuggestions: musicSuggestions
+                ),
+                ActionsOverTime: actionsOverTime,
+                PlaylistsByGenre: new Dictionary<string, int>(), // TODO: Parse from action results
+                Duplicates: new API.DTOs.Analytics.DuplicateStats(
+                    TotalScans: duplicateScans,
+                    TotalDuplicatesFound: totalDuplicatesFound,
+                    TotalDuplicatesRemoved: totalDuplicatesRemoved,
+                    AverageDuplicatesPerPlaylist: avgDuplicates
+                )
+            );
+
+            return Ok(analytics);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting app analytics");
+            return StatusCode(500, new { error = "Failed to get analytics" });
         }
     }
 }

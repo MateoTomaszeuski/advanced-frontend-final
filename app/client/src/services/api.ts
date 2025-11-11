@@ -8,6 +8,7 @@ import type {
   AgentAction,
   SpotifyConnectionStatus,
   ConnectSpotifyRequest,
+  PlaylistAnalytics,
 } from '../types/api';
 
 export const conversationApi = {
@@ -51,6 +52,9 @@ export const agentApi = {
     const queryString = queryParams.toString();
     return apiClient.get<AgentAction[]>(`/api/agent/history${queryString ? `?${queryString}` : ''}`);
   },
+
+  getAnalytics: () =>
+    apiClient.get('/api/agent/analytics'),
 };
 
 export const spotifyApi = {
@@ -72,6 +76,9 @@ export const spotifyApi = {
 
   addTracksToPlaylist: (playlistId: string, trackUris: string[]) =>
     apiClient.post(`/api/spotify/playlists/${playlistId}/tracks`, { trackUris }),
+
+  getPlaylistAnalytics: (playlistId: string) =>
+    apiClient.get<PlaylistAnalytics>(`/api/spotify/playlists/${playlistId}/analytics`),
 };
 
 export const testApi = {

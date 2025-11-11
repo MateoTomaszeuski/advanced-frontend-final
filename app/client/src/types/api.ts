@@ -19,6 +19,12 @@ export type {
   SuggestMusicResponse,
   SuggestMusicRequest,
   SpotifyPlaylist,
+  PlaylistAnalytics,
+  AudioFeaturesStats,
+  UserActivityStats,
+  ActionTypeStats,
+  DuplicateStats,
+  AppAnalytics,
 } from '../schemas/api';
 
 export interface CreateConversationRequest {

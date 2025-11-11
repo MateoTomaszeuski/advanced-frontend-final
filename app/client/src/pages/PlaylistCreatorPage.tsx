@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { SpotifyConnectionAlert } from '../components/SpotifyConnectionAlert';
 import { Button } from '../components/forms/Button';
@@ -37,6 +37,7 @@ export function PlaylistCreatorPage() {
   const [checkingConnection, setCheckingConnection] = useState(true);
   const [recentPlaylists, setRecentPlaylists] = useState<RecentPlaylist[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(false);
+  const conversationCreated = useRef(false);
   const auth = useAuth();
   
   const { createSmartPlaylist, createConversation, isLoading } = useAgent();
@@ -66,17 +67,19 @@ export function PlaylistCreatorPage() {
 
   useEffect(() => {
     const initConversation = async () => {
-      if (!currentConversation && spotifyConnected) {
+      if (!currentConversation && spotifyConnected && !conversationCreated.current) {
+        conversationCreated.current = true;
         try {
           const conv = await createConversation('Smart Playlist Creation');
           setCurrentConversation(conv);
         } catch (error) {
           console.error('Failed to create conversation:', error);
+          conversationCreated.current = false;
         }
       }
     };
     initConversation();
-  }, [currentConversation, createConversation, setCurrentConversation, spotifyConnected]);
+  }, [currentConversation, spotifyConnected, createConversation, setCurrentConversation]);
 
   useEffect(() => {
     const fetchRecent = async () => {

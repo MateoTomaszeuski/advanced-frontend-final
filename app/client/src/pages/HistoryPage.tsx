@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { agentApi } from '../services/api';
 import type { AgentAction } from '../types/api';
 import { Button } from '../components/forms/Button';
+import { showToast } from '../utils/toast';
 
 export function HistoryPage() {
   const [actions, setActions] = useState<AgentAction[]>([]);
@@ -21,6 +22,9 @@ export function HistoryPage() {
       setActions(history);
     } catch (error) {
       console.error('Failed to load history:', error);
+      showToast.error(
+        error instanceof Error ? error.message : 'Failed to load activity history'
+      );
     } finally {
       setLoading(false);
     }

@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { useEffect } from 'react';
 import { useAuth } from 'react-oidc-context';
 import { KeycloakProvider } from './providers/KeycloakProvider';
+import { AgentTimerProvider } from './providers/AgentTimerProvider';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { showToast } from './utils/toast';
@@ -106,7 +107,21 @@ function AppContent() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      <Toaster position="top-right" />
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          style: {
+            padding: '16px',
+            maxWidth: '500px',
+          },
+          success: {
+            duration: 4000,
+          },
+          error: {
+            duration: Infinity,
+          },
+        }}
+      />
     </BrowserRouter>
   );
 }
@@ -115,7 +130,9 @@ function App() {
   return (
     <ErrorBoundary>
       <KeycloakProvider>
-        <AppContent />
+        <AgentTimerProvider>
+          <AppContent />
+        </AgentTimerProvider>
       </KeycloakProvider>
     </ErrorBoundary>
   );

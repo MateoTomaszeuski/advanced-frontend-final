@@ -146,9 +146,68 @@ export const SuggestMusicRequestSchema = z.object({
 export const SpotifyPlaylistSchema = z.object({
   id: z.string(),
   name: z.string(),
-  description: z.string().optional(),
+  description: z.string().nullable(),
   uri: z.string(),
   totalTracks: z.number(),
+});
+
+export const AudioFeaturesStatsSchema = z.object({
+  avgDanceability: z.number(),
+  avgEnergy: z.number(),
+  avgValence: z.number(),
+  avgAcousticness: z.number(),
+  avgInstrumentalness: z.number(),
+  avgLiveness: z.number(),
+  avgSpeechiness: z.number(),
+  avgTempo: z.number(),
+  avgLoudness: z.number(),
+  minTempo: z.number(),
+  maxTempo: z.number(),
+  minEnergy: z.number(),
+  maxEnergy: z.number(),
+});
+
+export const PlaylistAnalyticsSchema = z.object({
+  playlistId: z.string(),
+  playlistName: z.string(),
+  totalTracks: z.number(),
+  audioFeatures: AudioFeaturesStatsSchema,
+  genres: z.record(z.string(), z.number()),
+  keys: z.record(z.string(), z.number()),
+  modes: z.record(z.string(), z.number()),
+  decadeDistribution: z.record(z.string(), z.number()),
+});
+
+export const UserActivityStatsSchema = z.object({
+  totalActions: z.number(),
+  completedActions: z.number(),
+  failedActions: z.number(),
+  totalConversations: z.number(),
+  totalPlaylistsCreated: z.number(),
+  totalTracksDiscovered: z.number(),
+});
+
+export const ActionTypeStatsSchema = z.object({
+  smartPlaylists: z.number(),
+  musicDiscovery: z.number(),
+  duplicateScans: z.number(),
+  duplicateRemovals: z.number(),
+  musicSuggestions: z.number(),
+});
+
+export const DuplicateStatsSchema = z.object({
+  totalScans: z.number(),
+  totalDuplicatesFound: z.number(),
+  totalDuplicatesRemoved: z.number(),
+  averageDuplicatesPerPlaylist: z.number(),
+});
+
+export const AppAnalyticsSchema = z.object({
+  userActivity: UserActivityStatsSchema,
+  actionTypes: ActionTypeStatsSchema,
+  actionsOverTime: z.record(z.string(), z.number()),
+  playlistsByGenre: z.record(z.string(), z.number()),
+  duplicates: DuplicateStatsSchema,
 });
 
 export type User = z.infer<typeof UserSchema>;
@@ -171,3 +230,9 @@ export type SuggestedTrack = z.infer<typeof SuggestedTrackSchema>;
 export type SuggestMusicResponse = z.infer<typeof SuggestMusicResponseSchema>;
 export type SuggestMusicRequest = z.infer<typeof SuggestMusicRequestSchema>;
 export type SpotifyPlaylist = z.infer<typeof SpotifyPlaylistSchema>;
+export type AudioFeaturesStats = z.infer<typeof AudioFeaturesStatsSchema>;
+export type PlaylistAnalytics = z.infer<typeof PlaylistAnalyticsSchema>;
+export type UserActivityStats = z.infer<typeof UserActivityStatsSchema>;
+export type ActionTypeStats = z.infer<typeof ActionTypeStatsSchema>;
+export type DuplicateStats = z.infer<typeof DuplicateStatsSchema>;
+export type AppAnalytics = z.infer<typeof AppAnalyticsSchema>;

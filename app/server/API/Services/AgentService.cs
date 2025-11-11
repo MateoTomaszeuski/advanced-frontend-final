@@ -779,72 +779,110 @@ IMPORTANT: Generate diverse alternatives - these must be tracks the user likely 
         string playlistId,
         int conversationId)
     {
-        var accessToken = await GetValidAccessTokenAsync(user);
-
-        _logger.LogInformation("Scanning playlist {PlaylistId} for duplicates for user {Email}", playlistId, user.Email);
-
-        var playlist = await _spotifyService.GetPlaylistAsync(accessToken, playlistId);
-        var playlistTracks = await _spotifyService.GetPlaylistTracksAsync(accessToken, playlistId);
-
-        var duplicateGroups = new List<DuplicateGroup>();
-        var processedTracks = new HashSet<string>();
-
-        foreach (var track in playlistTracks)
+        var action = new AgentAction
         {
-            if (processedTracks.Contains(track.Id)) continue;
+            ConversationId = conversationId,
+            ActionType = "ScanDuplicates",
+            Status = "Processing",
+            Parameters = JsonSerializer.SerializeToDocument(new { playlistId }),
+            CreatedAt = DateTime.UtcNow
+        };
 
-            var normalizedName = NormalizeTrackName(track.Name);
-            var artistNames = track.Artists.Select(a => a.Name.ToLowerInvariant()).OrderBy(n => n).ToArray();
+        action = await _actionRepository.CreateAsync(action);
 
-            var duplicates = playlistTracks
-                .Where(t => t.Id != track.Id &&
-                           NormalizeTrackName(t.Name) == normalizedName &&
-                           AreArtistsSimilar(t.Artists.Select(a => a.Name).ToArray(), track.Artists.Select(a => a.Name).ToArray()))
-                .ToArray();
+        try
+        {
+            var accessToken = await GetValidAccessTokenAsync(user);
 
-            if (duplicates.Any())
+            _logger.LogInformation("Scanning playlist {PlaylistId} for duplicates for user {Email}", playlistId, user.Email);
+
+            var playlist = await _spotifyService.GetPlaylistAsync(accessToken, playlistId);
+            var playlistTracks = await _spotifyService.GetPlaylistTracksAsync(accessToken, playlistId);
+
+            var duplicateGroups = new List<DuplicateGroup>();
+            var processedTracks = new HashSet<string>();
+
+            foreach (var track in playlistTracks)
             {
-                var allVersions = new[] { track }.Concat(duplicates).ToArray();
-                
-                foreach (var t in allVersions)
+                if (processedTracks.Contains(track.Id)) continue;
+
+                var normalizedName = NormalizeTrackName(track.Name);
+                var artistNames = track.Artists.Select(a => a.Name.ToLowerInvariant()).OrderBy(n => n).ToArray();
+
+                var duplicates = playlistTracks
+                    .Where(t => t.Id != track.Id &&
+                               NormalizeTrackName(t.Name) == normalizedName &&
+                               AreArtistsSimilar(t.Artists.Select(a => a.Name).ToArray(), track.Artists.Select(a => a.Name).ToArray()))
+                    .ToArray();
+
+                if (duplicates.Any())
                 {
-                    processedTracks.Add(t.Id);
+                    var allVersions = new[] { track }.Concat(duplicates).ToArray();
+                    
+                    foreach (var t in allVersions)
+                    {
+                        processedTracks.Add(t.Id);
+                    }
+
+                    var recommendedToKeep = allVersions
+                        .OrderByDescending(t => t.Popularity)
+                        .ThenBy(t => t.AddedAt)
+                        .First();
+
+                    var duplicateTrackDtos = allVersions.Select(t => new DuplicateTrack(
+                        t.Id,
+                        t.Uri,
+                        t.Album.Name,
+                        ParseReleaseDate(t.AddedAt),
+                        t.Popularity,
+                        t.Id == recommendedToKeep.Id
+                    )).ToArray();
+
+                    duplicateGroups.Add(new DuplicateGroup(
+                        track.Name,
+                        track.Artists.Select(a => a.Name).ToArray(),
+                        duplicateTrackDtos
+                    ));
                 }
-
-                var recommendedToKeep = allVersions
-                    .OrderByDescending(t => t.Popularity)
-                    .ThenBy(t => t.AddedAt)
-                    .First();
-
-                var duplicateTrackDtos = allVersions.Select(t => new DuplicateTrack(
-                    t.Id,
-                    t.Uri,
-                    t.Album.Name,
-                    ParseReleaseDate(t.AddedAt),
-                    t.Popularity,
-                    t.Id == recommendedToKeep.Id
-                )).ToArray();
-
-                duplicateGroups.Add(new DuplicateGroup(
-                    track.Name,
-                    track.Artists.Select(a => a.Name).ToArray(),
-                    duplicateTrackDtos
-                ));
             }
+
+            var totalDuplicateTracks = duplicateGroups.Sum(g => g.Duplicates.Length - 1);
+
+            _logger.LogInformation("Found {GroupCount} duplicate groups with {TrackCount} duplicate tracks",
+                duplicateGroups.Count, totalDuplicateTracks);
+
+            var result = new
+            {
+                playlistId = playlist.Id,
+                playlistName = playlist.Name,
+                duplicateGroups = duplicateGroups.Count,
+                totalDuplicates = totalDuplicateTracks
+            };
+
+            action.Status = "Completed";
+            action.Result = JsonSerializer.SerializeToDocument(result);
+            action.CompletedAt = DateTime.UtcNow;
+            await _actionRepository.UpdateAsync(action);
+
+            return new RemoveDuplicatesResponse(
+                playlist.Id,
+                playlist.Name,
+                duplicateGroups.Count,
+                totalDuplicateTracks,
+                duplicateGroups.ToArray()
+            );
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error scanning for duplicates in playlist {PlaylistId}", playlistId);
 
-        var totalDuplicateTracks = duplicateGroups.Sum(g => g.Duplicates.Length - 1);
+            action.Status = "Failed";
+            action.ErrorMessage = ex.Message;
+            action.CompletedAt = DateTime.UtcNow;
+            await _actionRepository.UpdateAsync(action);
 
-        _logger.LogInformation("Found {GroupCount} duplicate groups with {TrackCount} duplicate tracks",
-            duplicateGroups.Count, totalDuplicateTracks);
-
-        return new RemoveDuplicatesResponse(
-            playlist.Id,
-            playlist.Name,
-            duplicateGroups.Count,
-            totalDuplicateTracks,
-            duplicateGroups.ToArray()
-        );
+            throw;
+        }
     }
 
     public async Task<AgentActionResponse> ConfirmRemoveDuplicatesAsync(
