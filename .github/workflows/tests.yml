@@ -81,7 +81,7 @@ jobs:
         run: cd app/client && pnpm install --frozen-lockfile
 
       - name: Run ESLint
-        run: cd app/client && pnpm lint
+        run: cd app/client && pnpm lint:ci
 
   Frontend_Tests:
     runs-on: self-hosted
