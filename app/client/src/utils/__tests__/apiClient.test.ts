@@ -165,7 +165,7 @@ describe('ApiClient', () => {
       } as Response);
 
       await expect(apiClient.get('/protected')).rejects.toThrow(
-        'Unauthorized - please sign in again'
+        'Your session has expired. Please sign in again.'
       );
     });
 
@@ -177,7 +177,7 @@ describe('ApiClient', () => {
       } as Response);
 
       await expect(apiClient.get('/admin')).rejects.toThrow(
-        'Forbidden - you do not have access to this resource'
+        'You do not have permission to perform this action.'
       );
     });
 
@@ -201,7 +201,7 @@ describe('ApiClient', () => {
       } as Response);
 
       await expect(apiClient.get('/error')).rejects.toThrow(
-        'Internal server error'
+        'A server error occurred. Please try again later.'
       );
     });
 
@@ -214,7 +214,7 @@ describe('ApiClient', () => {
         },
       } as unknown as Response);
 
-      await expect(apiClient.get('/error')).rejects.toThrow('HTTP 500');
+      await expect(apiClient.get('/error')).rejects.toThrow('A server error occurred. Please try again later.');
     });
   });
 

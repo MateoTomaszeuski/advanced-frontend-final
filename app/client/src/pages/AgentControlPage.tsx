@@ -1,8 +1,8 @@
 import { MainLayout } from '../components/layout/MainLayout';
 import { useAgentStore } from '../stores/useAgentStore';
-import { conversationApi, agentApi } from '../services/api';
+import { conversationApi } from '../services/api';
 import { useState, useEffect, useCallback } from 'react';
-import type { Conversation, AgentAction } from '../types/api';
+import type { Conversation } from '../types/api';
 import { useAgentTimer } from '../hooks/useAgentTimer';
 import { showToast } from '../utils/toast';
 
