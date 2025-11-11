@@ -73,6 +73,7 @@ jobs:
 
   Frontend_Linting:
     runs-on: self-hosted
+    needs: [Backend_Tests]
     steps:
       - uses: actions/checkout@v4
 
@@ -84,7 +85,7 @@ jobs:
 
   Frontend_Tests:
     runs-on: self-hosted
-    needs: [Backend_Integration_Tests]
+    needs: [Frontend_Linting]
     steps:
       - uses: actions/checkout@v4
 
