@@ -199,35 +199,31 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 
 ### Agent Requirements
 
-[ ] 4 custom functions (actions) that can be called
+[x] 4 custom functions (actions) that can be called
 
-[ ] `createSmartPlaylist()` - autonomous playlist creation
+[x] `createSmartPlaylist()` - autonomous playlist creation
 
-[ ] `discoverNewMusic()` - autonomous new music discovery
+[x] `discoverNewMusic()` - autonomous new music discovery
 
-[ ] `removeDuplicates()` - requires user confirmation
+[x] `removeDuplicates()` - requires user confirmation (scanDuplicates + confirmRemoveDuplicates)
 
-[ ] `suggestMusicByContext()` - requires user confirmation
+[x] `suggestMusicByContext()` - requires user confirmation
 
-[ ] 1+ action(s) can be performed autonomously (createSmartPlaylist, discoverNewMusic)
+[x] 1+ action(s) can be performed autonomously (createSmartPlaylist, discoverNewMusic)
 
-[ ] 1+ action(s) require user confirmation to perform (removeDuplicates, suggestMusicByContext)
+[x] 1+ action(s) require user confirmation to perform (removeDuplicates, suggestMusicByContext)
 
-[ ] 1+ action(s) automatically adjust the UI when performed (navigate to new playlist, update dashboard)
+[x] 1+ action(s) automatically adjust the UI when performed (navigate to new playlist, update dashboard)
 
-[ ] Structured output, validated with Zod
+[x] Structured output, validated with Zod
 
-[ ] Agentic loop runs until task is complete or user intervention required
+[x] Agentic loop runs until task is complete or user intervention required
 
-[ ] LLM decisions and actions are persisted and can be inspected by users
+[x] LLM decisions and actions are persisted and can be inspected by users
 
 ### Additional Tasks (Choose 1+)
 
-[x] Real-time WebSocket communication for agent status updates (planned)
-
-[ ] Streaming generation in the UI for agent responses
-
-[ ] User configurable benchmarking tool for agent performance
+[ ] Real-time WebSocket communication for agent status updates (not implemented - uses HTTP polling)
 
 ### Technical Requirements
 
@@ -237,9 +233,9 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 
 [x] Unit tests run automatically in pipeline
 
-[x] Linter runs automatically in pipeline
+[x] Linter runs automatically in pipeline (with --max-warnings 0)
 
-[ ] Data persisted on server for multi-client access
+[x] Data persisted on server for multi-client access
 
 ### Technology Requirements
 
@@ -249,9 +245,9 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 
 [x] Error handling (API requests and render errors)
 
-[ ] Network calls - read data (GET playlists, tracks)
+[x] Network calls - read data (GET playlists, tracks)
 
-[ ] Network calls - write data (POST/PUT/DELETE playlists)
+[x] Network calls - write data (POST/PUT/DELETE playlists)
 
 [x] Developer type helping (TypeScript)
 
@@ -1130,12 +1126,12 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 #### Estimates:
 
 **Rubric Items:**
-- User configurable benchmarking tool (Additional Task - optional)
+- Implement websockets (Additional Task - optional)
 - Comprehensive unit test coverage
 
 **Features:**
 - Agent performance benchmarking dashboard
-- Benchmark configuration options
+- Implement websockets
 - Batch operations support (process multiple playlists)
 - Playlist comparison tools
 - Integration tests for Spotify API
@@ -1267,5 +1263,3 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 - Weeks 6-8 complete remaining features and testing
 - Weeks 9-10 serve as buffer for overflow and polish
 - Production deployment maintained throughout for continuous testing
-
-
