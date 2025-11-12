@@ -42,11 +42,18 @@ class ApiClient {
 
     const url = `${this.baseUrl}${endpoint}`;
 
+    // Create an AbortController for timeout (5 minutes for long operations)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
+
     try {
       const response = await fetch(url, {
         ...options,
         headers,
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -82,7 +89,17 @@ class ApiClient {
 
       return response.json();
     } catch (error) {
+      clearTimeout(timeoutId);
+      
       if (error instanceof Error) {
+        // Handle AbortError specifically (timeout)
+        if (error.name === 'AbortError') {
+          throw new Error('Request timed out. The operation may still be completing in the background. Try reloading the page to see if it completed successfully.');
+        }
+        // Handle network errors (Failed to fetch)
+        if (error.message.includes('Failed to fetch') || error.message.includes('fetch')) {
+          throw new Error('Request timed out or network error occurred. Try reloading the page to see if the operation completed successfully.');
+        }
         throw error;
       }
       

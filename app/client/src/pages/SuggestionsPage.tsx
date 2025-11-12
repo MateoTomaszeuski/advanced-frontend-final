@@ -6,7 +6,7 @@ import { SuggestionSettings } from '../components/suggestions/SuggestionSettings
 import { SuggestionResults } from '../components/suggestions/SuggestionResults';
 import { useAgent } from '../hooks/useAgent';
 import { spotifyApi } from '../services/api';
-import toast from 'react-hot-toast';
+import { showToast } from '../utils/toast';
 import type { SpotifyPlaylist, SuggestMusicResponse } from '../types/api';
 
 export function SuggestionsPage() {
@@ -97,11 +97,11 @@ export function SuggestionsPage() {
     setIsAdding(true);
     try {
       await spotifyApi.addTracksToPlaylist(selectedPlaylist, Array.from(selectedTracks));
-      toast.success(`Added ${selectedTracks.size} tracks to playlist!`);
+      showToast.success(`Added ${selectedTracks.size} tracks to playlist!`);
       setSelectedTracks(new Set());
     } catch (error) {
       console.error('Failed to add tracks:', error);
-      toast.error('Failed to add tracks to playlist');
+      showToast.error('Failed to add tracks to playlist');
     } finally {
       setIsAdding(false);
     }

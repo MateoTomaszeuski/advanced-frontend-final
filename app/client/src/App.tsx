@@ -127,6 +127,8 @@ function AppContent() {
             style: {
               padding: '12px',
             },
+            // Make error toasts dismissible by clicking
+            // They persist until manually closed
           },
         }}
         containerStyle={{

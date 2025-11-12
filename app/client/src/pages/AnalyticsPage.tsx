@@ -3,7 +3,7 @@ import { Button } from '../components/forms/Button';
 import { useState, useEffect, useRef } from 'react';
 import { agentApi } from '../services/api';
 import type { AppAnalytics } from '../types/api';
-import toast from 'react-hot-toast';
+import { showToast } from '../utils/toast';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -49,10 +49,10 @@ export function AnalyticsPage() {
     try {
       const data = await agentApi.getAnalytics();
       setAnalytics(data as AppAnalytics);
-      toast.success('Analytics loaded successfully');
+      showToast.success('Analytics loaded successfully');
     } catch (error) {
       console.error('Failed to load analytics:', error);
-      toast.error('Failed to load analytics');
+      showToast.error('Failed to load analytics');
     } finally {
       setLoading(false);
     }

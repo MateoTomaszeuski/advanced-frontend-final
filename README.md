@@ -1692,32 +1692,6 @@ An intelligent Spotify management assistant that automates playlist creation, mu
   - Improved code reusability and maintainability
   - Significantly reduced code duplication
 
-
----
-
-#### Estimates:
-
-**Rubric Items:**
-- All rubric items integration tested
-- Production deployment stable
-
-**Features:**
-- End-to-end feature integration testing
-- Cross-browser compatibility testing
-- Mobile responsiveness verification
-- Bug fixes from testing
-- Performance profiling and optimization
-- Security audit (OAuth flow, API keys)
-- Documentation updates
-
-#### Delivered:
-
-**Rubric Items:**
-
-
-**Features:**
-
-
 ---
 
 ### Dec 3 (Week 10 - Buffer & Final Polish)
@@ -1740,9 +1714,79 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 #### Delivered:
 
 **Rubric Items:**
-
+- Toasts / global notifications with user preferences
+- Settings page redesigned
+- All toast notifications respect user preferences
 
 **Features:**
+- **API Client Timeout Improvements**:
+  - Added 5-minute timeout using AbortController for all API requests
+  - Previously browser's default timeout (30-60 seconds) was causing failures on large operations
+  - Graceful timeout error handling with user-friendly messages
+  - Fixed "Failed to fetch" errors that occurred when backend completed successfully but frontend timed out
+  - Timeout errors now display: "Request timed out or network error occurred. Try reloading the page to see if the operation completed successfully."
+
+- **Settings Page Complete Redesign**:
+  - **Improved Layout**: Two-column grid on desktop for better space utilization
+  - **Card-Based Design**: Clear visual hierarchy with emojis (👤, 🎵, ⚙️, ⚠️)
+  - **Keycloak Account Section**: Clean display of name, email, username with uppercase labels
+  - **Spotify Account Section**:
+    - Beautiful profile card when connected (profile pic with green ring, name, email, country)
+    - Animated green pulse dot for active connection status
+    - Empty state with large icon and clear CTA when not connected
+    - Token expiry information display
+    - Full-width responsive buttons
+  - **Agent Preferences Section**: Background-highlighted toggle for notifications
+  - **Danger Zone**: Red border and warning styling for destructive actions
+  - **Removed Auto-Approve Section**: Eliminated unused auto-approve toggle as requested
+
+- **User Preferences System**:
+  - Added `UserPreferences` interface to user store with `notificationsEnabled` property
+  - Preferences persist in localStorage via Zustand persist middleware
+  - Default: notifications enabled
+  - `updatePreferences()` action to modify preferences
+  - Preferences cleared when user logs out
+  - Tied to user account (persists per email)
+
+- **Toast Notification Preference Integration**:
+  - Updated `showToast` utility to check user preferences before displaying any toast
+  - All toast types respect the setting: success, error, loading, and promise toasts
+  - `areNotificationsEnabled()` helper function checks Zustand state
+  - When disabled, toast functions return early without displaying anything
+  - Settings toggle confirmation toasts bypass preference check (intentional for user feedback)
+  
+- **Comprehensive Toast Replacement**:
+  - Replaced all raw `toast` imports with `showToast` utility across entire application
+  - Updated 11 toast calls in `hooks/useAgent.ts`
+  - Updated 8 toast calls in `pages/SettingsPage.tsx` (OAuth flows and connection management)
+  - Updated 2 toast calls in `pages/AnalyticsPage.tsx`
+  - Updated 2 toast calls in `pages/PlaylistCreatorPage.tsx`
+  - Updated 2 toast calls in `pages/SuggestionsPage.tsx`
+  - Updated 1 toast call in `pages/DiscoverPage.tsx`
+  - Only exceptions: Settings notification toggle (intentional) and test files
+
+- **Error Toast Improvements**:
+  - Error toasts now dismissible by clicking (added cursor: pointer)
+  - Duration set to Infinity but users can manually close them
+  - Persistent errors don't auto-dismiss but remain user-controllable
+  - Success toasts still auto-dismiss after 4 seconds
+
+- **UX Enhancements**:
+  - Immediate feedback when toggling notifications:
+    - "Notifications enabled" (green toast with ✓)
+    - "Notifications disabled" (gray toast with 🔕)
+  - Profile pictures with green ring border in Spotify section
+  - Animated status indicators (pulsing green dot)
+  - Better responsive design with grid layout
+  - Clearer visual separation between sections
+  - More intuitive button placement and sizing
+  - Icon indicators throughout settings page
+
+- **Bug Fixes**:
+  - Fixed error toasts not being closeable (added cursor pointer and proper click handling)
+  - Fixed timeout errors showing "Failed to fetch" instead of helpful message
+  - Fixed Analytics page showing toasts even when notifications disabled
+  - Fixed all pages showing toasts when preferences set to disabled
 
 
 ---

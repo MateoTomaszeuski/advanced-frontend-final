@@ -9,7 +9,7 @@ import { useAgent } from '../hooks/useAgent';
 import { useAgentStore } from '../stores/useAgentStore';
 import { spotifyApi } from '../services/api';
 import { useAuth } from 'react-oidc-context';
-import toast from 'react-hot-toast';
+import { showToast } from '../utils/toast';
 import type { AgentActionResult } from '../types/api';
 
 export function DiscoverPage() {
@@ -62,7 +62,7 @@ export function DiscoverPage() {
 
   const handleDiscover = async () => {
     if (!currentConversation) {
-      toast.error('No conversation found. Please refresh the page.');
+      showToast.error('No conversation found. Please refresh the page.');
       return;
     }
 

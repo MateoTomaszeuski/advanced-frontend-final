@@ -5,9 +5,10 @@ import { useUserStore } from '../stores/useUserStore';
 import { spotifyApi } from '../services/api';
 import { useAuth } from 'react-oidc-context';
 import toast from 'react-hot-toast';
+import { showToast } from '../utils/toast';
 
 export function SettingsPage() {
-  const { updateSpotifyConnection } = useUserStore();
+  const { updateSpotifyConnection, preferences, updatePreferences } = useUserStore();
   const auth = useAuth();
   const [spotifyStatus, setSpotifyStatus] = useState<{
     isConnected: boolean;
@@ -74,7 +75,7 @@ export function SettingsPage() {
       });
 
       if (error) {
-        toast.error(`Spotify authorization failed: ${error}`);
+        showToast.error(`Spotify authorization failed: ${error}`);
         window.history.replaceState(null, '', window.location.pathname);
         return;
       }
@@ -87,7 +88,7 @@ export function SettingsPage() {
               accessToken: token,
               expiresIn: expires,
             });
-            toast.success('Spotify account connected successfully!');
+            showToast.success('Spotify account connected successfully!');
             const status = await spotifyApi.getStatus();
             setSpotifyStatus(status);
             updateSpotifyConnection(true);
@@ -106,7 +107,7 @@ export function SettingsPage() {
               console.error('Failed to fetch Spotify profile:', error);
             }
           } catch (error) {
-            toast.error('Failed to connect Spotify account');
+            showToast.error('Failed to connect Spotify account');
             console.error('Spotify connection error:', error);
           }
         };
@@ -127,7 +128,7 @@ export function SettingsPage() {
       });
 
       if (error) {
-        toast.error(`Spotify authorization failed: ${error}`);
+        showToast.error(`Spotify authorization failed: ${error}`);
         window.history.replaceState(null, '', window.location.pathname);
         return;
       }
@@ -138,7 +139,7 @@ export function SettingsPage() {
             console.log('Exchanging authorization code...');
             const redirectUri = import.meta.env.VITE_SPOTIFY_REDIRECT_URI || 'https://127.0.0.1:5173/settings';
             await spotifyApi.exchangeCode(authCode, redirectUri);
-            toast.success('Spotify account connected successfully!');
+            showToast.success('Spotify account connected successfully!');
             const status = await spotifyApi.getStatus();
             setSpotifyStatus(status);
             updateSpotifyConnection(true);
@@ -157,7 +158,7 @@ export function SettingsPage() {
               console.error('Failed to fetch Spotify profile:', error);
             }
           } catch (error) {
-            toast.error('Failed to exchange authorization code');
+            showToast.error('Failed to exchange authorization code');
             console.error('Code exchange error:', error);
           }
         };
@@ -172,7 +173,7 @@ export function SettingsPage() {
     const redirectUri = import.meta.env.VITE_SPOTIFY_REDIRECT_URI || 'https://127.0.0.1:5173/settings';
 
     if (!clientId || clientId === 'your-spotify-client-id') {
-      toast.error('Spotify Client ID not configured. Please check environment variables.');
+      showToast.error('Spotify Client ID not configured. Please check environment variables.');
       return;
     }
 
@@ -195,9 +196,9 @@ export function SettingsPage() {
       setSpotifyStatus({ isConnected: false, isTokenValid: false });
       setSpotifyProfile(null);
       updateSpotifyConnection(false);
-      toast.success('Spotify account disconnected');
+      showToast.success('Spotify account disconnected');
     } catch (error) {
-      toast.error('Failed to disconnect Spotify account');
+      showToast.error('Failed to disconnect Spotify account');
       console.error('Spotify disconnection error:', error);
     } finally {
       setIsLoading(false);
@@ -206,148 +207,173 @@ export function SettingsPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Settings</h1>
 
-        <div className="bg-white rounded-lg shadow divide-y divide-gray-200">
-          <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Keycloak Account</h2>
-            <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Keycloak Account */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="text-2xl">👤</span>
+              Keycloak Account
+            </h2>
+            <div className="space-y-3">
               <div>
-                <label className="text-sm font-medium text-gray-700">Name</label>
-                <p className="text-gray-900">{auth.user?.profile?.name || 'Not set'}</p>
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Name</label>
+                <p className="text-gray-900 mt-1">{auth.user?.profile?.name || 'Not set'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">Email</label>
-                <p className="text-gray-900">{auth.user?.profile?.email || 'Not set'}</p>
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Email</label>
+                <p className="text-gray-900 mt-1">{auth.user?.profile?.email || 'Not set'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">Username</label>
-                <p className="text-gray-900">{auth.user?.profile?.preferred_username || 'Not set'}</p>
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Username</label>
+                <p className="text-gray-900 mt-1">{auth.user?.profile?.preferred_username || 'Not set'}</p>
               </div>
             </div>
           </div>
 
-          <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Spotify Account</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Connection Status</label>
-                <p className="text-gray-900">
-                  {spotifyStatus?.isConnected && spotifyStatus?.isTokenValid ? (
-                    <span className="text-green-600 font-medium">✓ Connected</span>
-                  ) : (
-                    <span className="text-gray-500">Not connected</span>
-                  )}
-                </p>
-              </div>
-              {spotifyProfile && (
-                <>
+          {/* Spotify Account */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="text-2xl">🎵</span>
+              Spotify Account
+            </h2>
+            
+            {spotifyStatus?.isConnected && spotifyStatus?.isTokenValid && spotifyProfile ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
                   {spotifyProfile.imageUrl && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Profile Picture</label>
-                      <img 
-                        src={spotifyProfile.imageUrl} 
-                        alt={spotifyProfile.displayName}
-                        className="mt-2 h-16 w-16 rounded-full"
-                      />
+                    <img 
+                      src={spotifyProfile.imageUrl} 
+                      alt={spotifyProfile.displayName}
+                      className="h-16 w-16 rounded-full ring-2 ring-green-500"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900">{spotifyProfile.displayName}</p>
+                    <p className="text-sm text-gray-600">{spotifyProfile.email}</p>
+                    {spotifyProfile.country && (
+                      <p className="text-xs text-gray-500 mt-1">📍 {spotifyProfile.country}</p>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="pt-3 border-t border-gray-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-700">Status</span>
+                    <span className="inline-flex items-center gap-1 text-sm text-green-600 font-medium">
+                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                      Connected
+                    </span>
+                  </div>
+                  
+                  {spotifyStatus?.tokenExpiry && (
+                    <div className="text-xs text-gray-500 mb-3">
+                      Token expires: {new Date(spotifyStatus.tokenExpiry).toLocaleString()}
                     </div>
                   )}
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Display Name</label>
-                    <p className="text-gray-900">{spotifyProfile.displayName}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Email</label>
-                    <p className="text-gray-900">{spotifyProfile.email}</p>
-                  </div>
-                  {spotifyProfile.country && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Country</label>
-                      <p className="text-gray-900">{spotifyProfile.country}</p>
-                    </div>
-                  )}
-                </>
-              )}
-              {spotifyStatus?.tokenExpiry && (
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Token Expires</label>
-                  <p className="text-gray-900 text-sm">
-                    {new Date(spotifyStatus.tokenExpiry).toLocaleString()}
+                  
+                  <Button 
+                    variant="danger" 
+                    onClick={handleDisconnectSpotify} 
+                    disabled={isLoading}
+                    className="w-full"
+                  >
+                    {isLoading ? 'Disconnecting...' : 'Disconnect Spotify'}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="text-center py-6">
+                  <div className="text-4xl mb-3">🔌</div>
+                  <p className="text-gray-600 mb-1">Not Connected</p>
+                  <p className="text-sm text-gray-500">
+                    Connect your Spotify account to enable playlist management and music discovery
                   </p>
                 </div>
-              )}
-            </div>
+                <Button 
+                  variant="primary" 
+                  onClick={handleConnectSpotify}
+                  className="w-full"
+                >
+                  Connect Spotify Account
+                </Button>
+              </div>
+            )}
           </div>
+        </div>
 
-          <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Spotify Connection</h2>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-900 font-medium">
-                  {spotifyStatus?.isConnected && spotifyStatus?.isTokenValid ? 'Connected' : 'Not Connected'}
+        {/* Agent Preferences */}
+        <div className="bg-white rounded-lg shadow p-6 mt-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <span className="text-2xl">⚙️</span>
+            Agent Preferences
+          </h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex-1">
+                <p className="font-medium text-gray-900 flex items-center gap-2">
+                  🔔 Notifications
                 </p>
-                <p className="text-sm text-gray-600">
-                  Connect your Spotify account to enable playlist management
+                <p className="text-sm text-gray-600 mt-1">
+                  Show toast notifications when agent completes tasks or encounters errors
                 </p>
               </div>
-              {spotifyStatus?.isConnected && spotifyStatus?.isTokenValid ? (
-                <Button variant="danger" onClick={handleDisconnectSpotify} disabled={isLoading}>
-                  {isLoading ? 'Disconnecting...' : 'Disconnect'}
-                </Button>
-              ) : (
-                <Button variant="primary" onClick={handleConnectSpotify}>
-                  Connect Spotify
-                </Button>
-              )}
+              <label className="relative inline-flex items-center cursor-pointer ml-4">
+                <input 
+                  type="checkbox" 
+                  checked={preferences.notificationsEnabled}
+                  onChange={(e) => {
+                    updatePreferences({ notificationsEnabled: e.target.checked });
+                    // Show a native toast to confirm the change (bypass the preference check)
+                    if (e.target.checked) {
+                      toast.success('Notifications enabled', {
+                        duration: 2000,
+                        style: {
+                          background: '#065f46',
+                          color: '#fff',
+                          fontWeight: '500',
+                        },
+                      });
+                    } else {
+                      toast('Notifications disabled', {
+                        duration: 2000,
+                        style: {
+                          background: '#6b7280',
+                          color: '#fff',
+                          fontWeight: '500',
+                        },
+                        icon: '🔕',
+                      });
+                    }
+                  }}
+                  className="sr-only peer" 
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+              </label>
             </div>
           </div>
+        </div>
 
-          <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Agent Preferences</h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-900">Auto-approve actions</p>
-                  <p className="text-sm text-gray-600">
-                    Automatically approve non-destructive agent actions
-                  </p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                </label>
+        {/* Danger Zone */}
+        <div className="bg-white rounded-lg shadow p-6 mt-6 border-2 border-red-200">
+          <h2 className="text-xl font-semibold text-red-600 mb-4 flex items-center gap-2">
+            <span className="text-2xl">⚠️</span>
+            Danger Zone
+          </h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg">
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">Clear agent history</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  Permanently delete all agent action history. This action cannot be undone.
+                </p>
               </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-900">Notifications</p>
-                  <p className="text-sm text-gray-600">
-                    Receive notifications when agent completes tasks
-                  </p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" defaultChecked className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6">
-            <h2 className="text-xl font-semibold text-red-600 mb-4">Danger Zone</h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-900">Clear agent history</p>
-                  <p className="text-sm text-gray-600">
-                    Delete all agent action history
-                  </p>
-                </div>
-                <Button variant="danger" size="sm">
-                  Clear History
-                </Button>
-              </div>
+              <Button variant="danger" size="sm" className="ml-4 whitespace-nowrap">
+                Clear History
+              </Button>
             </div>
           </div>
         </div>

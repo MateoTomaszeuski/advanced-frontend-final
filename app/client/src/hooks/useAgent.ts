@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAgentStore } from '../stores/useAgentStore';
 import { conversationApi, agentApi } from '../services/api';
 import { websocketService, type AgentStatusUpdate } from '../services/websocket';
-import toast from 'react-hot-toast';
+import { showToast } from '../utils/toast';
 import type {
   CreateSmartPlaylistRequest,
   DiscoverNewMusicRequest,
@@ -46,10 +46,10 @@ export function useAgent() {
       const conversation = await conversationApi.create({ title });
       addConversation(conversation);
       setCurrentConversation(conversation);
-      toast.success('Conversation created');
+      showToast.success('Conversation created');
       return conversation;
     } catch (error) {
-      toast.error(
+      showToast.error(
         error instanceof Error ? error.message : 'Failed to create conversation'
       );
       throw error;
@@ -77,18 +77,16 @@ export function useAgent() {
       const action = await agentApi.getAction(response.actionId);
       addRecentAction(action);
 
-      toast.success(
-        `Playlist "${response.result?.playlistName}" created with ${response.result?.trackCount} tracks!`,
-        { duration: 5000 }
+      showToast.success(
+        `Playlist "${response.result?.playlistName}" created with ${response.result?.trackCount} tracks!`
       );
 
       return response;
     } catch (error) {
       setStatus('error');
       setCurrentTask(null);
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to create playlist',
-        { duration: Infinity }
+      showToast.error(
+        error instanceof Error ? error.message : 'Failed to create playlist'
       );
       throw error;
     } finally {
@@ -117,18 +115,16 @@ export function useAgent() {
       const action = await agentApi.getAction(response.actionId);
       addRecentAction(action);
 
-      toast.success(
-        `Discovered ${response.result?.trackCount} new tracks in "${response.result?.playlistName}"!`,
-        { duration: 5000 }
+      showToast.success(
+        `Discovered ${response.result?.trackCount} new tracks in "${response.result?.playlistName}"!`
       );
 
       return response;
     } catch (error) {
       setStatus('error');
       setCurrentTask(null);
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to discover music',
-        { duration: Infinity }
+      showToast.error(
+        error instanceof Error ? error.message : 'Failed to discover music'
       );
       throw error;
     } finally {
@@ -151,18 +147,18 @@ export function useAgent() {
       setCurrentTask(null);
 
       if (response.totalDuplicateGroups > 0) {
-        toast.success(
+        showToast.success(
           `Found ${response.totalDuplicateTracks} duplicates in ${response.totalDuplicateGroups} groups`
         );
       } else {
-        toast.success('No duplicates found in this playlist');
+        showToast.success('No duplicates found in this playlist');
       }
 
       return response;
     } catch (error) {
       setStatus('error');
       setCurrentTask(null);
-      toast.error(
+      showToast.error(
         error instanceof Error ? error.message : 'Failed to scan for duplicates'
       );
       throw error;
@@ -200,13 +196,13 @@ export function useAgent() {
       const action = await agentApi.getAction(response.actionId);
       addRecentAction(action);
 
-      toast.success(`Removed ${trackUrisToRemove.length} duplicate tracks!`);
+      showToast.success(`Removed ${trackUrisToRemove.length} duplicate tracks!`);
 
       return response;
     } catch (error) {
       setStatus('error');
       setCurrentTask(null);
-      toast.error(
+      showToast.error(
         error instanceof Error ? error.message : 'Failed to remove duplicates'
       );
       throw error;
@@ -239,13 +235,13 @@ export function useAgent() {
       setStatus('idle');
       setCurrentTask(null);
 
-      toast.success(`Generated ${response.suggestionCount} suggestions for "${response.playlistName}"`);
+      showToast.success(`Generated ${response.suggestionCount} suggestions for "${response.playlistName}"`);
 
       return response;
     } catch (error) {
       setStatus('error');
       setCurrentTask(null);
-      toast.error(
+      showToast.error(
         error instanceof Error ? error.message : 'Failed to generate suggestions'
       );
       throw error;
