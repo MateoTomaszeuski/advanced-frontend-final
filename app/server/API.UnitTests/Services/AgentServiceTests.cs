@@ -1,10 +1,12 @@
 using System.Text.Json;
 using API.DTOs.Agent;
 using API.DTOs.Spotify;
+using API.Hubs;
 using API.Models;
 using API.Repositories;
 using API.Services;
 using FluentAssertions;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using TUnit.Core;
@@ -18,6 +20,7 @@ public class AgentServiceTests
     private readonly Mock<ISpotifyTokenService> _mockTokenService;
     private readonly Mock<IAIService> _mockAIService;
     private readonly Mock<ILogger<AgentService>> _mockLogger;
+    private readonly Mock<IHubContext<AgentHub>> _mockHubContext;
     private readonly AgentService _agentService;
 
     public AgentServiceTests()
@@ -27,13 +30,15 @@ public class AgentServiceTests
         _mockTokenService = new Mock<ISpotifyTokenService>();
         _mockAIService = new Mock<IAIService>();
         _mockLogger = new Mock<ILogger<AgentService>>();
+        _mockHubContext = new Mock<IHubContext<AgentHub>>();
 
         _agentService = new AgentService(
             _mockActionRepository.Object,
             _mockSpotifyService.Object,
             _mockTokenService.Object,
             _mockAIService.Object,
-            _mockLogger.Object
+            _mockLogger.Object,
+            _mockHubContext.Object
         );
     }
 

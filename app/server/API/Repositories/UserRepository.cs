@@ -61,6 +61,9 @@ public class UserRepository : IUserRepository
         const string sql = @"
             INSERT INTO users (email, display_name, created_at, updated_at)
             VALUES (@Email, @DisplayName, @CreatedAt, @UpdatedAt)
+            ON CONFLICT (email) DO UPDATE
+            SET display_name = EXCLUDED.display_name,
+                updated_at = EXCLUDED.updated_at
             RETURNING id as Id, email as Email, display_name as DisplayName,
                       spotify_access_token as SpotifyAccessToken, 
                       spotify_refresh_token as SpotifyRefreshToken,

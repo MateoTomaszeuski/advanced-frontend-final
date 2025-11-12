@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAgentStore } from '../stores/useAgentStore';
 import { conversationApi, agentApi } from '../services/api';
+import { websocketService, type AgentStatusUpdate } from '../services/websocket';
 import toast from 'react-hot-toast';
 import type {
   CreateSmartPlaylistRequest,
@@ -20,6 +21,26 @@ export function useAgent() {
     addConversation,
   } = useAgentStore();
 
+  useEffect(() => {
+    const unsubscribe = websocketService.onStatusUpdate((update: AgentStatusUpdate) => {
+      console.log('📨 Agent update received in useAgent:', update);
+      
+      if (update.status === 'processing' && update.message) {
+        setStatus('processing');
+        setCurrentTask(update.message);
+      } else if (update.status === 'completed') {
+        setStatus('idle');
+        setCurrentTask(null);
+        setProgress(100);
+      } else if (update.status === 'error') {
+        setStatus('error');
+        setCurrentTask(update.message || 'An error occurred');
+      }
+    });
+
+    return unsubscribe;
+  }, [setStatus, setCurrentTask, setProgress]);
+
   const createConversation = async (title: string) => {
     try {
       const conversation = await conversationApi.create({ title });
@@ -38,11 +59,11 @@ export function useAgent() {
   const createSmartPlaylist = async (data: CreateSmartPlaylistRequest) => {
     setIsLoading(true);
     setStatus('processing');
-    setCurrentTask('Creating smart playlist...');
+    setCurrentTask('Initializing playlist creation...');
     setProgress(0);
 
     try {
-      setProgress(30);
+      // WebSocket will handle real-time status updates
       const response = await agentApi.createSmartPlaylist(data);
 
       if (response.status === 'Failed') {
@@ -57,7 +78,8 @@ export function useAgent() {
       addRecentAction(action);
 
       toast.success(
-        `Playlist "${response.result?.playlistName}" created with ${response.result?.trackCount} tracks!`
+        `Playlist "${response.result?.playlistName}" created with ${response.result?.trackCount} tracks!`,
+        { duration: 5000 }
       );
 
       return response;
@@ -65,7 +87,8 @@ export function useAgent() {
       setStatus('error');
       setCurrentTask(null);
       toast.error(
-        error instanceof Error ? error.message : 'Failed to create playlist'
+        error instanceof Error ? error.message : 'Failed to create playlist',
+        { duration: Infinity }
       );
       throw error;
     } finally {
@@ -76,11 +99,11 @@ export function useAgent() {
   const discoverNewMusic = async (data: DiscoverNewMusicRequest) => {
     setIsLoading(true);
     setStatus('processing');
-    setCurrentTask('Discovering new music...');
+    setCurrentTask('Initializing music discovery...');
     setProgress(0);
 
     try {
-      setProgress(30);
+      // WebSocket will handle real-time status updates
       const response = await agentApi.discoverNewMusic(data);
 
       if (response.status === 'Failed') {
@@ -95,7 +118,8 @@ export function useAgent() {
       addRecentAction(action);
 
       toast.success(
-        `Discovered ${response.result?.trackCount} new tracks in "${response.result?.playlistName}"!`
+        `Discovered ${response.result?.trackCount} new tracks in "${response.result?.playlistName}"!`,
+        { duration: 5000 }
       );
 
       return response;
@@ -103,7 +127,8 @@ export function useAgent() {
       setStatus('error');
       setCurrentTask(null);
       toast.error(
-        error instanceof Error ? error.message : 'Failed to discover music'
+        error instanceof Error ? error.message : 'Failed to discover music',
+        { duration: Infinity }
       );
       throw error;
     } finally {

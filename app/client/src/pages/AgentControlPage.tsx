@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Conversation } from '../types/api';
 import { useAgentTimer } from '../hooks/useAgentTimer';
 import { showToast } from '../utils/toast';
+import { useWebSocket } from '../hooks/useWebSocket';
 
 export function AgentControlPage() {
   const {
@@ -13,11 +14,15 @@ export function AgentControlPage() {
     recentActions,
     currentConversation,
     setConversations,
+    setStatus,
+    setCurrentTask,
   } = useAgentStore();
 
   const { elapsedTime } = useAgentTimer();
+  const { isConnected, latestStatus } = useWebSocket();
   const [loading, setLoading] = useState(true);
   const [allConversations, setAllConversations] = useState<Conversation[]>([]);
+  const [realtimeMessage, setRealtimeMessage] = useState<string | null>(null);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -33,6 +38,34 @@ export function AgentControlPage() {
       setLoading(false);
     }
   }, [setConversations]);
+
+  useEffect(() => {
+    if (latestStatus) {
+      console.log('Latest WebSocket status:', latestStatus);
+      
+      if (latestStatus.status === 'processing') {
+        setStatus('processing');
+      } else if (latestStatus.status === 'error') {
+        setStatus('error');
+      } else if (latestStatus.status === 'completed') {
+        setStatus('idle');
+      }
+      
+      if (latestStatus.message) {
+        setCurrentTask(latestStatus.message);
+        setRealtimeMessage(latestStatus.message);
+        
+        setTimeout(() => setRealtimeMessage(null), 5000);
+      }
+
+      if (latestStatus.status === 'completed' && latestStatus.message) {
+        showToast.success(latestStatus.message);
+        loadConversations();
+      } else if (latestStatus.status === 'error' && latestStatus.message) {
+        showToast.error(latestStatus.message);
+      }
+    }
+  }, [latestStatus, setStatus, setCurrentTask, loadConversations]);
 
   useEffect(() => {
     loadConversations();
@@ -94,7 +127,22 @@ export function AgentControlPage() {
   return (
     <MainLayout>
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Agent Control Center</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Agent Control Center</h1>
+          <div className="flex items-center gap-2">
+            <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`} />
+            <span className="text-sm text-gray-600">
+              {isConnected ? 'WebSocket Connected' : 'WebSocket Disconnected'}
+            </span>
+          </div>
+        </div>
+
+        {realtimeMessage && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
+            <div className="animate-pulse w-2 h-2 bg-blue-600 rounded-full" />
+            <p className="text-sm text-blue-800 font-medium">{realtimeMessage}</p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">

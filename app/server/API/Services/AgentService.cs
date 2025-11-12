@@ -1,9 +1,11 @@
 using System.Text.Json;
 using API.DTOs.Agent;
 using API.DTOs.Spotify;
+using API.Hubs;
 using API.Models;
 using API.Repositories;
 using API.Services.Helpers;
+using Microsoft.AspNetCore.SignalR;
 
 namespace API.Services;
 
@@ -24,13 +26,15 @@ public class AgentService : IAgentService
     private readonly IAIService _aiService;
     private readonly ILogger<AgentService> _logger;
     private readonly TrackFilterHelper _trackFilterHelper;
+    private readonly IHubContext<AgentHub> _hubContext;
 
     public AgentService(
         IAgentActionRepository actionRepository,
         ISpotifyService spotifyService,
         ISpotifyTokenService tokenService,
         IAIService aiService,
-        ILogger<AgentService> logger)
+        ILogger<AgentService> logger,
+        IHubContext<AgentHub> hubContext)
     {
         _actionRepository = actionRepository;
         _spotifyService = spotifyService;
@@ -38,11 +42,30 @@ public class AgentService : IAgentService
         _aiService = aiService;
         _logger = logger;
         _trackFilterHelper = new TrackFilterHelper(spotifyService);
+        _hubContext = hubContext;
     }
 
     private async Task<string> GetValidAccessTokenAsync(User user)
     {
         return await _tokenService.GetValidAccessTokenAsync(user);
+    }
+
+    private async Task SendAgentStatusUpdate(string userEmail, string status, string? message = null, object? data = null)
+    {
+        try
+        {
+            await _hubContext.Clients.Group($"user-{userEmail}").SendAsync("AgentStatusUpdate", new
+            {
+                status,
+                message,
+                data,
+                timestamp = DateTime.UtcNow
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send WebSocket status update to user {Email}", userEmail);
+        }
     }
 
     public async Task<AgentActionResponse> CreateSmartPlaylistAsync(
@@ -64,6 +87,8 @@ public class AgentService : IAgentService
 
         try
         {
+            await SendAgentStatusUpdate(user.Email, "processing", "Analyzing your request with AI...");
+
             var accessToken = await GetValidAccessTokenAsync(user);
 
             _logger.LogInformation("Creating smart playlist for user {Email} with prompt: {Prompt}",
@@ -162,6 +187,8 @@ IMPORTANT: Each request is unique - provide fresh, creative results even if simi
 
             _logger.LogInformation("Using playlist name: {PlaylistName}, search query: {SearchQuery}", playlistName, searchQuery);
 
+            await SendAgentStatusUpdate(user.Email, "processing", $"Searching Spotify for tracks matching: {playlistName}");
+
             var requestedTrackCount = request.Preferences?.MaxTracks ?? 20;
             var allTracks = new List<SpotifyTrack>();
             var trackIds = new HashSet<string>();
@@ -191,6 +218,8 @@ IMPORTANT: Each request is unique - provide fresh, creative results even if simi
 
             _logger.LogInformation("Initial search returned {Count} unique tracks", allTracks.Count);
 
+            await SendAgentStatusUpdate(user.Email, "processing", $"Found {allTracks.Count} tracks in initial search. Searching for more...");
+
             var searchIterations = 0;
             var maxSearchIterations = Math.Max(20, (requestedTrackCount / 10));
             var currentSearchQueries = new List<string> { searchQuery };
@@ -201,11 +230,15 @@ IMPORTANT: Each request is unique - provide fresh, creative results even if simi
                 _logger.LogInformation("Search iteration {Iteration}/{MaxIterations}: Need {Missing} more tracks", 
                     searchIterations, maxSearchIterations, requestedTrackCount - allTracks.Count);
 
+                await SendAgentStatusUpdate(user.Email, "processing", $"Iteration {searchIterations}/{maxSearchIterations}: Found {allTracks.Count}/{requestedTrackCount} tracks");
+
                 foreach (var query in currentSearchQueries.ToList())
                 {
                     if (allTracks.Count >= requestedTrackCount) break;
 
                     _logger.LogInformation("Trying query: '{Query}'", query);
+
+                    await SendAgentStatusUpdate(user.Email, "processing", $"Searching with query: '{query}'");
 
                     var additionalTracks = await _spotifyService.SearchTracksAsync(
                         accessToken,
@@ -232,6 +265,8 @@ IMPORTANT: Each request is unique - provide fresh, creative results even if simi
 
                     _logger.LogInformation("After query '{Query}': found {NewTracks} new tracks, total {Count} unique tracks", 
                         query, tracksFoundInThisQuery, allTracks.Count);
+                    
+                    await SendAgentStatusUpdate(user.Email, "processing", $"After query '{query}': found {tracksFoundInThisQuery} new tracks, total {allTracks.Count} unique tracks");
                 }
 
                 if (allTracks.Count < requestedTrackCount && searchIterations % 3 == 0 && searchIterations < maxSearchIterations)
@@ -285,6 +320,8 @@ IMPORTANT: Generate creative alternatives - think outside the box!"),
                                     currentSearchQueries = newQueries;
                                     _logger.LogInformation("AI generated {Count} new search queries: {Queries}", 
                                         newQueries.Count, string.Join(", ", newQueries));
+                                    
+                                    await SendAgentStatusUpdate(user.Email, "processing", $"AI generated {newQueries.Count} new search strategies to find more tracks");
                                 }
                             }
                         }
@@ -330,6 +367,8 @@ IMPORTANT: Generate creative alternatives - think outside the box!"),
 
             _logger.LogInformation("Final unique track count: {Count} (requested: {Requested})", tracks.Length, requestedTrackCount);
 
+            await SendAgentStatusUpdate(user.Email, "processing", $"Creating playlist with {tracks.Length} tracks...");
+
             var userId = await _spotifyService.GetCurrentUserIdAsync(accessToken);
 
             var playlist = await _spotifyService.CreatePlaylistAsync(
@@ -340,6 +379,7 @@ IMPORTANT: Generate creative alternatives - think outside the box!"),
 
             if (tracks.Length > 0)
             {
+                await SendAgentStatusUpdate(user.Email, "processing", "Adding tracks to playlist...");
                 var trackUrisToAdd = tracks.Select(t => t.Uri).ToArray();
                 await _spotifyService.AddTracksToPlaylistAsync(
                     accessToken,
@@ -368,6 +408,8 @@ IMPORTANT: Generate creative alternatives - think outside the box!"),
             action.CompletedAt = DateTime.UtcNow;
             await _actionRepository.UpdateAsync(action);
 
+            await SendAgentStatusUpdate(user.Email, "completed", $"Playlist '{playlist.Name}' created successfully!", new { playlistId = playlist.Id, trackCount = tracks.Length });
+
             _logger.LogInformation("Successfully created playlist {PlaylistId} with {TrackCount} tracks",
                 playlist.Id, tracks.Length);
 
@@ -376,6 +418,8 @@ IMPORTANT: Generate creative alternatives - think outside the box!"),
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating smart playlist for user {Email}", user.Email);
+
+            await SendAgentStatusUpdate(user.Email, "error", $"Failed to create playlist: {ex.Message}");
 
             action.Status = "Failed";
             action.ErrorMessage = ex.Message;
@@ -404,6 +448,8 @@ IMPORTANT: Generate creative alternatives - think outside the box!"),
 
         try
         {
+            await SendAgentStatusUpdate(user.Email, "processing", "Analyzing your music taste...");
+
             var accessToken = await GetValidAccessTokenAsync(user);
 
             _logger.LogInformation("Discovering new music for user {Email}, requested: {Limit} tracks", user.Email, request.Limit);
@@ -583,6 +629,8 @@ IMPORTANT: Generate diverse, unique queries - do not repeat previous suggestions
 
                         _logger.LogInformation("Search iteration {Iteration}, query: '{Query}'", searchIterations, query);
 
+                        await SendAgentStatusUpdate(user.Email, "processing", $"Discovery iteration {searchIterations}: Searching with query '{query}'");
+
                         var searchResults = await _spotifyService.SearchTracksAsync(
                             accessToken,
                             query,
@@ -612,6 +660,8 @@ IMPORTANT: Generate diverse, unique queries - do not repeat previous suggestions
 
                         _logger.LogInformation("After query '{Query}': found {NewTracks} new tracks, total {Count} unique new tracks", 
                             query, tracksFoundInThisQuery, allDiscoveredTracks.Count);
+                        
+                        await SendAgentStatusUpdate(user.Email, "processing", $"After query '{query}': found {tracksFoundInThisQuery} new tracks, total {allDiscoveredTracks.Count} unique tracks");
                     }
 
                     if (allDiscoveredTracks.Count < request.Limit && searchIterations % 2 == 0)
@@ -665,6 +715,8 @@ IMPORTANT: Generate diverse alternatives - these must be tracks the user likely 
                                         currentSearchQueries = newQueries;
                                         _logger.LogInformation("AI generated {Count} new discovery queries: {Queries}", 
                                             newQueries.Count, string.Join(", ", newQueries));
+                                        
+                                        await SendAgentStatusUpdate(user.Email, "processing", $"AI generated {newQueries.Count} new discovery strategies to find more tracks");
                                     }
                                 }
                             }
@@ -1066,6 +1118,8 @@ IMPORTANT: Generate diverse, creative queries - each request should yield unique
 
                 _logger.LogInformation("Searching suggestions (iteration {Iteration}) with query: '{Query}'", searchIterations, query);
 
+                await SendAgentStatusUpdate(user.Email, "processing", $"Suggestions iteration {searchIterations}: Searching with query '{query}'");
+
                 var searchResults = await _spotifyService.SearchTracksAsync(
                     accessToken,
                     query,
@@ -1093,6 +1147,8 @@ IMPORTANT: Generate diverse, creative queries - each request should yield unique
                 
                 _logger.LogInformation("After query '{Query}': found {NewTracks} new suggestions, total {Count}", 
                     query, tracksFoundInThisQuery, allSuggestions.Count);
+                
+                await SendAgentStatusUpdate(user.Email, "processing", $"After query '{query}': found {tracksFoundInThisQuery} new suggestions, total {allSuggestions.Count}");
             }
 
             if (allSuggestions.Count < targetCount && searchIterations < maxSearchIterations)
@@ -1146,6 +1202,8 @@ IMPORTANT: Generate creative alternatives that match the context!"),
                                 currentSearchQueries = newQueries;
                                 _logger.LogInformation("AI generated {Count} new suggestion queries: {Queries}", 
                                     newQueries.Count, string.Join(", ", newQueries));
+                                
+                                await SendAgentStatusUpdate(user.Email, "processing", $"AI generated {newQueries.Count} new suggestion strategies based on context");
                             }
                         }
                     }

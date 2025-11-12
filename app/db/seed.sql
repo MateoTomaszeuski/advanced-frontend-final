@@ -6,7 +6,7 @@
 -- Example user (replace with your actual test user email)
 INSERT INTO users (email, display_name, created_at, updated_at)
 VALUES 
-    ('test@example.com', 'Test User', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ('mateofake@gmail.com', 'Mateo Tomaszeuski', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (email) DO NOTHING;
 
 -- Example conversation for the test user
@@ -17,7 +17,7 @@ SELECT
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 FROM users
-WHERE email = 'test@example.com'
+WHERE email = 'mateofake@gmail.com'
 ON CONFLICT DO NOTHING;
 
 -- Note: Agent actions will be created automatically as users interact with the system

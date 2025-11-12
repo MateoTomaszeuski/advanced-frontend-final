@@ -1,4 +1,5 @@
 using API.Data;
+using API.Hubs;
 using API.Middleware;
 using API.Repositories;
 using API.Services;
@@ -37,6 +38,8 @@ builder.Services.AddCors(options =>
               .AllowCredentials();
     });
 });
+
+builder.Services.AddSignalR();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -98,6 +101,7 @@ app.UseAuthorization();
 app.UseMiddleware<UserContextMiddleware>();
 app.MapGet("/", () => "API is running!");
 app.MapControllers().RequireAuthorization();
+app.MapHub<AgentHub>("/hubs/agent").RequireAuthorization();
 
 app.Run();
 

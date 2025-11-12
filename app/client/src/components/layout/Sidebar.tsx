@@ -1,12 +1,11 @@
 import { useAuth } from 'react-oidc-context';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useUIStore } from '../../stores/useUIStore';
 
 export function Sidebar() {
-  const { isSidebarOpen } = useUIStore();
+  const { isSidebarOpen, toggleSidebar, isTransitioning } = useUIStore();
   const auth = useAuth();
-
-  if (!isSidebarOpen) return null;
+  const location = useLocation();
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -21,29 +20,128 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-gradient-to-b from-green-900 to-green-950 text-white min-h-screen p-4 flex flex-col shadow-xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">Spotify Agent</h1>
-        <p className="text-sm text-green-200">{auth.user?.profile?.email}</p>
-      </div>
-      
-      <nav className="flex-1">
-        <ul className="space-y-2">
-          {navItems.map((item) => (
-            <li key={item.path}>
-              <Link
-                to={item.path}
-                className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-green-800 transition-colors"
+    <>
+      {/* Desktop Sidebar */}
+      <aside
+        className={`
+          hidden md:block
+          fixed left-0 top-0 h-screen
+          bg-linear-to-b from-green-900 to-green-950 text-white
+          shadow-xl z-30
+          ${isSidebarOpen ? 'w-64' : 'w-0'}
+          ${isTransitioning ? 'transition-all duration-300 ease-in-out' : ''}
+          overflow-hidden
+        `}
+      >
+        <div className="p-4 flex flex-col h-full">
+          <div className="mb-8 shrink-0">
+            <h1 className="text-2xl font-bold whitespace-nowrap">Spotify Agent</h1>
+            <p className="text-sm text-green-200 truncate">{auth.user?.profile?.email}</p>
+          </div>
+          
+          <nav className="flex-1 overflow-y-auto">
+            <ul className="space-y-2">
+              {navItems.map((item) => (
+                <li key={item.path}>
+                  <Link
+                    to={item.path}
+                    onClick={() => {
+                      if (window.innerWidth < 768) {
+                        toggleSidebar();
+                      }
+                    }}
+                    className={`
+                      flex items-center gap-3 px-4 py-2 rounded-lg
+                      transition-colors whitespace-nowrap
+                      ${location.pathname === item.path 
+                        ? 'bg-green-800 font-semibold' 
+                        : 'hover:bg-green-800'
+                      }
+                    `}
+                  >
+                    <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                    </svg>
+                    <span>{item.label}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
+      </aside>
+
+      {/* Mobile Sidebar - Fullscreen Overlay */}
+      <div
+        className={`
+          md:hidden
+          fixed inset-0 z-50
+          transition-all duration-300 ease-in-out
+          ${isSidebarOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}
+        `}
+      >
+        {/* Backdrop */}
+        <div
+          className="absolute inset-0 bg-black bg-opacity-50"
+          onClick={toggleSidebar}
+          aria-hidden="true"
+        />
+        
+        {/* Menu Panel */}
+        <div
+          className={`
+            absolute top-0 left-0 right-0
+            bg-linear-to-r from-green-900 to-green-950 text-white
+            shadow-lg
+            transform transition-transform duration-300 ease-in-out
+            ${isSidebarOpen ? 'translate-y-0' : '-translate-y-full'}
+          `}
+        >
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-xl font-bold">Spotify Agent</h1>
+                <p className="text-xs text-green-200 truncate">{auth.user?.profile?.email}</p>
+              </div>
+              <button
+                onClick={toggleSidebar}
+                className="p-2 hover:bg-green-800 rounded-lg transition-colors"
+                aria-label="Close menu"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                <span>{item.label}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-    </aside>
+              </button>
+            </div>
+            
+            <nav className="overflow-y-auto max-h-[calc(100vh-200px)]">
+              <ul className="space-y-2">
+                {navItems.map((item) => (
+                  <li key={item.path}>
+                    <Link
+                      to={item.path}
+                      onClick={toggleSidebar}
+                      className={`
+                        flex items-center gap-3 px-4 py-3 rounded-lg
+                        transition-colors
+                        ${location.pathname === item.path 
+                          ? 'bg-green-800 font-semibold' 
+                          : 'hover:bg-green-800'
+                        }
+                      `}
+                    >
+                      <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                      </svg>
+                      <span>{item.label}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

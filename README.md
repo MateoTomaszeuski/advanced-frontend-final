@@ -223,7 +223,9 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 
 ### Additional Tasks (Choose 1+)
 
-[ ] Real-time WebSocket communication for agent status updates (not implemented - uses HTTP polling)
+[x] Real-time WebSocket communication for agent status updates (SignalR implementation)
+
+[X] Streaming Agent Loop
 
 ### Technical Requirements
 
@@ -344,6 +346,7 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 - Developer type helping (TypeScript with strict types throughout)
 - 2+ reusable layout components (MainLayout, AuthLayout, Sidebar, Header - 4 total)
 - 3+ reusable form input components (TextInput, SelectDropdown, Button, SearchInput, Checkbox - 5 total)
+- 1+ reusable informational components (InfoBox - collapsible tips/info component with type-based styling)
 - Error handling for render errors (ErrorBoundary with fallback UI)
 - Authentication and user account support (Keycloak OAuth with react-oidc-context)
 - Authorized pages and public pages (ProtectedRoute wrapper)
@@ -354,6 +357,7 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 - Zustand stores: useUserStore, useAgentStore, useUIStore with localStorage persistence
 - Layout components: MainLayout (sidebar+header+scrollable content), AuthLayout (centered card), Sidebar (green gradient navigation), Header (user dropdown menu)
 - Form components: TextInput, SelectDropdown, Button (4 variants: primary, secondary, danger, ghost), SearchInput, Checkbox - all TypeScript typed with error states
+- InfoBox component: Collapsible information/tips component with two types ('tips' with 💡 emoji and green styling, 'info' with ℹ️ emoji and blue styling), smooth expand/collapse animation, customizable title and bullet points
 - ErrorBoundary class component with fallback UI and error details
 - Landing page with Spotify branding, gradient background, and Keycloak OAuth sign-in
 - Dashboard page with agent status cards, metrics display, and recent activity section
@@ -1141,9 +1145,117 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 #### Delivered:
 
 **Rubric Items:**
-
+- Real-time WebSocket communication implemented (SignalR)
 
 **Features:**
+- **SignalR WebSocket Backend**:
+  - Created `Hubs/AgentHub.cs` with connection lifecycle management
+  - `OnConnectedAsync()` logs connection ID, user email/name, timestamp, and transport type (WebSocket/SSE/LongPolling)
+  - `OnDisconnectedAsync()` logs disconnection with exception details if error occurred
+  - `JoinUserGroup()` and `LeaveUserGroup()` for user-specific message broadcasting
+  - Authorization required via [Authorize] attribute
+  - Comprehensive logging for connection monitoring and troubleshooting
+  - Configured in `Program.cs` with `AddSignalR()` and `MapHub<AgentHub>("/hubs/agent")`
+  - CORS configuration allows WebSocket connections from frontend origins
+  
+- **AgentService WebSocket Integration**:
+  - Injected `IHubContext<AgentHub>` into AgentService constructor
+  - `SendAgentStatusUpdate()` helper method broadcasts to user-specific groups
+  - Real-time status updates during `CreateSmartPlaylistAsync()`:
+    - "Analyzing your request with AI..." at start
+    - "Searching Spotify for tracks matching: {playlistName}" after AI processing
+    - "Creating playlist with {count} tracks..." before playlist creation
+    - "Adding tracks to playlist..." during track addition
+    - "Playlist '{name}' created successfully!" on completion
+    - Error messages on failure
+  - Real-time updates during `DiscoverNewMusicAsync()`:
+    - "Analyzing your music taste..." at start
+    - Status updates throughout discovery process
+  - All agent operations broadcast status, message, data, and timestamp to connected clients
+  - Error status updates with detailed error messages
+  
+- **Frontend WebSocket Service** (`services/websocket.ts`):
+  - Singleton WebSocketService class wrapping SignalR HubConnection
+  - Connection management with access token from Keycloak
+  - Support for WebSockets, ServerSentEvents, and LongPolling transports (fallback hierarchy)
+  - Automatic reconnection with exponential backoff (up to 5 attempts, 2s base delay)
+  - `connect()` method with user email for group subscription
+  - `disconnect()` method with proper cleanup
+  - `onStatusUpdate()` callback registration with cleanup function
+  - `isConnected()` and `getConnectionState()` for connection monitoring
+  - Event listeners for reconnecting, reconnected, and close events
+  - Comprehensive logging for debugging
+  
+- **Frontend WebSocket Hook** (`hooks/useWebSocket.ts`):
+  - `useWebSocket()` React hook for easy integration
+  - Automatic connection on auth state change
+  - Automatic disconnection on unmount
+  - Returns `isConnected`, `latestStatus`, `connect`, `disconnect`
+  - Manages latest status update in React state
+  - Clean subscription management with effect cleanup
+  
+- **Agent Control Page WebSocket Integration**:
+  - Real-time status updates replacing polling
+  - WebSocket connection indicator (green dot = connected, gray = disconnected)
+  - Live message banner showing current agent operation with animated pulse dot
+  - Auto-dismissing messages after 5 seconds
+  - Success toasts on operation completion
+  - Error toasts on failures
+  - Automatic conversation list refresh on completion
+  - Status mapping from WebSocket events to agent store states
+  
+- **Responsive Sidebar with Animations**:
+  - **Desktop (≥768px)**: Vertical left sidebar with smooth 300ms slide-in/out animation
+    - Fixed positioning with `left-0 top-0`
+    - Width transitions between `w-64` (16rem) and `w-0` (collapsed)
+    - Hidden when closed with `overflow-hidden`
+    - Gradient background `bg-linear-to-b from-green-900 to-green-950`
+  - **Mobile (<768px)**: Horizontal top navbar with scroll
+    - Fixed positioning at top with `top-0 left-0 right-0`
+    - Height/opacity transitions for smooth show/hide
+    - Horizontal scrolling nav items with `overflow-x-auto`
+    - Backdrop overlay (`bg-black bg-opacity-50`) when open
+    - Close button (X icon) in top-right corner
+  - Active route highlighting with green background (`bg-green-800`)
+  - Click outside to close on mobile (backdrop click handler)
+  - Smooth transitions with `transition-all duration-300 ease-in-out`
+  - Properly positioned using `shrink-0` classes
+  
+- **Enhanced Header Component**:
+  - Hamburger menu icon that toggles between hamburger (☰) and close (×) icons
+  - Icon changes based on `isSidebarOpen` state
+  - Focus states with green ring (`focus:ring-2 focus:ring-green-600`)
+  - Accessible aria-labels ("Open menu" / "Close menu")
+  - "Spotify Agent" title visible on desktop, hidden on mobile
+  - User info (name and email) hidden on small screens with `sm:block`
+  - Hover effects on hamburger button
+  - Proper z-index layering (`z-10 relative`)
+  
+- **MainLayout Dynamic Margin**:
+  - Dynamic margin-left adjustment based on sidebar state
+  - Window resize event listener for responsive behavior
+  - Smooth transitions synchronized with sidebar animations
+  - Desktop: 256px margin when sidebar open, 0px when closed
+  - Mobile: Always 0px margin (sidebar overlays content)
+  - useEffect with cleanup for resize listener
+  
+- **UI Store Enhancements**:
+  - `getInitialSidebarState()` function for smart defaults
+  - Sidebar starts open on desktop (≥768px), closed on mobile (<768px)
+  - Prevents layout shift on initial load
+  - Type-safe TypeScript implementation
+  
+- **Unit Test Updates**:
+  - Updated `AgentServiceTests.cs` to include `IHubContext<AgentHub>` mock
+  - Added `using API.Hubs` and `using Microsoft.AspNetCore.SignalR`
+  - All tests passing with new constructor parameter
+  
+- **Build Verification**:
+  - Frontend builds successfully (pnpm run build)
+  - Backend builds successfully (dotnet build)
+  - No linting errors (pnpm run lint)
+  - All unit tests passing
+  - SignalR included in ASP.NET Core 9 by default (no extra package needed)
 
 
 ---
@@ -1153,10 +1265,13 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 #### Estimates:
 
 **Rubric Items:**
+- Stream Agent Loop (Additional Task - optional)
 - Performance optimization complete
 - All error handling edge cases covered
 
 **Features:**
+- Update the User with the agent last action 
+  - this is being shown in the Backend Logs already, just needs to update the user.
 - Lazy loading for large playlists
 - Virtualization for long lists
 - Optimistic UI updates
@@ -1169,10 +1284,137 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 #### Delivered:
 
 **Rubric Items:**
-
+- Stream Agent Loop (WebSocket real-time updates)
 
 **Features:**
+- **Streaming Agent Loop Implementation**:
+  - Real-time LLM action updates displayed to users during all agent operations
+  - WebSocket integration in `useAgent` hook listens for `AgentStatusUpdate` events
+  - Backend sends detailed status updates after each search query completion
+  - Shows exact track counts found per query iteration
+  - Displays when AI generates new search strategies mid-operation
+  - Agent status updates automatically propagate to UI via Zustand store
+  - Updates happen during: playlist creation, music discovery, and music suggestions
+  
+- **Enhanced Agent Status Display**:
+  - Upgraded status banner with double-ring animated spinner
+  - Real-time timestamp display showing when each update was received
+  - "PROCESSING" badge with current operation details
+  - Animated progress bar with pulse effect
+  - Larger, more prominent status messages for better visibility
+  
+- **useAgent Hook WebSocket Integration**:
+  - Added `useEffect` to subscribe to WebSocket status updates
+  - Automatic status/task synchronization with agent store
+  - Updates `currentTask` in real-time as backend sends messages
+  - Clean subscription management with proper cleanup
+  
+- **Real-Time Status Messages** (already implemented in backend, now visible):
+  - "Analyzing your request with AI..."
+  - "Searching Spotify for tracks matching: {playlistName}"
+  - "Found {count} tracks in initial search. Searching for more..."
+  - "Iteration {x}/{max}: Found {count}/{total} tracks"
+  - "Searching with query: '{query}'"
+  - **"After query '{query}': found {x} new tracks, total {y} unique tracks"**
+  - **"AI generated {count} new search strategies to find more tracks"** 
+  - "Creating playlist with {count} tracks..."
+  - "Adding tracks to playlist..."
+  - "Playlist '{name}' created successfully!"
+  
+- **Discovery & Suggestions Status Updates**:
+  - "Discovery iteration {x}: Searching with query '{query}'"
+  - "After query '{query}': found {x} new tracks, total {y} unique tracks"
+  - "AI generated {count} new discovery strategies to find more tracks"
+  - "Suggestions iteration {x}: Searching with query '{query}'"
+  - "After query '{query}': found {x} new suggestions, total {y}"
+  - "AI generated {count} new suggestion strategies based on context"
+  
+- **UI Enhancements**:
+  - PlaylistCreatorPage upgraded with streaming status display
+  - DiscoverPage upgraded with streaming status display
+  - Consistent design language across all agent operations
+  - Green Spotify-themed borders and backgrounds
+  - Improved visual hierarchy with larger fonts and spacing
+  - Timestamp display in monospace font for precise tracking
+  
+- **Toast Improvements**:
+  - Success toasts now have 5-second duration for better readability
+  - Error toasts persist until manually dismissed (duration: 0)
+  - Prevents important error messages from auto-dismissing
 
+- **WebSocket Global Provider**:
+  - Created `WebSocketProvider` component to establish global WebSocket connection
+  - Wrapped app with `WebSocketProvider` in App.tsx
+  - Ensures WebSocket connection is active across all pages
+  - Allows `useAgent` hook to receive real-time status updates everywhere
+  - Fixed issue where status updates weren't showing on PlaylistCreatorPage and DiscoverPage
+
+- **Mobile Navigation Complete Redesign**:
+  - Fixed black screen and broken header layout in mobile mode
+  - **New mobile menu approach**: Fullscreen overlay instead of top bar
+  - Menu slides down from top with smooth transform animation
+  - Backdrop and menu panel combined in single container (z-50)
+  - Vertical menu list (like desktop) instead of horizontal scrolling
+  - Menu items properly sized with adequate touch targets (py-3)
+  - Max height constraint for scrollable menu on small devices
+  - Proper opacity and visibility transitions for smooth open/close
+  - Clicking backdrop or X button closes menu instantly
+  - Menu closes automatically after navigation
+
+- **Toast Notifications Mobile Optimization**:
+  - Reduced padding from 16px to 12px for mobile friendliness
+  - Reduced max-width from 500px to 400px
+  - Added explicit fontSize: 14px for better mobile readability
+  - Added containerStyle with top: 70px to avoid header overlap
+  - Toasts now properly sized for mobile screens
+
+- **Test Suite Updates**:
+  - Fixed 4 failing tests in useAgent.test.ts
+  - Updated toast.success expectations to include { duration: 5000 }
+  - Updated toast.error expectations to include { duration: Infinity }
+  - All 58 tests now passing in frontend test suite
+  - Tests verified with run-frontend-tests.sh script
+
+- **Database Duplicate Key Error Fix**:
+  - Fixed 500 error when creating users after deleting Docker volumes
+  - Added `ON CONFLICT (email) DO UPDATE` to UserRepository.CreateAsync()
+  - Database now gracefully handles duplicate user creation attempts
+  - Updates display_name and updated_at instead of throwing constraint violation
+  - Works for any email, prevents errors when new accounts are created
+
+- **Error Toast UX Improvements**:
+  - Error toasts now have infinite duration but can be manually closed
+  - React Hot Toast automatically displays close button (X) for infinite toasts
+  - Users can dismiss error messages when ready
+  - Success toasts still auto-dismiss after 4 seconds
+  - Improves error visibility while maintaining user control
+
+- **Sidebar Navigation Stability Fix**:
+  - Removed bouncing/flashing animation during page navigation
+  - Eliminated JavaScript state-based layout calculations (useState/useEffect)
+  - Replaced dynamic inline styles with pure Tailwind CSS classes
+  - Fixed z-index hierarchy: Mobile overlay (z-50) > Desktop sidebar (z-30) > Header (z-10)
+  - Sidebar now remains completely stable when navigating between pages
+
+- **Smooth Sidebar Transitions**:
+  - Added `isTransitioning` state to control when animations occur
+  - Smooth 300ms transition only when hamburger menu is toggled
+  - No animations during normal page navigation (prevents flash/bounce)
+  - Desktop sidebar opens by default (width >= 768px)
+  - Mobile sidebar uses fullscreen overlay with smooth slide animation
+  - Transition classes only applied during user-initiated toggle action
+  - setTimeout cleanup ensures transition state is removed after animation completes
+
+- **InfoBox Reusable Component**:
+  - Created generic collapsible information component for tips and instructions
+  - Two types supported: 'tips' (💡 emoji, green styling) and 'info' (ℹ️ emoji, blue styling)
+  - Smooth expand/collapse animation with rotating chevron icon
+  - Customizable title and bullet point items via props
+  - Default collapsed state to reduce visual clutter
+  - Keyboard accessible with focus ring styling
+  - Integrated into PlaylistCreatorPage, DiscoverPage, DuplicateCleanerPage, and SuggestionsPage
+  - Replaced static info boxes with interactive collapsible versions
+  - Improves UX by allowing users to expand information when needed
 
 ---
 

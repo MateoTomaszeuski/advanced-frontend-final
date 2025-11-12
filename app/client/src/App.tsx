@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useAuth } from 'react-oidc-context';
 import { KeycloakProvider } from './providers/KeycloakProvider';
 import { AgentTimerProvider } from './providers/AgentTimerProvider';
+import { WebSocketProvider } from './providers/WebSocketProvider';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { showToast } from './utils/toast';
@@ -111,15 +112,25 @@ function AppContent() {
         position="top-right"
         toastOptions={{
           style: {
-            padding: '16px',
-            maxWidth: '500px',
+            padding: '12px',
+            maxWidth: '400px',
+            fontSize: '14px',
           },
           success: {
             duration: 4000,
+            style: {
+              padding: '12px',
+            },
           },
           error: {
             duration: Infinity,
+            style: {
+              padding: '12px',
+            },
           },
+        }}
+        containerStyle={{
+          top: 70,
         }}
       />
     </BrowserRouter>
@@ -131,7 +142,9 @@ function App() {
     <ErrorBoundary>
       <KeycloakProvider>
         <AgentTimerProvider>
-          <AppContent />
+          <WebSocketProvider>
+            <AppContent />
+          </WebSocketProvider>
         </AgentTimerProvider>
       </KeycloakProvider>
     </ErrorBoundary>

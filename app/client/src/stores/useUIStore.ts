@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 interface UIState {
   isSidebarOpen: boolean;
+  isTransitioning: boolean;
   isModalOpen: boolean;
   modalContent: React.ReactNode | null;
   toggleSidebar: () => void;
@@ -10,11 +11,21 @@ interface UIState {
   closeModal: () => void;
 }
 
+const getInitialSidebarState = () => {
+  if (typeof window === 'undefined') return true;
+  return window.innerWidth >= 768;
+};
+
 export const useUIStore = create<UIState>((set) => ({
-  isSidebarOpen: true,
+  isSidebarOpen: getInitialSidebarState(),
+  isTransitioning: false,
   isModalOpen: false,
   modalContent: null,
-  toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+  toggleSidebar: () => {
+    set({ isTransitioning: true });
+    set((state) => ({ isSidebarOpen: !state.isSidebarOpen }));
+    setTimeout(() => set({ isTransitioning: false }), 300);
+  },
   setSidebarOpen: (open) => set({ isSidebarOpen: open }),
   openModal: (content) => set({ isModalOpen: true, modalContent: content }),
   closeModal: () => set({ isModalOpen: false, modalContent: null }),

@@ -103,7 +103,8 @@ describe('useAgent', () => {
       expect(result.current.isLoading).toBe(false);
       expect(agentApi.createSmartPlaylist).toHaveBeenCalled();
       expect(toast.success).toHaveBeenCalledWith(
-        'Playlist "My Playlist" created with 25 tracks!'
+        'Playlist "My Playlist" created with 25 tracks!',
+        { duration: 5000 }
       );
 
       const state = useAgentStore.getState();
@@ -132,7 +133,7 @@ describe('useAgent', () => {
         })
       ).rejects.toThrow('Invalid prompt');
 
-      expect(toast.error).toHaveBeenCalledWith('Invalid prompt');
+      expect(toast.error).toHaveBeenCalledWith('Invalid prompt', { duration: Infinity });
 
       const state = useAgentStore.getState();
       expect(state.status).toBe('error');
@@ -211,7 +212,8 @@ describe('useAgent', () => {
       });
 
       expect(toast.success).toHaveBeenCalledWith(
-        'Discovered 15 new tracks in "Discovered Tracks"!'
+        'Discovered 15 new tracks in "Discovered Tracks"!',
+        { duration: 5000 }
       );
 
       const state = useAgentStore.getState();
@@ -233,7 +235,7 @@ describe('useAgent', () => {
         })
       ).rejects.toThrow('Discovery failed');
 
-      expect(toast.error).toHaveBeenCalledWith('Discovery failed');
+      expect(toast.error).toHaveBeenCalledWith('Discovery failed', { duration: Infinity });
     });
   });
 

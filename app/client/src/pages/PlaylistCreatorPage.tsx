@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { SpotifyConnectionAlert } from '../components/SpotifyConnectionAlert';
+import { InfoBox } from '../components/InfoBox';
 import { Button } from '../components/forms/Button';
 import { TextInput } from '../components/forms/TextInput';
 import { SelectDropdown } from '../components/forms/SelectDropdown';
@@ -151,16 +152,50 @@ export function PlaylistCreatorPage() {
           </p>
         </div>
 
+        <div className="mb-6">
+          <InfoBox
+            type="tips"
+            items={[
+              'Be specific about the mood or activity (workout, study, party, etc.)',
+              'Mention genres if you have a preference',
+              'Use advanced options to fine-tune energy and tempo',
+              'The AI will automatically name your playlist based on your description',
+            ]}
+          />
+        </div>
+
         {!checkingConnection && !spotifyConnected && <SpotifyConnectionAlert />}
 
-        {agentStatus === 'processing' && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center gap-3">
-              <div className="animate-spin h-5 w-5 border-2 border-green-600 border-t-transparent rounded-full"></div>
-              <div>
-                <p className="font-medium text-green-900">{currentTask}</p>
-                <p className="text-sm text-green-700">This may take a moment...</p>
+        {agentStatus === 'processing' && currentTask && (
+          <div className="mb-6 bg-green-50 border-2 border-green-300 rounded-lg p-5 shadow-sm">
+            <div className="flex items-start gap-4">
+              <div className="shrink-0 mt-1">
+                <div className="relative">
+                  <div className="animate-spin h-6 w-6 border-3 border-green-600 border-t-transparent rounded-full"></div>
+                  <div className="absolute inset-0 animate-pulse">
+                    <div className="h-6 w-6 border-3 border-green-300 border-t-transparent rounded-full"></div>
+                  </div>
+                </div>
               </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-600 text-white">
+                    PROCESSING
+                  </span>
+                  <span className="text-xs text-green-600 font-mono">
+                    {new Date().toLocaleTimeString()}
+                  </span>
+                </div>
+                <p className="font-semibold text-green-900 text-lg leading-snug">
+                  {currentTask}
+                </p>
+                <p className="text-sm text-green-700 mt-1">
+                  Please wait while the AI agent completes this operation...
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 h-1.5 bg-green-200 rounded-full overflow-hidden">
+              <div className="h-full bg-green-600 rounded-full animate-pulse" style={{ width: '100%' }}></div>
             </div>
           </div>
         )}
@@ -305,16 +340,6 @@ export function PlaylistCreatorPage() {
               </Button>
             </div>
           </form>
-        </div>
-
-        <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4">
-          <h3 className="font-medium text-green-900 mb-2">💡 Tips</h3>
-          <ul className="text-sm text-green-800 space-y-1">
-            <li>• Be specific about the mood or activity (workout, study, party, etc.)</li>
-            <li>• Mention genres if you have a preference</li>
-            <li>• Use advanced options to fine-tune energy and tempo</li>
-            <li>• The AI will automatically name your playlist based on your description</li>
-          </ul>
         </div>
 
         {spotifyConnected && recentPlaylists.length > 0 && (
