@@ -42,7 +42,14 @@ describe('useAgent', () => {
 
       expect(conversation).toEqual(mockConversation);
       expect(conversationApi.create).toHaveBeenCalledWith({ title: 'Test Conversation' });
-      expect(toast.success).toHaveBeenCalledWith('Conversation created');
+      expect(toast.success).toHaveBeenCalledWith(
+        'Conversation created',
+        expect.objectContaining({
+          duration: 4000,
+          style: expect.any(Object),
+          iconTheme: expect.any(Object)
+        })
+      );
 
       const state = useAgentStore.getState();
       expect(state.conversations).toContainEqual(mockConversation);
@@ -61,7 +68,14 @@ describe('useAgent', () => {
         })
       ).rejects.toThrow('Failed to create');
 
-      expect(toast.error).toHaveBeenCalledWith('Failed to create');
+      expect(toast.error).toHaveBeenCalledWith(
+        'Failed to create',
+        expect.objectContaining({
+          duration: Infinity,
+          style: expect.any(Object),
+          iconTheme: expect.any(Object)
+        })
+      );
     });
   });
 
@@ -104,7 +118,11 @@ describe('useAgent', () => {
       expect(agentApi.createSmartPlaylist).toHaveBeenCalled();
       expect(toast.success).toHaveBeenCalledWith(
         'Playlist "My Playlist" created with 25 tracks!',
-        { duration: 5000 }
+        expect.objectContaining({
+          duration: 4000,
+          style: expect.any(Object),
+          iconTheme: expect.any(Object)
+        })
       );
 
       const state = useAgentStore.getState();
@@ -133,7 +151,14 @@ describe('useAgent', () => {
         })
       ).rejects.toThrow('Invalid prompt');
 
-      expect(toast.error).toHaveBeenCalledWith('Invalid prompt', { duration: Infinity });
+      expect(toast.error).toHaveBeenCalledWith(
+        'Invalid prompt',
+        expect.objectContaining({
+          duration: Infinity,
+          style: expect.any(Object),
+          iconTheme: expect.any(Object)
+        })
+      );
 
       const state = useAgentStore.getState();
       expect(state.status).toBe('error');
@@ -213,7 +238,11 @@ describe('useAgent', () => {
 
       expect(toast.success).toHaveBeenCalledWith(
         'Discovered 15 new tracks in "Discovered Tracks"!',
-        { duration: 5000 }
+        expect.objectContaining({
+          duration: 4000,
+          style: expect.any(Object),
+          iconTheme: expect.any(Object)
+        })
       );
 
       const state = useAgentStore.getState();
@@ -235,7 +264,14 @@ describe('useAgent', () => {
         })
       ).rejects.toThrow('Discovery failed');
 
-      expect(toast.error).toHaveBeenCalledWith('Discovery failed', { duration: Infinity });
+      expect(toast.error).toHaveBeenCalledWith(
+        'Discovery failed',
+        expect.objectContaining({
+          duration: Infinity,
+          style: expect.any(Object),
+          iconTheme: expect.any(Object)
+        })
+      );
     });
   });
 
@@ -256,7 +292,12 @@ describe('useAgent', () => {
       });
 
       expect(toast.success).toHaveBeenCalledWith(
-        'Found 5 duplicates in 2 groups'
+        'Found 5 duplicates in 2 groups',
+        expect.objectContaining({
+          duration: 4000,
+          style: expect.any(Object),
+          iconTheme: expect.any(Object)
+        })
       );
     });
 
@@ -276,7 +317,12 @@ describe('useAgent', () => {
       });
 
       expect(toast.success).toHaveBeenCalledWith(
-        'No duplicates found in this playlist'
+        'No duplicates found in this playlist',
+        expect.objectContaining({
+          duration: 4000,
+          style: expect.any(Object),
+          iconTheme: expect.any(Object)
+        })
       );
     });
   });
@@ -306,7 +352,14 @@ describe('useAgent', () => {
         await result.current.confirmRemoveDuplicates(1, 'playlist123', ['uri1', 'uri2']);
       });
 
-      expect(toast.success).toHaveBeenCalledWith('Removed 2 duplicate tracks!');
+      expect(toast.success).toHaveBeenCalledWith(
+        'Removed 2 duplicate tracks!',
+        expect.objectContaining({
+          duration: 4000,
+          style: expect.any(Object),
+          iconTheme: expect.any(Object)
+        })
+      );
     });
   });
 
@@ -327,7 +380,12 @@ describe('useAgent', () => {
       });
 
       expect(toast.success).toHaveBeenCalledWith(
-        'Generated 5 suggestions for "Test Playlist"'
+        'Generated 5 suggestions for "Test Playlist"',
+        expect.objectContaining({
+          duration: 4000,
+          style: expect.any(Object),
+          iconTheme: expect.any(Object)
+        })
       );
     });
 
