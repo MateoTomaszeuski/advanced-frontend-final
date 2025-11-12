@@ -44,7 +44,7 @@ export function InfoBox({ type, title, items, defaultExpanded = false }: InfoBox
           <h3 className={`font-medium ${style.textColor}`}>{style.title}</h3>
         </div>
         <svg
-          className={`w-5 h-5 ${style.iconColor} transform transition-transform duration-200 ${
+          className={`w-5 h-5 ${style.iconColor} transform transition-transform duration-300 ${
             isExpanded ? 'rotate-180' : ''
           }`}
           fill="none"
@@ -55,13 +55,19 @@ export function InfoBox({ type, title, items, defaultExpanded = false }: InfoBox
         </svg>
       </button>
       
-      {isExpanded && (
-        <ul className={`mt-3 text-sm ${style.subtextColor} space-y-1`}>
-          {items.map((item, index) => (
-            <li key={index}>• {item}</li>
-          ))}
-        </ul>
-      )}
+      <div
+        className={`transition-all duration-300 ease-in-out ${
+          isExpanded ? 'opacity-100 mt-3' : 'opacity-0 max-h-0 overflow-hidden'
+        }`}
+      >
+        {isExpanded && (
+          <ul className={`text-sm ${style.subtextColor} space-y-1`}>
+            {items.map((item, index) => (
+              <li key={index}>• {item}</li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

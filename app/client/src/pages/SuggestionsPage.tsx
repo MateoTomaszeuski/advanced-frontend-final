@@ -2,9 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { SpotifyConnectionAlert } from '../components/SpotifyConnectionAlert';
 import { InfoBox } from '../components/InfoBox';
-import { SelectDropdown } from '../components/forms/SelectDropdown';
-import { TextInput } from '../components/forms/TextInput';
-import { Button } from '../components/forms/Button';
+import { SuggestionSettings } from '../components/suggestions/SuggestionSettings';
+import { SuggestionResults } from '../components/suggestions/SuggestionResults';
 import { useAgent } from '../hooks/useAgent';
 import { spotifyApi } from '../services/api';
 import toast from 'react-hot-toast';
@@ -119,19 +118,6 @@ export function SuggestionsPage() {
     setSelectedTracks(new Set());
   };
 
-  const playlistOptions = playlists.map((p) => ({
-    value: p.id,
-    label: `${p.name} (${p.totalTracks} tracks)`,
-  }));
-
-  const contextExamples = [
-    'more upbeat and energetic',
-    'similar but more chill',
-    'different artists with same vibe',
-    'newer releases in the same genre',
-    'deeper cuts and b-sides',
-  ];
-
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto">
@@ -154,174 +140,30 @@ export function SuggestionsPage() {
 
         <SpotifyConnectionAlert />
 
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Configure Suggestions</h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={fetchPlaylists}
-              leftIcon={
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              }
-            >
-              Sync with Spotify
-            </Button>
-          </div>
+        <SuggestionSettings
+          playlists={playlists}
+          selectedPlaylist={selectedPlaylist}
+          setSelectedPlaylist={setSelectedPlaylist}
+          context={context}
+          setContext={setContext}
+          limit={limit}
+          setLimit={setLimit}
+          onGenerate={handleGenerate}
+          onSync={fetchPlaylists}
+          isLoading={isLoading}
+          conversationId={conversationId}
+        />
 
-          <div className="space-y-4">
-            <SelectDropdown
-              label="Playlist"
-              value={selectedPlaylist}
-              onChange={(e) => setSelectedPlaylist(e.target.value)}
-              options={playlistOptions}
-              placeholder="Choose a playlist"
-            />
-
-            <TextInput
-              label="Context / Description"
-              value={context}
-              onChange={(e) => setContext(e.target.value)}
-              placeholder="e.g., more upbeat and energetic"
-              helperText="Describe what kind of music you're looking for"
-            />
-
-            <SelectDropdown
-              label="Number of Suggestions"
-              value={limit}
-              onChange={(e) => setLimit(e.target.value)}
-              options={[
-                { value: '5', label: '5 suggestions' },
-                { value: '10', label: '10 suggestions' },
-                { value: '15', label: '15 suggestions' },
-                { value: '20', label: '20 suggestions' },
-                { value: '30', label: '30 suggestions' },
-                { value: '50', label: '50 suggestions' },
-              ]}
-            />
-
-            <div className="flex flex-wrap gap-2">
-              {contextExamples.map((example) => (
-                <button
-                  key={example}
-                  onClick={() => setContext(example)}
-                  className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-full text-gray-700 transition-colors"
-                >
-                  {example}
-                </button>
-              ))}
-            </div>
-
-            <Button
-              onClick={handleGenerate}
-              disabled={!selectedPlaylist || !context || !conversationId || isLoading}
-              isLoading={isLoading}
-              className="w-full"
-            >
-              {isLoading ? 'Generating...' : 'Generate Suggestions'}
-            </Button>
-          </div>
-        </div>
-
-        {suggestions && suggestions.suggestionCount > 0 && (
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Suggestions for "{suggestions.playlistName}"
-              </h2>
-              <div className="flex items-center gap-2">
-                {selectedTracks.size > 0 && (
-                  <Button
-                    onClick={handleAddToPlaylist}
-                    disabled={isAdding}
-                    isLoading={isAdding}
-                    variant="primary"
-                    size="sm"
-                  >
-                    Add {selectedTracks.size} to Playlist
-                  </Button>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-gray-600">
-                Context: <span className="italic">{suggestions.context}</span>
-              </p>
-              <div className="flex items-center gap-2">
-                {selectedTracks.size === suggestions.suggestions.length ? (
-                  <Button
-                    onClick={handleDeselectAll}
-                    variant="ghost"
-                    size="sm"
-                  >
-                    Deselect All
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleSelectAll}
-                    variant="ghost"
-                    size="sm"
-                  >
-                    Select All
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {suggestions.suggestions.map((track) => (
-                <div
-                  key={track.id}
-                  className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-green-300 transition-colors"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedTracks.has(track.uri)}
-                    onChange={() => toggleTrackSelection(track.uri)}
-                    className="mt-1 h-5 w-5 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 truncate">{track.name}</h3>
-                    <p className="text-sm text-gray-600 truncate">
-                      {track.artists.join(', ')}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1 italic">{track.reason}</p>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs text-gray-500">
-                      ♪ {track.popularity}
-                    </span>
-                    <a
-                      href={track.uri}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-md transition-colors"
-                    >
-                      <svg
-                        className="w-4 h-4 mr-1"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
-                      </svg>
-                      Play
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {suggestions && suggestions.suggestionCount === 0 && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
-            <p className="text-yellow-800">
-              No suggestions found for this context. Try a different description or playlist.
-            </p>
-          </div>
+        {suggestions && (
+          <SuggestionResults
+            suggestions={suggestions}
+            selectedTracks={selectedTracks}
+            onToggleTrack={toggleTrackSelection}
+            onSelectAll={handleSelectAll}
+            onDeselectAll={handleDeselectAll}
+            onAddToPlaylist={handleAddToPlaylist}
+            isAdding={isAdding}
+          />
         )}
       </div>
     </MainLayout>
