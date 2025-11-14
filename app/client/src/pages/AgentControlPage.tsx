@@ -4,9 +4,9 @@ import { ActiveConversation } from '../components/agent-control/ActiveConversati
 import { RecentActionsList } from '../components/agent-control/RecentActionsList';
 import { ConversationsList } from '../components/agent-control/ConversationsList';
 import { useAgentStore } from '../stores/useAgentStore';
-import { conversationApi } from '../services/api';
+import { conversationApi, agentApi } from '../services/api';
 import { useState, useEffect, useCallback } from 'react';
-import type { Conversation } from '../types/api';
+import type { Conversation, AgentAction } from '../types/api';
 import { useAgentTimer } from '../hooks/useAgentTimer';
 import { showToast } from '../utils/toast';
 import { useWebSocket } from '../hooks/useWebSocket';
@@ -15,7 +15,6 @@ export function AgentControlPage() {
   const {
     status,
     currentTask,
-    recentActions,
     currentConversation,
     setConversations,
     setStatus,
@@ -26,6 +25,7 @@ export function AgentControlPage() {
   const { isConnected, latestStatus } = useWebSocket();
   const [loading, setLoading] = useState(true);
   const [allConversations, setAllConversations] = useState<Conversation[]>([]);
+  const [recentActions, setRecentActions] = useState<AgentAction[]>([]);
   const [realtimeMessage, setRealtimeMessage] = useState<string | null>(null);
 
   const loadConversations = useCallback(async () => {
@@ -42,6 +42,15 @@ export function AgentControlPage() {
       setLoading(false);
     }
   }, [setConversations]);
+
+  const loadRecentActions = useCallback(async () => {
+    try {
+      const actions = await agentApi.getHistory({ limit: 10 });
+      setRecentActions(actions);
+    } catch (error) {
+      console.error('Failed to load recent actions:', error);
+    }
+  }, []);
 
   useEffect(() => {
     if (latestStatus) {
@@ -65,15 +74,17 @@ export function AgentControlPage() {
       if (latestStatus.status === 'completed' && latestStatus.message) {
         showToast.success(latestStatus.message);
         loadConversations();
+        loadRecentActions();
       } else if (latestStatus.status === 'error' && latestStatus.message) {
         showToast.error(latestStatus.message);
       }
     }
-  }, [latestStatus, setStatus, setCurrentTask, loadConversations]);
+  }, [latestStatus, setStatus, setCurrentTask, loadConversations, loadRecentActions]);
 
   useEffect(() => {
     loadConversations();
-  }, [loadConversations]);
+    loadRecentActions();
+  }, [loadConversations, loadRecentActions]);
 
   return (
     <MainLayout>

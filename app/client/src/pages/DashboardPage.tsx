@@ -26,8 +26,9 @@ export function DashboardPage() {
           agentApi.getAnalytics(),
           agentApi.getHistory({ limit: 5 }),
         ]);
-        setAnalytics(analyticsData as AppAnalytics);
+        
         setRecentActions(historyData as AgentAction[]);
+        setAnalytics(analyticsData as AppAnalytics);
       } catch (error) {
         console.error('Failed to fetch data:', error);
         showToast.error(

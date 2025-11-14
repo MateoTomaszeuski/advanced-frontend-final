@@ -1788,6 +1788,25 @@ An intelligent Spotify management assistant that automates playlist creation, mu
   - Fixed Analytics page showing toasts even when notifications disabled
   - Fixed all pages showing toasts when preferences set to disabled
 
+- **History Management System Redesign**:
+  - **Removed Client-Side Filtering**: Eliminated `historyHidden` and `historyClearedAt` properties from UserPreferences
+  - **Database Deletion Implementation**: "Clear History" button now permanently deletes all agent actions from PostgreSQL
+  - **Backend DELETE Endpoint**: Added `DELETE /api/agent/history` endpoint in AgentController
+    - Iterates through user's conversations and deletes all associated agent_actions
+    - Returns count of deleted records for confirmation
+    - Full error handling and logging
+  - **Frontend Integration**: Updated SettingsPage with async clearHistory() API call
+    - Loading state with "Clearing..." text during deletion
+    - Confirmation dialog with clear warning message
+    - Proper error handling with try-catch-finally
+  - **Code Cleanup**: Removed all unused filtering logic from multiple pages
+    - Removed unused `useUserStore` imports from: useAgent.ts, DashboardPage.tsx, AnalyticsPage.tsx
+    - Cleaned up HistoryPage.tsx, DashboardPage.tsx, AgentControlPage.tsx (all now fetch directly from API)
+    - Removed timestamp-based filtering logic throughout codebase
+    - Updated AgentControlPage to fetch recent actions from API instead of in-memory store
+  - **TypeScript Improvements**: Fixed type imports in DashboardPage using `type` keyword for `verbatimModuleSyntax` compatibility
+  - **User Experience**: History pages show empty state after deletion, new actions display normally after clearing
+
 
 ---
 

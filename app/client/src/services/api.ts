@@ -55,6 +55,9 @@ export const agentApi = {
 
   getAnalytics: () =>
     apiClient.get('/api/agent/analytics'),
+
+  clearHistory: () =>
+    apiClient.delete('/api/agent/history'),
 };
 
 export const spotifyApi = {

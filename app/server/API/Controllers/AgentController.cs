@@ -325,6 +325,43 @@ public class AgentController : ControllerBase
         }
     }
 
+    [HttpDelete("history")]
+    public async Task<IActionResult> ClearHistory()
+    {
+        var user = this.GetCurrentUser();
+        if (user == null)
+        {
+            return this.UnauthorizedUser();
+        }
+
+        _logger.LogInformation("ClearHistory request from user: {Email}", user.Email);
+
+        try
+        {
+            var allConversations = await _conversationRepository.GetAllByUserIdAsync(user.Id);
+            var conversationIds = allConversations.Select(c => c.Id).ToList();
+
+            var deletedCount = 0;
+            foreach (var convId in conversationIds)
+            {
+                var actions = await _actionRepository.GetAllByConversationIdAsync(convId);
+                foreach (var action in actions)
+                {
+                    await _actionRepository.DeleteAsync(action.Id);
+                    deletedCount++;
+                }
+            }
+
+            _logger.LogInformation("Deleted {Count} actions for user: {Email}", deletedCount, user.Email);
+            return Ok(new { message = $"Deleted {deletedCount} actions", deletedCount });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error clearing history for user: {Email}", user.Email);
+            return StatusCode(500, new { error = "Failed to clear history" });
+        }
+    }
+
     [HttpGet("analytics")]
     public async Task<IActionResult> GetAppAnalytics()
     {

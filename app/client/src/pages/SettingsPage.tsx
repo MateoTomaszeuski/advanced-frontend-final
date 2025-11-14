@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { Button } from '../components/forms/Button';
 import { useUserStore } from '../stores/useUserStore';
-import { spotifyApi } from '../services/api';
+import { spotifyApi, agentApi } from '../services/api';
 import { useAuth } from 'react-oidc-context';
 import toast from 'react-hot-toast';
 import { showToast } from '../utils/toast';
@@ -368,11 +368,30 @@ export function SettingsPage() {
               <div className="flex-1">
                 <p className="font-medium text-gray-900">Clear agent history</p>
                 <p className="text-sm text-gray-600 mt-1">
-                  Permanently delete all agent action history. This action cannot be undone.
+                  Permanently delete all agent action history from the database. This action cannot be undone.
                 </p>
               </div>
-              <Button variant="danger" size="sm" className="ml-4 whitespace-nowrap">
-                Clear History
+              <Button 
+                variant="danger" 
+                size="sm" 
+                className="ml-4 whitespace-nowrap"
+                onClick={async () => {
+                  if (window.confirm('Are you sure you want to delete all history? This will permanently delete all your agent actions from the database. This action cannot be undone.')) {
+                    try {
+                      setIsLoading(true);
+                      await agentApi.clearHistory();
+                      showToast.success('History deleted');
+                    } catch (error) {
+                      console.error('Failed to clear history:', error);
+                      showToast.error('Failed to clear history');
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }
+                }}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Clearing...' : 'Clear History'}
               </Button>
             </div>
           </div>
