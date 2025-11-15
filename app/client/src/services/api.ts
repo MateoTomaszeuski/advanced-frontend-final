@@ -10,6 +10,12 @@ import type {
   ConnectSpotifyRequest,
   PlaylistAnalytics,
 } from '../types/api';
+import type {
+  ThemeData,
+  ThemeResponse,
+  GenerateThemeRequest,
+  SaveThemeRequest,
+} from '../types/theme';
 
 export const conversationApi = {
   getAll: () => apiClient.get<Conversation[]>('/api/conversations'),
@@ -87,4 +93,18 @@ export const spotifyApi = {
 export const testApi = {
   me: () => apiClient.get('/api/test/me'),
   ping: () => apiClient.get('/api/test/ping'),
+};
+
+export const themeApi = {
+  generate: (data: GenerateThemeRequest) =>
+    apiClient.post<ThemeData>('/api/themes/generate', data),
+
+  save: (data: SaveThemeRequest) =>
+    apiClient.post<ThemeResponse>('/api/themes/save', data),
+
+  getCurrent: () =>
+    apiClient.get<ThemeResponse>('/api/themes/current'),
+
+  delete: () =>
+    apiClient.delete('/api/themes/current'),
 };

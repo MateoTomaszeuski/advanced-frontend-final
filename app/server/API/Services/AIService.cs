@@ -121,7 +121,16 @@ public class AIService : IAIService
 
             if (tools != null && tools.Count > 0)
             {
-                requestBody["tools"] = tools;
+                requestBody["tools"] = tools.Select(t => new Dictionary<string, object>
+                {
+                    ["type"] = t.Type,
+                    ["function"] = new Dictionary<string, object>
+                    {
+                        ["name"] = t.Function.Name,
+                        ["description"] = t.Function.Description,
+                        ["parameters"] = t.Function.Parameters
+                    }
+                }).ToList();
             }
 
             var jsonContent = JsonSerializer.Serialize(requestBody);

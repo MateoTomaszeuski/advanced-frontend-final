@@ -26,12 +26,13 @@ export function Sidebar() {
         className={`
           hidden md:block
           fixed left-0 top-0 h-screen
-          bg-linear-to-b from-green-900 to-green-950 text-white
+          bg-theme-sidebar text-white
           shadow-xl z-30
           ${isSidebarOpen ? 'w-64' : 'w-0'}
           ${isTransitioning ? 'transition-all duration-300 ease-in-out' : ''}
           overflow-hidden
         `}
+        style={{ color: 'white' }}
       >
         <div className="p-4 flex flex-col h-full">
           <div className="mb-8 shrink-0">
@@ -54,8 +55,8 @@ export function Sidebar() {
                       flex items-center gap-3 px-4 py-2 rounded-lg
                       transition-colors whitespace-nowrap
                       ${location.pathname === item.path 
-                        ? 'bg-green-800 font-semibold' 
-                        : 'hover:bg-green-800'
+                        ? 'bg-theme-primary font-semibold' 
+                        : 'hover:bg-theme-primary hover:bg-opacity-70'
                       }
                     `}
                   >
@@ -91,11 +92,12 @@ export function Sidebar() {
         <div
           className={`
             absolute top-0 left-0 right-0
-            bg-linear-to-r from-green-900 to-green-950 text-white
+            bg-theme-sidebar text-white
             shadow-lg
             transform transition-transform duration-300 ease-in-out
             ${isSidebarOpen ? 'translate-y-0' : '-translate-y-full'}
           `}
+          style={{ color: 'white' }}
         >
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
@@ -105,7 +107,7 @@ export function Sidebar() {
               </div>
               <button
                 onClick={toggleSidebar}
-                className="p-2 hover:bg-green-800 rounded-lg transition-colors"
+                className="p-2 hover:bg-theme-primary hover:bg-opacity-70 rounded-lg transition-colors"
                 aria-label="Close menu"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,8 +127,8 @@ export function Sidebar() {
                         flex items-center gap-3 px-4 py-3 rounded-lg
                         transition-colors
                         ${location.pathname === item.path 
-                          ? 'bg-green-800 font-semibold' 
-                          : 'hover:bg-green-800'
+                          ? 'bg-theme-primary font-semibold' 
+                          : 'hover:bg-theme-primary hover:bg-opacity-70'
                         }
                       `}
                     >

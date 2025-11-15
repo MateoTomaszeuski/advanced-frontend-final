@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { Button } from '../components/forms/Button';
 import { useUserStore } from '../stores/useUserStore';
@@ -8,6 +9,7 @@ import toast from 'react-hot-toast';
 import { showToast } from '../utils/toast';
 
 export function SettingsPage() {
+  const navigate = useNavigate();
   const { updateSpotifyConnection, preferences, updatePreferences } = useUserStore();
   const auth = useAuth();
   const [spotifyStatus, setSpotifyStatus] = useState<{
@@ -327,7 +329,6 @@ export function SettingsPage() {
                   checked={preferences.notificationsEnabled}
                   onChange={(e) => {
                     updatePreferences({ notificationsEnabled: e.target.checked });
-                    // Show a native toast to confirm the change (bypass the preference check)
                     if (e.target.checked) {
                       toast.success('Notifications enabled', {
                         duration: 2000,
@@ -354,6 +355,30 @@ export function SettingsPage() {
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
               </label>
             </div>
+          </div>
+        </div>
+
+        {/* Customization */}
+        <div className="bg-white rounded-lg shadow p-6 mt-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <span className="text-2xl">🎨</span>
+            Appearance
+          </h2>
+          <div className="flex items-center justify-between p-4 bg-linear-to-r from-purple-50 to-blue-50 rounded-lg">
+            <div className="flex-1">
+              <p className="font-medium text-gray-900">Customize Theme</p>
+              <p className="text-sm text-gray-600 mt-1">
+                Use AI to create a personalized color theme for your app
+              </p>
+            </div>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => navigate('/settings/customize')}
+              className="ml-4 whitespace-nowrap"
+            >
+              Customize
+            </Button>
           </div>
         </div>
 

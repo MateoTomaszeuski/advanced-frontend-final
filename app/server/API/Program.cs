@@ -16,10 +16,12 @@ builder.Services.AddSingleton<IDbConnectionFactory>(new DbConnectionFactory(conn
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IConversationRepository, ConversationRepository>();
 builder.Services.AddScoped<IAgentActionRepository, AgentActionRepository>();
+builder.Services.AddScoped<IThemeRepository, ThemeRepository>();
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAgentService, AgentService>();
 builder.Services.AddScoped<ISpotifyTokenService, SpotifyTokenService>();
+builder.Services.AddScoped<IThemeService, ThemeService>();
 builder.Services.AddHttpClient<ISpotifyService, SpotifyService>();
 builder.Services.AddHttpClient<IAIService, AIService>();
 builder.Services.AddHttpClient(); // Add general HttpClient factory

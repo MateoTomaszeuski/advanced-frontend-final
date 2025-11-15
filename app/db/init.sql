@@ -78,3 +78,25 @@ COMMENT ON COLUMN agent_actions.action_type IS 'Type of agent action: CreateSmar
 COMMENT ON COLUMN agent_actions.status IS 'Action status: Processing, Completed, Failed, AwaitingApproval';
 COMMENT ON COLUMN agent_actions.parameters IS 'JSON parameters for the action';
 COMMENT ON COLUMN agent_actions.result IS 'JSON result of the action';
+
+-- User themes table for AI-generated app customization
+CREATE TABLE IF NOT EXISTS user_themes (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    theme_data JSONB NOT NULL,
+    description TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id)
+);
+
+CREATE INDEX idx_user_themes_user_id ON user_themes(user_id);
+
+CREATE TRIGGER update_user_themes_updated_at
+    BEFORE UPDATE ON user_themes
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+COMMENT ON TABLE user_themes IS 'User-specific AI-generated theme customizations';
+COMMENT ON COLUMN user_themes.theme_data IS 'JSON object containing theme configuration (colors, styles, etc.)';
+COMMENT ON COLUMN user_themes.description IS 'User description that was used to generate the theme';

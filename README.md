@@ -1807,6 +1807,82 @@ An intelligent Spotify management assistant that automates playlist creation, mu
   - **TypeScript Improvements**: Fixed type imports in DashboardPage using `type` keyword for `verbatimModuleSyntax` compatibility
   - **User Experience**: History pages show empty state after deletion, new actions display normally after clearing
 
+- **AI-Powered Theme Customization Feature**:
+  - **Backend Infrastructure**:
+    - Created `user_themes` table in PostgreSQL with JSONB theme_data column, description TEXT, unique constraint on user_id
+    - Created DTOs: ThemeDataDto (8 colors), GenerateThemeRequest, SaveThemeRequest, ThemeResponse
+    - Created ThemeRepository with CRUD operations (CreateAsync, GetByUserIdAsync, UpdateAsync, DeleteAsync)
+    - Created ThemeService with AI integration for theme generation and theme management
+    - Created ThemesController with 4 endpoints (POST /generate, POST /save, GET /current, DELETE /current)
+    - AI tool calling with `setAppTheme` function generates 8 color properties: primaryColor, secondaryColor, accentColor, backgroundColor, textColor, sidebarColor, cardBackground, borderColor
+    - Theme persistence per Keycloak user with unique constraint on user_id
+    - Proper user authorization using GetCurrentUser() extension method
+  
+  - **AI Theme Generation**:
+    - Natural language prompt parsing with GPT-OSS-120B model
+    - System prompt: "You are a professional UI/UX designer and color specialist"
+    - Generates harmonious, accessible color themes based on user descriptions
+    - Returns 8 colors with semantic meaning for different UI elements
+    - Ensures good contrast ratios for accessibility
+    - AI provides professional UI/UX design expertise
+    - Fallback to default colors if AI doesn't generate theme
+  
+  - **Frontend Integration**:
+    - Created ThemeContext with React context provider (ThemeProvider component)
+    - Loads saved theme on authentication automatically via useEffect
+    - Applies theme via CSS variables with proper --color-theme-* naming
+    - Real-time theme preview during customization using applyTheme() function
+    - Theme persists across sessions and page navigation
+    - resetTheme() function to restore default colors
+    - useTheme() hook for accessing theme context throughout app
+  
+  - **Customize Page** (CustomizePage.tsx):
+    - Natural language description input textarea with character counter (0/1000)
+    - InfoBox with tips for describing themes effectively (mood, color preferences, light vs dark, design inspirations)
+    - AI-powered theme generation button with loading state ("Generating...")
+    - Live preview with 8 color swatches showing hex codes in grid layout
+    - Each swatch displays color name, hex value, and colored rectangle
+    - Save/Cancel options after generation with loading states
+    - "Restore to Defaults" button with confirmation dialog to prevent accidental resets
+    - Applies generated theme to entire app in real-time for preview
+    - Navigation via Settings page → "Customize Theme" button
+    - Full conversation tracking with conversationId state
+    - Toast notifications for success/error states
+  
+  - **Tailwind v4 CSS Variable System**:
+    - Uses `@theme` directive in index.css for proper JIT compilation
+    - Declares 8 themeable variables in @theme block: `--color-theme-primary`, `--color-theme-secondary`, `--color-theme-accent`, `--color-theme-background`, `--color-theme-text`, `--color-theme-sidebar`, `--color-theme-card`, `--color-theme-border`
+    - Custom utility classes in @layer utilities: `.bg-theme-card`, `.bg-theme-background`, `.bg-theme-sidebar`, `.bg-theme-primary`, `.bg-theme-accent`, `.text-theme-text`, `.text-theme-primary`, `.border-theme-border`
+    - Proper `--color-` prefix for Tailwind v4 compatibility (required for theme variables)
+    - No CSS hacks or !important overrides needed
+    - JIT compiler recognizes --color-* variables as themeable colors
+  
+  - **Settings Page Integration**:
+    - Added "Customize Theme" navigation button in settings under "Preferences" section
+    - Routes to /settings/customize using React Router Link
+    - Button styled with green Spotify theme and palette emoji icon
+    - Integrated with existing settings card layout
+    - Proper navigation hierarchy maintained
+  
+  - **Bug Fixes**:
+    - Fixed AI tool serialization (lowercase property names: type, function, name, description, parameters instead of PascalCase Type, Function, Name)
+    - Fixed authentication in ThemesController (uses GetCurrentUser() extension method instead of User.FindFirst("email"))
+    - Fixed theme not applying to UI (migrated from regular CSS with !important overrides to Tailwind v4 @theme directive)
+    - Fixed React Fast Refresh warning (added eslint-disable-next-line react-refresh/only-export-components comment)
+    - Fixed infinite loop in ThemeContext by defining useTheme separately and exporting with eslint disable comment
+  
+  - **Theme Features**:
+    - Generate themes from natural language descriptions ("dark professional theme with purple accents", "bright summer vibes", etc.)
+    - Save themes to database per user (unique per user_id)
+    - Load saved theme automatically on login via useEffect in ThemeContext
+    - Delete saved theme and restore defaults with confirmation dialog
+    - Real-time theme preview before saving (applies immediately to entire app)
+    - All 8 colors customizable and validated by AI
+    - Themes apply across entire application (sidebar, cards, buttons, text, borders)
+    - Confirmation dialog prevents accidental resets ("Are you sure you want to restore the default theme?")
+    - Theme data stored as JSONB in PostgreSQL for flexibility
+    - Theme description persisted for future reference
+
 
 ---
 

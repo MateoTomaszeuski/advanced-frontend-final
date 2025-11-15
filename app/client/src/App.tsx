@@ -5,6 +5,7 @@ import { useAuth } from 'react-oidc-context';
 import { KeycloakProvider } from './providers/KeycloakProvider';
 import { AgentTimerProvider } from './providers/AgentTimerProvider';
 import { WebSocketProvider } from './providers/WebSocketProvider';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { showToast } from './utils/toast';
@@ -12,6 +13,7 @@ import { showToast } from './utils/toast';
 import { LandingPage } from './pages/LandingPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { CustomizePage } from './pages/CustomizePage';
 import { PlaylistCreatorPage } from './pages/PlaylistCreatorPage';
 import { DiscoverPage } from './pages/DiscoverPage';
 import { DuplicateCleanerPage } from './pages/DuplicateCleanerPage';
@@ -106,6 +108,14 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/settings/customize"
+          element={
+            <ProtectedRoute>
+              <CustomizePage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster 
@@ -143,11 +153,13 @@ function App() {
   return (
     <ErrorBoundary>
       <KeycloakProvider>
-        <AgentTimerProvider>
-          <WebSocketProvider>
-            <AppContent />
-          </WebSocketProvider>
-        </AgentTimerProvider>
+        <ThemeProvider>
+          <AgentTimerProvider>
+            <WebSocketProvider>
+              <AppContent />
+            </WebSocketProvider>
+          </AgentTimerProvider>
+        </ThemeProvider>
       </KeycloakProvider>
     </ErrorBoundary>
   );
