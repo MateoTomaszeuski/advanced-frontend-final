@@ -106,7 +106,7 @@ export function DashboardPage() {
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-theme-text mb-8">Dashboard</h1>
 
         <SpotifyConnectionAlert />
 
@@ -187,9 +187,9 @@ export function DashboardPage() {
 
         {currentTask && <CurrentTask task={currentTask} />}
 
-        <div className="bg-white rounded-lg shadow mb-8">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Quick Actions</h2>
+        <div className="bg-theme-card rounded-lg shadow mb-8">
+          <div className="p-6 border-b border-theme-border">
+            <h2 className="text-xl font-semibold text-theme-text">Quick Actions</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-6">
             {quickActions.map((action) => (
@@ -208,9 +208,9 @@ export function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <RecentActivity actions={recentActions} onViewAll={() => navigate('/history')} />
 
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">More Tools</h2>
+          <div className="bg-theme-card rounded-lg shadow">
+            <div className="p-6 border-b border-theme-border flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-theme-text">More Tools</h2>
             </div>
             <div className="p-6 space-y-3">
               <ToolCard

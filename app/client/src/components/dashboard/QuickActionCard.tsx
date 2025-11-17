@@ -12,15 +12,15 @@ export function QuickActionCard({ title, description, icon, color, onClick }: Qu
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-start p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:shadow-md transition-all group"
+      className="flex flex-col items-start p-4 border-2 border-theme-border rounded-lg hover:border-green-500 hover:shadow-md transition-all group"
     >
       <div className={`${color} p-3 rounded-lg mb-3 group-hover:scale-110 transition-transform`}>
         {icon}
       </div>
-      <h3 className="text-sm font-semibold text-gray-900 mb-1 group-hover:text-green-700 transition-colors">
+      <h3 className="text-sm font-semibold text-theme-text mb-1 group-hover:text-green-700 transition-colors">
         {title}
       </h3>
-      <p className="text-xs text-gray-500">{description}</p>
+      <p className="text-xs text-theme-text opacity-70">{description}</p>
     </button>
   );
 }
