@@ -46,7 +46,7 @@ export function PlaylistForm({
     <div className="bg-theme-card rounded-lg shadow-sm border border-theme-border p-6">
       <form onSubmit={onSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-theme-text mb-2">
             Playlist Description *
           </label>
           <TextInput
@@ -55,13 +55,13 @@ export function PlaylistForm({
             placeholder="e.g., Create a workout playlist with high-energy rock songs"
             disabled={isLoading}
           />
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-2 text-sm text-theme-text opacity-70">
             Examples: "chill vibes for studying", "upbeat party mix", "focus music for work"
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Number of Tracks</label>
+          <label className="block text-sm font-medium text-theme-text mb-2">Number of Tracks</label>
           <SelectDropdown
             value={maxTracks}
             onChange={(e) => setMaxTracks(e.target.value)}
@@ -93,8 +93,8 @@ export function PlaylistForm({
           <div className="space-y-4 pl-6 border-l-2 border-green-200">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Min Energy (0-100)
+                <label className="block text-sm font-medium text-theme-text mb-2">
+                  Minimum Energy (0-1)
                 </label>
                 <TextInput
                   type="number"

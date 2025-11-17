@@ -8,14 +8,14 @@ export function ActiveConversation({ conversation }: ActiveConversationProps) {
   return (
     <div className="bg-theme-card rounded-lg shadow mb-8">
       <div className="px-6 py-4 border-b border-theme-border">
-        <h2 className="text-xl font-bold text-gray-900">Active Conversation</h2>
+        <h2 className="text-xl font-bold text-theme-text">Active Conversation</h2>
       </div>
       <div className="p-6">
         {conversation ? (
           <div className="space-y-3">
             <div>
-              <span className="text-sm text-gray-500">Conversation ID:</span>
-              <span className="ml-2 text-sm font-medium text-gray-900">
+              <span className="text-sm text-theme-text opacity-70">Conversation ID:</span>
+              <span className="ml-2 text-sm font-medium text-theme-text">
                 {conversation.id}
               </span>
             </div>

@@ -7,14 +7,14 @@ interface LatestDiscoveryProps {
 export function LatestDiscovery({ discoveryResult }: LatestDiscoveryProps) {
   return (
     <div className="bg-theme-card rounded-lg shadow-sm border border-theme-border p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Latest Discovery</h2>
+      <h2 className="text-lg font-semibold text-theme-text mb-4">Latest Discovery</h2>
       
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-medium text-gray-900">
+          <h3 className="font-medium text-theme-text">
             {discoveryResult.playlistName}
           </h3>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-theme-text opacity-70">
             {discoveryResult.trackCount} tracks
           </span>
         </div>

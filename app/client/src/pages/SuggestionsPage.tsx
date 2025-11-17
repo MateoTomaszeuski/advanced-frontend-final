@@ -121,8 +121,8 @@ export function SuggestionsPage() {
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Music Suggestions</h1>
-        <p className="text-gray-600 mb-6">
+        <h1 className="text-3xl font-bold text-theme-text mb-2">Music Suggestions</h1>
+        <p className="text-theme-text opacity-80 mb-6">
           Get AI-powered music recommendations based on your playlist and context.
         </p>
 

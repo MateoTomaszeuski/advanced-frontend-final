@@ -16,11 +16,11 @@ export function DiscoverySettings({
 }: DiscoverySettingsProps) {
   return (
     <div className="bg-theme-card rounded-lg shadow-sm border border-theme-border p-6 mb-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Discovery Settings</h3>
-      
+      <h3 className="text-lg font-semibold text-theme-text mb-4">Discovery Settings</h3>
+
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-theme-text mb-2">
             Number of Tracks to Discover
           </label>
           <SelectDropdown

@@ -46,7 +46,7 @@ export function SuggestionSettings({
   return (
     <div className="bg-theme-card rounded-lg shadow-sm p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-gray-900">Configure Suggestions</h2>
+        <h2 className="text-xl font-semibold text-theme-text">Configure Suggestions</h2>
         <Button
           variant="ghost"
           size="sm"

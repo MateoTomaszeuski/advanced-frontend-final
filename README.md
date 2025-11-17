@@ -1717,6 +1717,7 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 - Toasts / global notifications with user preferences
 - Settings page redesigned
 - All toast notifications respect user preferences
+- AI-powered theme customization feature (bonus feature)
 
 **Features:**
 - **API Client Timeout Improvements**:
@@ -1834,17 +1835,18 @@ An intelligent Spotify management assistant that automates playlist creation, mu
     - Real-time theme preview during customization using applyTheme() function
     - Theme persists across sessions and page navigation
     - resetTheme() function to restore default colors
+    - reloadTheme() function to fetch saved theme from backend
     - useTheme() hook for accessing theme context throughout app
   
   - **Customize Page** (CustomizePage.tsx):
     - Natural language description input textarea with character counter (0/1000)
     - InfoBox with tips for describing themes effectively (mood, color preferences, light vs dark, design inspirations)
     - AI-powered theme generation button with loading state ("Generating...")
-    - Live preview with 8 color swatches showing hex codes in grid layout
-    - Each swatch displays color name, hex value, and colored rectangle
+    - Live preview with 8 color swatches showing hex codes in 2x4 grid layout
+    - Each swatch displays color name, hex value, and colored rectangle with proper labels
     - Save/Cancel options after generation with loading states
     - "Restore to Defaults" button with confirmation dialog to prevent accidental resets
-    - Applies generated theme to entire app in real-time for preview
+    - Applies generated theme to entire app in real-time for preview (sidebar, cards, text, buttons, borders)
     - Navigation via Settings page → "Customize Theme" button
     - Full conversation tracking with conversationId state
     - Toast notifications for success/error states
@@ -1860,28 +1862,46 @@ An intelligent Spotify management assistant that automates playlist creation, mu
   - **Settings Page Integration**:
     - Added "Customize Theme" navigation button in settings under "Preferences" section
     - Routes to /settings/customize using React Router Link
-    - Button styled with green Spotify theme and palette emoji icon
+    - Button styled with green Spotify theme and palette emoji icon (🎨)
     - Integrated with existing settings card layout
     - Proper navigation hierarchy maintained
   
   - **Bug Fixes**:
-    - Fixed AI tool serialization (lowercase property names: type, function, name, description, parameters instead of PascalCase Type, Function, Name)
+    - Fixed AI tool serialization (lowercase property names: type, function, name, description, parameters instead of PascalCase)
     - Fixed authentication in ThemesController (uses GetCurrentUser() extension method instead of User.FindFirst("email"))
     - Fixed theme not applying to UI (migrated from regular CSS with !important overrides to Tailwind v4 @theme directive)
     - Fixed React Fast Refresh warning (added eslint-disable-next-line react-refresh/only-export-components comment)
     - Fixed infinite loop in ThemeContext by defining useTheme separately and exporting with eslint disable comment
+    - Fixed MainLayout hardcoded bg-gray-50 to bg-theme-background
+    - Fixed preview text not updating to theme colors
+    - Fixed header/top bar text not updating to theme colors
+    - Fixed dashboard cards and all pages not updating to theme colors (comprehensive grep search and replacement)
   
   - **Theme Features**:
-    - Generate themes from natural language descriptions ("dark professional theme with purple accents", "bright summer vibes", etc.)
-    - Save themes to database per user (unique per user_id)
+    - Generate themes from natural language descriptions ("dark professional theme with purple accents", "bright summer vibes", "minimal light theme", etc.)
+    - Save themes to database per user (unique per user_id, one theme per user)
     - Load saved theme automatically on login via useEffect in ThemeContext
     - Delete saved theme and restore defaults with confirmation dialog
     - Real-time theme preview before saving (applies immediately to entire app)
     - All 8 colors customizable and validated by AI
-    - Themes apply across entire application (sidebar, cards, buttons, text, borders)
+    - Themes apply across entire application (sidebar, cards, buttons, text, borders, backgrounds)
     - Confirmation dialog prevents accidental resets ("Are you sure you want to restore the default theme?")
     - Theme data stored as JSONB in PostgreSQL for flexibility
     - Theme description persisted for future reference
+    - Comprehensive theme color application across all components (100+ updates to replace hardcoded gray text with theme variables)
+    - Mobile responsive sidebar and header use theme colors
+    - All text elements use text-theme-text with opacity variations for hierarchy (opacity-70, opacity-80)
+    - All cards use bg-theme-card instead of bg-white
+    - All borders use border-theme-border instead of border-gray-*
+  
+  - **Comprehensive Theme Variable Adoption**:
+    - Updated all pages: Dashboard, Settings, Playlist Creator, Duplicate Cleaner, Discover, Suggestions, Agent Control, History
+    - Updated all components: Header, Sidebar, QuickActionCard, ToolCard, MetricCard, RecentActivity, CurrentTask, PlaylistForm, ScanResults, SuggestionResults, StatusCards, FilterPanel, ActionList
+    - Replaced 100+ instances of hardcoded text-gray-*, text-slate-*, text-zinc-* with text-theme-text
+    - Replaced all bg-white with bg-theme-card
+    - Replaced all border-gray-* with border-theme-border
+    - Proper opacity usage for text hierarchy (primary text = no opacity, secondary = opacity-80, tertiary = opacity-70)
+    - Ensured mobile responsive design adapts colors properly
 
 
 ---

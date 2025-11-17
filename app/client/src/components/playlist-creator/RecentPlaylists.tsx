@@ -22,7 +22,7 @@ export function RecentPlaylists({ playlists, isLoading }: RecentPlaylistsProps) 
   return (
     <div className="mt-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold text-gray-900">Recently Created Playlists</h2>
+        <h2 className="text-2xl font-bold text-theme-text">Recently Created Playlists</h2>
         {isLoading && (
           <div className="animate-spin h-5 w-5 border-2 border-green-600 border-t-transparent rounded-full"></div>
         )}
@@ -35,13 +35,13 @@ export function RecentPlaylists({ playlists, isLoading }: RecentPlaylistsProps) 
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-900 truncate">
+                <h3 className="font-semibold text-theme-text truncate">
                   {playlist.result.playlistName}
                 </h3>
-                <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                  "{playlist.inputPrompt}"
+                <p className="text-sm text-theme-text opacity-70 mt-1 line-clamp-2">
+                  {playlist.inputPrompt}
                 </p>
-                <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                <div className="flex items-center gap-4 mt-2 text-xs text-theme-text opacity-60">
                   <span>{playlist.result.trackCount} tracks</span>
                   <span>•</span>
                   <span>{new Date(playlist.createdAt).toLocaleDateString()}</span>

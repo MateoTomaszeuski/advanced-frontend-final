@@ -45,7 +45,7 @@ export function HistoryPage() {
     <MainLayout>
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Activity History</h1>
+          <h1 className="text-3xl font-bold text-theme-text">Activity History</h1>
           <Button onClick={loadHistory} variant="secondary">
             Refresh
           </Button>

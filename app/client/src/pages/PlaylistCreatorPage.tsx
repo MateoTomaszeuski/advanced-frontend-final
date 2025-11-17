@@ -154,8 +154,8 @@ export function PlaylistCreatorPage() {
     <MainLayout>
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Playlist Creator</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-bold text-theme-text mb-2">Playlist Creator</h1>
+          <p className="text-theme-text opacity-80">
             Describe your perfect playlist and let AI create it for you
           </p>
         </div>

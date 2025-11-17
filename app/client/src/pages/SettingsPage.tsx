@@ -210,34 +210,34 @@ export function SettingsPage() {
   return (
     <MainLayout>
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Settings</h1>
+        <h1 className="text-3xl font-bold text-theme-text mb-8">Settings</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Keycloak Account */}
           <div className="bg-theme-card rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h2 className="text-xl font-semibold text-theme-text mb-4 flex items-center gap-2">
               <span className="text-2xl">👤</span>
               Keycloak Account
             </h2>
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Name</label>
-                <p className="text-gray-900 mt-1">{auth.user?.profile?.name || 'Not set'}</p>
+                <label className="text-xs font-medium text-theme-text opacity-70 uppercase tracking-wide">Name</label>
+                <p className="text-theme-text mt-1">{auth.user?.profile?.name || 'Not set'}</p>
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Email</label>
-                <p className="text-gray-900 mt-1">{auth.user?.profile?.email || 'Not set'}</p>
+                <label className="text-xs font-medium text-theme-text opacity-70 uppercase tracking-wide">Email</label>
+                <p className="text-theme-text mt-1">{auth.user?.profile?.email || 'Not set'}</p>
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Username</label>
-                <p className="text-gray-900 mt-1">{auth.user?.profile?.preferred_username || 'Not set'}</p>
+                <label className="text-xs font-medium text-theme-text opacity-70 uppercase tracking-wide">Username</label>
+                <p className="text-theme-text mt-1">{auth.user?.profile?.preferred_username || 'Not set'}</p>
               </div>
             </div>
           </div>
 
           {/* Spotify Account */}
           <div className="bg-theme-card rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h2 className="text-xl font-semibold text-theme-text mb-4 flex items-center gap-2">
               <span className="text-2xl">🎵</span>
               Spotify Account
             </h2>
@@ -253,17 +253,17 @@ export function SettingsPage() {
                     />
                   )}
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-900">{spotifyProfile.displayName}</p>
-                    <p className="text-sm text-gray-600">{spotifyProfile.email}</p>
+                    <p className="font-semibold text-theme-text">{spotifyProfile.displayName}</p>
+                    <p className="text-sm text-theme-text opacity-80">{spotifyProfile.email}</p>
                     {spotifyProfile.country && (
-                      <p className="text-xs text-gray-500 mt-1">📍 {spotifyProfile.country}</p>
+                      <p className="text-xs text-theme-text opacity-70 mt-1">📍 {spotifyProfile.country}</p>
                     )}
                   </div>
                 </div>
                 
-                <div className="pt-3 border-t border-gray-200">
+                <div className="pt-3 border-t border-theme-border">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-gray-700">Status</span>
+                    <span className="text-sm font-medium text-theme-text">Status</span>
                     <span className="inline-flex items-center gap-1 text-sm text-green-600 font-medium">
                       <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                       Connected
@@ -271,7 +271,7 @@ export function SettingsPage() {
                   </div>
                   
                   {spotifyStatus?.tokenExpiry && (
-                    <div className="text-xs text-gray-500 mb-3">
+                    <div className="text-xs text-theme-text opacity-70 mb-3">
                       Token expires: {new Date(spotifyStatus.tokenExpiry).toLocaleString()}
                     </div>
                   )}
@@ -290,8 +290,8 @@ export function SettingsPage() {
               <div className="space-y-4">
                 <div className="text-center py-6">
                   <div className="text-4xl mb-3">🔌</div>
-                  <p className="text-gray-600 mb-1">Not Connected</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-theme-text mb-1">Not Connected</p>
+                  <p className="text-sm text-theme-text opacity-70">
                     Connect your Spotify account to enable playlist management and music discovery
                   </p>
                 </div>
@@ -308,18 +308,18 @@ export function SettingsPage() {
         </div>
 
         {/* Agent Preferences */}
-        <div className="bg-white rounded-lg shadow p-6 mt-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <div className="bg-theme-card rounded-lg shadow p-6 mt-6">
+          <h2 className="text-xl font-semibold text-theme-text mb-4 flex items-center gap-2">
             <span className="text-2xl">⚙️</span>
             Agent Preferences
           </h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div className="flex-1">
-                <p className="font-medium text-gray-900 flex items-center gap-2">
+                <p className="font-medium text-theme-text flex items-center gap-2">
                   🔔 Notifications
                 </p>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-theme-text opacity-70 mt-1">
                   Show toast notifications when agent completes tasks or encounters errors
                 </p>
               </div>
@@ -360,14 +360,14 @@ export function SettingsPage() {
 
         {/* Customization */}
         <div className="bg-theme-card rounded-lg shadow p-6 mt-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <h2 className="text-xl font-semibold text-theme-text mb-4 flex items-center gap-2">
             <span className="text-2xl">🎨</span>
             Appearance
           </h2>
           <div className="flex items-center justify-between p-4 bg-linear-to-r from-purple-50 to-blue-50 rounded-lg">
             <div className="flex-1">
-              <p className="font-medium text-gray-900">Customize Theme</p>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="font-medium text-theme-text">Customize Theme</p>
+              <p className="text-sm text-theme-text opacity-70 mt-1">
                 Use AI to create a personalized color theme for your app
               </p>
             </div>

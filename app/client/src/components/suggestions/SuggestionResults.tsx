@@ -33,7 +33,7 @@ export function SuggestionResults({
   return (
     <div className="bg-theme-card rounded-lg shadow-sm p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 className="text-xl font-semibold text-theme-text">
           Suggestions for "{suggestions.playlistName}"
         </h2>
         <div className="flex items-center gap-2">

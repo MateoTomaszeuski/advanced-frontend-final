@@ -83,8 +83,8 @@ export function DiscoverPage() {
     <MainLayout>
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">New Music Discovery</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-bold text-theme-text mb-2">New Music Discovery</h1>
+          <p className="text-theme-text opacity-80">
             Discover fresh tracks based on your listening habits
           </p>
         </div>
