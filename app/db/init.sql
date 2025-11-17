@@ -65,20 +65,6 @@ CREATE TRIGGER update_conversations_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Comments for documentation
-COMMENT ON TABLE users IS 'User accounts with Spotify integration';
-COMMENT ON TABLE conversations IS 'Agent conversation sessions';
-COMMENT ON TABLE agent_actions IS 'Individual agent actions within conversations';
-
-COMMENT ON COLUMN users.spotify_access_token IS 'Spotify OAuth access token';
-COMMENT ON COLUMN users.spotify_refresh_token IS 'Spotify OAuth refresh token';
-COMMENT ON COLUMN users.spotify_token_expiry IS 'Expiration time for Spotify access token';
-
-COMMENT ON COLUMN agent_actions.action_type IS 'Type of agent action: CreateSmartPlaylist, DiscoverNewMusic, RemoveDuplicates, SuggestMusicByContext';
-COMMENT ON COLUMN agent_actions.status IS 'Action status: Processing, Completed, Failed, AwaitingApproval';
-COMMENT ON COLUMN agent_actions.parameters IS 'JSON parameters for the action';
-COMMENT ON COLUMN agent_actions.result IS 'JSON result of the action';
-
 -- User themes table for AI-generated app customization
 CREATE TABLE IF NOT EXISTS user_themes (
     id SERIAL PRIMARY KEY,
@@ -96,7 +82,3 @@ CREATE TRIGGER update_user_themes_updated_at
     BEFORE UPDATE ON user_themes
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
-
-COMMENT ON TABLE user_themes IS 'User-specific AI-generated theme customizations';
-COMMENT ON COLUMN user_themes.theme_data IS 'JSON object containing theme configuration (colors, styles, etc.)';
-COMMENT ON COLUMN user_themes.description IS 'User description that was used to generate the theme';
