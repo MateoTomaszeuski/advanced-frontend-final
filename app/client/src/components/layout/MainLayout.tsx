@@ -11,11 +11,11 @@ export function MainLayout({ children }: MainLayoutProps) {
   const { isSidebarOpen, isTransitioning } = useUIStore();
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-theme-background overflow-hidden">
       <Sidebar />
       <div 
         className={`
-          flex-1 flex flex-col overflow-hidden bg-gray-50
+          flex-1 flex flex-col overflow-hidden bg-theme-background
           ${isSidebarOpen ? 'md:ml-64' : 'md:ml-0'}
           ${isTransitioning ? 'transition-all duration-300 ease-in-out' : ''}
         `}

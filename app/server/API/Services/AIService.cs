@@ -133,7 +133,11 @@ public class AIService : IAIService
                 }).ToList();
             }
 
-            var jsonContent = JsonSerializer.Serialize(requestBody);
+            var options = new JsonSerializerOptions 
+            { 
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
+            };
+            var jsonContent = JsonSerializer.Serialize(requestBody, options);
             _logger.LogDebug("AI API Request: {Request}", jsonContent);
 
             var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
