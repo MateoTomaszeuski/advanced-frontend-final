@@ -214,7 +214,7 @@ export function SettingsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Keycloak Account */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-theme-card rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <span className="text-2xl">👤</span>
               Keycloak Account
@@ -236,7 +236,7 @@ export function SettingsPage() {
           </div>
 
           {/* Spotify Account */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-theme-card rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <span className="text-2xl">🎵</span>
               Spotify Account
@@ -359,7 +359,7 @@ export function SettingsPage() {
         </div>
 
         {/* Customization */}
-        <div className="bg-white rounded-lg shadow p-6 mt-6">
+        <div className="bg-theme-card rounded-lg shadow p-6 mt-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <span className="text-2xl">🎨</span>
             Appearance
@@ -383,7 +383,7 @@ export function SettingsPage() {
         </div>
 
         {/* Danger Zone */}
-        <div className="bg-white rounded-lg shadow p-6 mt-6 border-2 border-red-200">
+        <div className="bg-theme-card rounded-lg shadow p-6 mt-6 border-2 border-red-200">
           <h2 className="text-xl font-semibold text-red-600 mb-4 flex items-center gap-2">
             <span className="text-2xl">⚠️</span>
             Danger Zone

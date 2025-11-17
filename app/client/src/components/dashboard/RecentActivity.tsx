@@ -8,8 +8,8 @@ interface RecentActivityProps {
 
 export function RecentActivity({ actions, onViewAll }: RecentActivityProps) {
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+    <div className="bg-theme-card rounded-lg shadow">
+      <div className="p-6 border-b border-theme-border flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-900">Recent Activity</h2>
         <Button variant="ghost" onClick={onViewAll}>
           View All

@@ -14,7 +14,7 @@ export function MetricCard({
   label,
   value,
   icon,
-  bgColor = 'bg-white',
+  bgColor = 'bg-theme-card',
   iconBgColor = 'bg-gray-100',
   iconColor = 'text-gray-700',
   isLoading = false,

@@ -8,8 +8,8 @@ interface ActionListProps {
 
 export function ActionList({ actions, loading }: ActionListProps) {
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="px-6 py-4 border-b border-gray-200">
+    <div className="bg-theme-card rounded-lg shadow">
+      <div className="p-6 border-b border-theme-border">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-gray-900">All Actions</h2>
           <span className="text-sm text-gray-500">

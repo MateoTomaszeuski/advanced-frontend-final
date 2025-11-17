@@ -122,8 +122,8 @@ export function CustomizePage() {
     <MainLayout>
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Customize Theme</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-bold text-theme-text mb-2">Customize Theme</h1>
+          <p className="text-theme-text opacity-80">
             Describe your ideal theme and let AI create a custom color palette for you
           </p>
         </div>
@@ -140,20 +140,20 @@ export function CustomizePage() {
           />
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="bg-theme-card rounded-lg shadow p-6 mb-6">
+          <label className="block text-sm font-medium text-theme-text mb-2">
             Describe Your Theme
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Example: A dark professional theme with purple accents, inspired by midnight coding sessions..."
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            className="w-full px-4 py-3 border border-theme-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-theme-background text-theme-text"
             rows={5}
             disabled={isGenerating || generatedTheme !== null}
           />
           <div className="flex items-center justify-between mt-4">
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-theme-text opacity-70">
               {description.length}/1000 characters (minimum 10)
             </span>
             {!generatedTheme && (
@@ -178,76 +178,76 @@ export function CustomizePage() {
         </div>
 
         {generatedTheme && (
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Preview</h2>
-            <p className="text-gray-600 mb-6">
+          <div className="bg-theme-card rounded-lg shadow p-6 mb-6">
+            <h2 className="text-xl font-semibold text-theme-text mb-4">Preview</h2>
+            <p className="text-theme-text opacity-80 mb-6">
               The theme has been applied to the entire app. Navigate around to see how it looks!
             </p>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="text-center">
                 <div
-                  className="w-full h-20 rounded-lg mb-2 border border-gray-200"
+                  className="w-full h-20 rounded-lg mb-2 border border-theme-border"
                   style={{ backgroundColor: generatedTheme.primaryColor }}
                 />
-                <p className="text-xs font-medium text-gray-700">Primary</p>
-                <p className="text-xs text-gray-500">{generatedTheme.primaryColor}</p>
+                <p className="text-xs font-medium text-theme-text">Primary</p>
+                <p className="text-xs text-theme-text opacity-70">{generatedTheme.primaryColor}</p>
               </div>
               <div className="text-center">
                 <div
-                  className="w-full h-20 rounded-lg mb-2 border border-gray-200"
+                  className="w-full h-20 rounded-lg mb-2 border border-theme-border"
                   style={{ backgroundColor: generatedTheme.secondaryColor }}
                 />
-                <p className="text-xs font-medium text-gray-700">Secondary</p>
-                <p className="text-xs text-gray-500">{generatedTheme.secondaryColor}</p>
+                <p className="text-xs font-medium text-theme-text">Secondary</p>
+                <p className="text-xs text-theme-text opacity-70">{generatedTheme.secondaryColor}</p>
               </div>
               <div className="text-center">
                 <div
-                  className="w-full h-20 rounded-lg mb-2 border border-gray-200"
+                  className="w-full h-20 rounded-lg mb-2 border border-theme-border"
                   style={{ backgroundColor: generatedTheme.accentColor }}
                 />
-                <p className="text-xs font-medium text-gray-700">Accent</p>
-                <p className="text-xs text-gray-500">{generatedTheme.accentColor}</p>
+                <p className="text-xs font-medium text-theme-text">Accent</p>
+                <p className="text-xs text-theme-text opacity-70">{generatedTheme.accentColor}</p>
               </div>
               <div className="text-center">
                 <div
-                  className="w-full h-20 rounded-lg mb-2 border border-gray-200"
+                  className="w-full h-20 rounded-lg mb-2 border border-theme-border"
                   style={{ backgroundColor: generatedTheme.backgroundColor }}
                 />
-                <p className="text-xs font-medium text-gray-700">Background</p>
-                <p className="text-xs text-gray-500">{generatedTheme.backgroundColor}</p>
+                <p className="text-xs font-medium text-theme-text">Background</p>
+                <p className="text-xs text-theme-text opacity-70">{generatedTheme.backgroundColor}</p>
               </div>
               <div className="text-center">
                 <div
-                  className="w-full h-20 rounded-lg mb-2 border border-gray-200"
+                  className="w-full h-20 rounded-lg mb-2 border border-theme-border"
                   style={{ backgroundColor: generatedTheme.sidebarColor }}
                 />
-                <p className="text-xs font-medium text-gray-700">Sidebar</p>
-                <p className="text-xs text-gray-500">{generatedTheme.sidebarColor}</p>
+                <p className="text-xs font-medium text-theme-text">Sidebar</p>
+                <p className="text-xs text-theme-text opacity-70">{generatedTheme.sidebarColor}</p>
               </div>
               <div className="text-center">
                 <div
-                  className="w-full h-20 rounded-lg mb-2 border border-gray-200"
+                  className="w-full h-20 rounded-lg mb-2 border border-theme-border"
                   style={{ backgroundColor: generatedTheme.cardBackground }}
                 />
-                <p className="text-xs font-medium text-gray-700">Card</p>
-                <p className="text-xs text-gray-500">{generatedTheme.cardBackground}</p>
+                <p className="text-xs font-medium text-theme-text">Card</p>
+                <p className="text-xs text-theme-text opacity-70">{generatedTheme.cardBackground}</p>
               </div>
               <div className="text-center">
                 <div
-                  className="w-full h-20 rounded-lg mb-2 border border-gray-200"
+                  className="w-full h-20 rounded-lg mb-2 border border-theme-border"
                   style={{ backgroundColor: generatedTheme.textColor }}
                 />
-                <p className="text-xs font-medium text-gray-700">Text</p>
-                <p className="text-xs text-gray-500">{generatedTheme.textColor}</p>
+                <p className="text-xs font-medium text-theme-text">Text</p>
+                <p className="text-xs text-theme-text opacity-70">{generatedTheme.textColor}</p>
               </div>
               <div className="text-center">
                 <div
-                  className="w-full h-20 rounded-lg mb-2 border border-gray-200"
+                  className="w-full h-20 rounded-lg mb-2 border border-theme-border"
                   style={{ backgroundColor: generatedTheme.borderColor }}
                 />
-                <p className="text-xs font-medium text-gray-700">Border</p>
-                <p className="text-xs text-gray-500">{generatedTheme.borderColor}</p>
+                <p className="text-xs font-medium text-theme-text">Border</p>
+                <p className="text-xs text-theme-text opacity-70">{generatedTheme.borderColor}</p>
               </div>
             </div>
 

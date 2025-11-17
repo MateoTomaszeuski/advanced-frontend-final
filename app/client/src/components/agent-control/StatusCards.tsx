@@ -28,7 +28,7 @@ export function StatusCards({ status, currentTask, elapsedTime }: StatusCardsPro
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-theme-card rounded-lg shadow p-6">
         <h3 className="text-sm font-medium text-gray-500 mb-2">Agent Status</h3>
         <div className="flex items-center gap-3">
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(status)}`}>
@@ -40,14 +40,14 @@ export function StatusCards({ status, currentTask, elapsedTime }: StatusCardsPro
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-theme-card rounded-lg shadow p-6">
         <h3 className="text-sm font-medium text-gray-500 mb-2">Current Task</h3>
         <p className="text-lg font-semibold text-gray-900">
           {currentTask || 'No active task'}
         </p>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-theme-card rounded-lg shadow p-6">
         <h3 className="text-sm font-medium text-gray-500 mb-2">Time Elapsed</h3>
         <div className="flex items-center gap-3">
           <p className="text-2xl font-bold text-gray-900 font-mono">

@@ -31,7 +31,7 @@ export function RecentPlaylists({ playlists, isLoading }: RecentPlaylistsProps) 
         {playlists.map((playlist) => (
           <div
             key={playlist.id}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:border-green-300 transition-colors"
+            className="bg-theme-card rounded-lg shadow-sm border border-theme-border p-4 hover:border-green-300 transition-colors"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">

@@ -6,8 +6,8 @@ interface ActiveConversationProps {
 
 export function ActiveConversation({ conversation }: ActiveConversationProps) {
   return (
-    <div className="bg-white rounded-lg shadow mb-8">
-      <div className="px-6 py-4 border-b border-gray-200">
+    <div className="bg-theme-card rounded-lg shadow mb-8">
+      <div className="px-6 py-4 border-b border-theme-border">
         <h2 className="text-xl font-bold text-gray-900">Active Conversation</h2>
       </div>
       <div className="p-6">

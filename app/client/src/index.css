@@ -17,11 +17,13 @@
   }
 
   body {
-    @apply font-sans min-h-screen bg-theme-background text-theme-text;
+    @apply font-sans min-h-screen text-theme-text;
+    background-color: var(--color-theme-background);
   }
 
   #root {
-    @apply min-h-screen bg-theme-background;
+    @apply min-h-screen;
+    background-color: var(--color-theme-background);
   }
 }
 

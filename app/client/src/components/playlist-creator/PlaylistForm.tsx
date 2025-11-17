@@ -43,7 +43,7 @@ export function PlaylistForm({
   onClear,
 }: PlaylistFormProps) {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div className="bg-theme-card rounded-lg shadow-sm border border-theme-border p-6">
       <form onSubmit={onSubmit} className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">

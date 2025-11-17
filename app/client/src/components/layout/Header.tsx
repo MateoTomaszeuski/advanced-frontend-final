@@ -7,7 +7,7 @@ export function Header() {
   const { toggleSidebar, isSidebarOpen } = useUIStore();
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4 relative z-10">
+    <header className="bg-theme-card border-b border-theme-border px-6 py-4 relative z-10">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
@@ -16,11 +16,11 @@ export function Header() {
             aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'}
           >
             {isSidebarOpen ? (
-              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-theme-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             ) : (
-              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-theme-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -30,17 +30,17 @@ export function Header() {
               </svg>
             )}
           </button>
-          <h2 className="text-lg font-semibold text-gray-800 hidden sm:block">
+          <h2 className="text-lg font-semibold text-theme-text hidden sm:block">
             Spotify Agent
           </h2>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium text-gray-700">
+            <p className="text-sm font-medium text-theme-text">
               {auth.user?.profile?.name || 'User'}
             </p>
-            <p className="text-xs text-gray-500">{auth.user?.profile?.email}</p>
+            <p className="text-xs text-theme-text opacity-70">{auth.user?.profile?.email}</p>
           </div>
           <Button
             variant="ghost"

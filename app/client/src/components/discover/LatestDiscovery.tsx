@@ -6,7 +6,7 @@ interface LatestDiscoveryProps {
 
 export function LatestDiscovery({ discoveryResult }: LatestDiscoveryProps) {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div className="bg-theme-card rounded-lg shadow-sm border border-theme-border p-6">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Latest Discovery</h2>
       
       <div className="mb-4">

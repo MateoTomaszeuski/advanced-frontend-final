@@ -16,8 +16,8 @@ export function FilterPanel({
   onClearFilters,
 }: FilterPanelProps) {
   return (
-    <div className="bg-white rounded-lg shadow mb-6 p-6">
-      <h3 className="text-sm font-medium text-gray-700 mb-4">Filters</h3>
+    <div className="bg-theme-card rounded-lg shadow mb-6 p-6">
+      <h2 className="text-xl font-semibold text-gray-900 mb-4">Filters</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">

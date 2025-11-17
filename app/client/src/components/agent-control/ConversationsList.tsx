@@ -7,8 +7,8 @@ interface ConversationsListProps {
 
 export function ConversationsList({ conversations, currentConversationId }: ConversationsListProps) {
   return (
-    <div className="bg-white rounded-lg shadow mt-8">
-      <div className="px-6 py-4 border-b border-gray-200">
+    <div className="bg-theme-card rounded-lg shadow mt-8">
+      <div className="p-6 border-b border-theme-border">
         <h2 className="text-xl font-bold text-gray-900">All Conversations</h2>
       </div>
       <div className="divide-y divide-gray-200">
