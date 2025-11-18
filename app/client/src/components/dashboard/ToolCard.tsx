@@ -13,13 +13,13 @@ export function ToolCard({ title, description, icon, iconBgColor, iconColor, onC
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-4 p-4 border border-theme-border rounded-lg hover:border-green-500 hover:shadow-md transition-all group text-left"
+      className="w-full flex items-center gap-4 p-4 border border-theme-border rounded-lg hover:border-theme-accent hover:shadow-md transition-all group text-left"
     >
       <div className={`${iconBgColor} p-3 rounded-lg group-hover:scale-110 transition-transform`}>
         <div className={iconColor}>{icon}</div>
       </div>
       <div className="flex-1">
-        <h3 className="font-semibold text-theme-text group-hover:text-green-700 transition-colors">
+        <h3 className="font-semibold text-theme-text group-hover:text-theme-accent transition-colors">
           {title}
         </h3>
         <p className="text-sm text-theme-text opacity-70">{description}</p>

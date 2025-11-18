@@ -25,7 +25,7 @@ export function ScanResults({
         <h2 className="text-xl font-semibold text-theme-text">Scan Results</h2>
         <div className="text-sm text-theme-text opacity-70">
           {scanResult.totalDuplicateGroups === 0 ? (
-            <span className="text-green-600 font-medium">✓ No duplicates found</span>
+            <span className="text-theme-text font-medium">✓ No duplicates found</span>
           ) : (
             <span>
               Found <span className="font-semibold text-red-600">{scanResult.totalDuplicateTracks}</span>{' '}

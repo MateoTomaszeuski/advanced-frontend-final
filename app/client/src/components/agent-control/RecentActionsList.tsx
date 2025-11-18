@@ -34,20 +34,20 @@ export function RecentActionsList({ actions, loading }: RecentActionsListProps) 
       case 'AwaitingApproval':
         return 'text-yellow-600 bg-yellow-50';
       default:
-        return 'text-gray-600 bg-gray-50';
+        return 'text-theme-text opacity-70 bg-theme-card';
     }
   };
 
   return (
     <div className="bg-theme-card rounded-lg shadow">
       <div className="p-6 border-b border-theme-border">
-        <h2 className="text-xl font-bold text-gray-900">Recent Actions</h2>
+        <h2 className="text-xl font-bold text-theme-text">Recent Actions</h2>
       </div>
-      <div className="divide-y divide-gray-200">
+      <div className="divide-y divide-theme-accent">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading actions...</div>
+          <div className="p-8 text-center text-theme-text">Loading actions...</div>
         ) : actions.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 italic">
+          <div className="p-8 text-center text-theme-text italic">
             No recent actions to display
           </div>
         ) : (
@@ -56,7 +56,7 @@ export function RecentActionsList({ actions, loading }: RecentActionsListProps) 
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <span className="font-semibold text-gray-900">
+                    <span className="font-semibold text-theme-accent">
                       {getActionTypeLabel(action.actionType)}
                     </span>
                     <span className={`px-2 py-1 rounded text-xs font-medium ${getActionStatusColor(action.status)}`}>
@@ -64,9 +64,9 @@ export function RecentActionsList({ actions, loading }: RecentActionsListProps) 
                     </span>
                   </div>
                   {action.inputPrompt && (
-                    <p className="text-sm text-gray-600 mb-2">{action.inputPrompt}</p>
+                    <p className="text-sm text-theme-text opacity-70 mb-2">{action.inputPrompt}</p>
                   )}
-                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <div className="flex items-center gap-4 text-xs text-theme-text opacity-60">
                     <span>
                       Created: {new Date(action.createdAt).toLocaleString()}
                     </span>

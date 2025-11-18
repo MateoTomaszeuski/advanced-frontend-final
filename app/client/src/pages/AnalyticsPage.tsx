@@ -131,7 +131,7 @@ export function AnalyticsPage() {
     <MainLayout>
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">App Usage Analytics</h1>
+          <h1 className="text-3xl font-bold text-theme-text">App Usage Analytics</h1>
           <Button onClick={loadAnalytics} disabled={loading}>
             {loading ? 'Loading...' : 'Refresh'}
           </Button>
@@ -147,33 +147,33 @@ export function AnalyticsPage() {
           <>
             {/* Key Metrics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-sm font-medium text-gray-500 mb-2">Total Actions</h3>
-                <p className="text-3xl font-bold text-green-700">{analytics.userActivity.totalActions}</p>
-                <p className="text-xs text-gray-500 mt-1">Completed operations</p>
+              <div className="bg-theme-card rounded-lg shadow p-6 border border-theme-border">
+                <h3 className="text-sm font-medium text-theme-text opacity-70 mb-2">Total Actions</h3>
+                <p className="text-3xl font-bold text-theme-accent">{analytics.userActivity.totalActions}</p>
+                <p className="text-xs text-theme-text opacity-60 mt-1">Completed operations</p>
               </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-sm font-medium text-gray-500 mb-2">Playlists Created</h3>
-                <p className="text-3xl font-bold text-green-700">{analytics.userActivity.totalPlaylistsCreated}</p>
-                <p className="text-xs text-gray-500 mt-1">AI-generated playlists</p>
+              <div className="bg-theme-card rounded-lg shadow p-6 border border-theme-border">
+                <h3 className="text-sm font-medium text-theme-text opacity-70 mb-2">Playlists Created</h3>
+                <p className="text-3xl font-bold text-theme-accent">{analytics.userActivity.totalPlaylistsCreated}</p>
+                <p className="text-xs text-theme-text opacity-60 mt-1">AI-generated playlists</p>
               </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-sm font-medium text-gray-500 mb-2">Conversations</h3>
-                <p className="text-3xl font-bold text-green-700">{analytics.userActivity.totalConversations}</p>
-                <p className="text-xs text-gray-500 mt-1">Active sessions</p>
+              <div className="bg-theme-card rounded-lg shadow p-6 border border-theme-border">
+                <h3 className="text-sm font-medium text-theme-text opacity-70 mb-2">Conversations</h3>
+                <p className="text-3xl font-bold text-theme-accent">{analytics.userActivity.totalConversations}</p>
+                <p className="text-xs text-theme-text opacity-60 mt-1">Active sessions</p>
               </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-sm font-medium text-gray-500 mb-2">Duplicates Found</h3>
-                <p className="text-3xl font-bold text-green-700">{analytics.duplicates.totalDuplicatesFound}</p>
-                <p className="text-xs text-gray-500 mt-1">Across all playlists</p>
+              <div className="bg-theme-card rounded-lg shadow p-6 border border-theme-border">
+                <h3 className="text-sm font-medium text-theme-text opacity-70 mb-2">Duplicates Found</h3>
+                <p className="text-3xl font-bold text-theme-accent">{analytics.duplicates.totalDuplicatesFound}</p>
+                <p className="text-xs text-theme-text opacity-60 mt-1">Across all playlists</p>
               </div>
             </div>
 
             {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               {/* Activity Over Time */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Activity Over Time (Last 30 Days)</h2>
+              <div className="bg-theme-card rounded-lg shadow p-6 border border-theme-border">
+                <h2 className="text-xl font-semibold text-theme-text mb-4">Activity Over Time (Last 30 Days)</h2>
                 {activityChartData && Object.keys(analytics.actionsOverTime).length > 0 ? (
                   <div className="h-80">
                     <Line
@@ -198,7 +198,7 @@ export function AnalyticsPage() {
                     />
                   </div>
                 ) : (
-                  <div className="h-80 flex items-center justify-center text-gray-500">
+                  <div className="h-80 flex items-center justify-center text-theme-text opacity-70">
                     <div className="text-center">
                       <p className="text-4xl mb-2">📊</p>
                       <p>No activity data yet</p>
@@ -209,8 +209,8 @@ export function AnalyticsPage() {
               </div>
 
               {/* Action Types Distribution */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Actions by Type</h2>
+              <div className="bg-theme-card rounded-lg shadow p-6 border border-theme-border">
+                <h2 className="text-xl font-semibold text-theme-text mb-4">Actions by Type</h2>
                 {actionTypesChartData && analytics.userActivity.totalActions > 0 ? (
                   <div className="h-80">
                     <Bar
@@ -235,7 +235,7 @@ export function AnalyticsPage() {
                     />
                   </div>
                 ) : (
-                  <div className="h-80 flex items-center justify-center text-gray-500">
+                  <div className="h-80 flex items-center justify-center text-theme-text opacity-70">
                     <div className="text-center">
                       <p className="text-4xl mb-2">📈</p>
                       <p>No actions yet</p>
@@ -249,13 +249,13 @@ export function AnalyticsPage() {
             {/* Detailed Stats */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Feature Usage Stats */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Feature Usage</h2>
+              <div className="bg-theme-card rounded-lg shadow p-6 border border-theme-border">
+                <h2 className="text-xl font-semibold text-theme-text mb-4">Feature Usage</h2>
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600">Smart Playlists</span>
-                      <span className="font-medium text-gray-900">{analytics.actionTypes.smartPlaylists} created</span>
+                      <span className="text-theme-text opacity-70">Smart Playlists</span>
+                      <span className="font-medium text-theme-text">{analytics.actionTypes.smartPlaylists} created</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
@@ -272,8 +272,8 @@ export function AnalyticsPage() {
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600">Music Discovery</span>
-                      <span className="font-medium text-gray-900">{analytics.actionTypes.musicDiscovery} sessions</span>
+                      <span className="text-theme-text opacity-70">Music Discovery</span>
+                      <span className="font-medium text-theme-text">{analytics.actionTypes.musicDiscovery} sessions</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
@@ -290,8 +290,8 @@ export function AnalyticsPage() {
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600">Duplicate Scans</span>
-                      <span className="font-medium text-gray-900">{analytics.actionTypes.duplicateScans} scans</span>
+                      <span className="text-theme-text opacity-70">Duplicate Scans</span>
+                      <span className="font-medium text-theme-text">{analytics.actionTypes.duplicateScans} scans</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
@@ -308,8 +308,8 @@ export function AnalyticsPage() {
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600">Music Suggestions</span>
-                      <span className="font-medium text-gray-900">{analytics.actionTypes.musicSuggestions} requests</span>
+                      <span className="text-theme-text opacity-70">Music Suggestions</span>
+                      <span className="font-medium text-theme-text">{analytics.actionTypes.musicSuggestions} requests</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
@@ -328,8 +328,8 @@ export function AnalyticsPage() {
               </div>
 
               {/* Duplicate Management Stats */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Duplicate Management</h2>
+              <div className="bg-theme-card rounded-lg shadow p-6 border border-theme-border">
+                <h2 className="text-xl font-semibold text-theme-text mb-4">Duplicate Management</h2>
                 {duplicateStatsChartData && analytics.duplicates.totalDuplicatesFound > 0 ? (
                   <div className="h-64 flex items-center justify-center mb-4">
                     <Doughnut
@@ -348,20 +348,20 @@ export function AnalyticsPage() {
                 ) : null}
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Total Scans</span>
-                    <span className="font-semibold text-gray-900">{analytics.duplicates.totalScans}</span>
+                    <span className="text-sm text-theme-text opacity-70">Total Scans</span>
+                    <span className="font-semibold text-theme-text">{analytics.duplicates.totalScans}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Duplicates Found</span>
-                    <span className="font-semibold text-gray-900">{analytics.duplicates.totalDuplicatesFound}</span>
+                    <span className="text-sm text-theme-text opacity-70">Duplicates Found</span>
+                    <span className="font-semibold text-theme-text">{analytics.duplicates.totalDuplicatesFound}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Duplicates Removed</span>
+                    <span className="text-sm text-theme-text opacity-70">Duplicates Removed</span>
                     <span className="font-semibold text-green-700">{analytics.duplicates.totalDuplicatesRemoved}</span>
                   </div>
                   <div className="flex justify-between items-center pt-3 border-t">
-                    <span className="text-sm text-gray-600">Avg per Playlist</span>
-                    <span className="font-semibold text-gray-900">
+                    <span className="text-sm text-theme-text opacity-70">Avg per Playlist</span>
+                    <span className="font-semibold text-theme-text">
                       {analytics.duplicates.averageDuplicatesPerPlaylist.toFixed(1)}
                     </span>
                   </div>

@@ -23,11 +23,11 @@ export function MetricCard({
     <div className={`${bgColor} rounded-lg shadow p-6`}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-600">{label}</p>
+          <p className="text-sm text-theme-text opacity-70">{label}</p>
           {isLoading ? (
             <div className="h-8 w-16 bg-gray-200 animate-pulse rounded mt-1" />
           ) : (
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
+            <p className="text-2xl font-bold text-theme-text">{value}</p>
           )}
         </div>
         <div className={`w-12 h-12 rounded-full ${iconBgColor} flex items-center justify-center`}>

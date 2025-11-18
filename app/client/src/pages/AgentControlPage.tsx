@@ -90,10 +90,10 @@ export function AgentControlPage() {
     <MainLayout>
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Agent Control Center</h1>
+          <h1 className="text-3xl font-bold text-theme-text">Agent Control Center</h1>
           <div className="flex items-center gap-2">
             <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`} />
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-theme-text opacity-70">
               {isConnected ? 'WebSocket Connected' : 'WebSocket Disconnected'}
             </span>
           </div>

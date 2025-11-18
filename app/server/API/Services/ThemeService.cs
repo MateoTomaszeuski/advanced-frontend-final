@@ -99,6 +99,12 @@ public class ThemeService : IThemeService
 
         var response = await _aiService.GetChatCompletionAsync(messages, tools);
 
+        // Check if AI service returned an error
+        if (!string.IsNullOrEmpty(response.Error))
+        {
+            throw new InvalidOperationException($"Failed to generate theme: {response.Error}");
+        }
+
         if (response.ToolCalls == null || !response.ToolCalls.Any())
         {
             throw new InvalidOperationException("AI did not generate a theme. Please try a different description.");

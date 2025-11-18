@@ -97,7 +97,7 @@ export function SuggestionSettings({
             <button
               key={example}
               onClick={() => setContext(example)}
-              className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-full text-gray-700 transition-colors"
+              className="px-3 py-1 text-sm bg-theme-card hover:bg-theme-background rounded-full text-theme-text opacity-80 hover:opacity-100 transition-colors border border-theme-border"
             >
               {example}
             </button>

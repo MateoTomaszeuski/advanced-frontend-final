@@ -47,11 +47,11 @@ export function SpotifyConnectionAlert() {
   };
 
   return (
-    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+    <div className="bg-theme-card opacity-95 border-l-4 border-theme-accent p-4 mb-6">
       <div className="flex items-start">
         <div className="shrink-0">
           <svg
-            className="h-5 w-5 text-yellow-400"
+            className="h-5 w-5 text-theme-accent"
             viewBox="0 0 20 20"
             fill="currentColor"
           >
@@ -63,10 +63,10 @@ export function SpotifyConnectionAlert() {
           </svg>
         </div>
         <div className="ml-3 flex-1">
-          <h3 className="text-sm font-medium text-yellow-800">
+          <h3 className="text-sm font-medium text-theme-text">
             Spotify Account Not Connected
           </h3>
-          <div className="mt-2 text-sm text-yellow-700">
+          <div className="mt-2 text-sm text-theme-text opacity-80">
             <p>
               To use playlist creation and music discovery features, you need to connect your Spotify account.
             </p>
@@ -74,7 +74,7 @@ export function SpotifyConnectionAlert() {
           <div className="mt-4">
             <button
               onClick={handleConnect}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-yellow-800 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+              className="inline-flex items-center px-4 py-2 border border-theme-border text-sm font-medium rounded-md text-theme-text bg-theme-background hover:bg-theme-card transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-accent"
             >
               <svg
                 className="mr-2 h-4 w-4"

@@ -20,28 +20,28 @@ export function ActiveConversation({ conversation }: ActiveConversationProps) {
               </span>
             </div>
             <div>
-              <span className="text-sm text-gray-500">Title:</span>
-              <span className="ml-2 text-sm font-medium text-gray-900">
+              <span className="text-sm text-theme-text opacity-70">Title:</span>
+              <span className="ml-2 text-sm font-medium text-theme-text">
                 {conversation.title}
               </span>
             </div>
             <div>
-              <span className="text-sm text-gray-500">Created:</span>
-              <span className="ml-2 text-sm text-gray-700">
+              <span className="text-sm text-theme-text opacity-70">Created:</span>
+              <span className="ml-2 text-sm text-theme-text opacity-80">
                 {new Date(conversation.createdAt).toLocaleString()}
               </span>
             </div>
             {conversation.actionCount !== undefined && (
               <div>
-                <span className="text-sm text-gray-500">Total Actions:</span>
-                <span className="ml-2 text-sm font-medium text-gray-900">
+                <span className="text-sm text-theme-text opacity-70">Total Actions:</span>
+                <span className="ml-2 text-sm font-medium text-theme-text">
                   {conversation.actionCount}
                 </span>
               </div>
             )}
           </div>
         ) : (
-          <p className="text-gray-500 italic">No active conversation</p>
+          <p className="text-theme-text opacity-70 italic">No active conversation</p>
         )}
       </div>
     </div>

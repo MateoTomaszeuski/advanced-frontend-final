@@ -14,30 +14,32 @@ export function InfoBox({ type, title, items, defaultExpanded = false }: InfoBox
     tips: {
       emoji: '💡',
       title: title || 'Tips',
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-200',
-      textColor: 'text-green-900',
-      subtextColor: 'text-green-800',
-      iconColor: 'text-green-600',
+      bgColor: 'bg-theme-card',
+      borderColor: 'border-theme-border',
+      textColor: 'text-theme-text',
+      subtextColor: 'text-theme-text opacity-80',
+      iconColor: 'text-theme-accent',
+      opacityClass: 'opacity-100',
     },
     info: {
       emoji: 'ℹ️',
       title: title || 'How it works',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-200',
-      textColor: 'text-blue-900',
-      subtextColor: 'text-blue-800',
-      iconColor: 'text-blue-600',
+      bgColor: 'bg-theme-card',
+      borderColor: 'border-theme-border',
+      textColor: 'text-theme-text',
+      subtextColor: 'text-theme-text opacity-80',
+      iconColor: 'text-theme-primary',
+      opacityClass: 'opacity-90',
     },
   };
 
   const style = config[type];
 
   return (
-    <div className={`${style.bgColor} border ${style.borderColor} rounded-lg p-4`}>
+    <div className={`${style.bgColor} ${style.opacityClass} border ${style.borderColor} rounded-lg p-4`}>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between gap-3 text-left focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 rounded"
+        className="w-full flex items-center justify-between gap-3 text-left focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-accent rounded"
       >
         <div className="flex items-center gap-2">
           <span className="text-lg">{style.emoji}</span>

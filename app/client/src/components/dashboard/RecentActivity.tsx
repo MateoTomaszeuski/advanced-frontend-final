@@ -1,4 +1,3 @@
-import { Button } from '../forms/Button';
 import type { AgentAction } from '../../types/api';
 
 interface RecentActivityProps {
@@ -10,16 +9,19 @@ export function RecentActivity({ actions, onViewAll }: RecentActivityProps) {
   return (
     <div className="bg-theme-card rounded-lg shadow">
       <div className="p-6 border-b border-theme-border flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">Recent Activity</h2>
-        <Button variant="ghost" onClick={onViewAll}>
+        <h2 className="text-xl font-semibold text-theme-text">Recent Activity</h2>
+        <button
+          onClick={onViewAll}
+          className="text-theme-accent hover:text-theme-accent hover:opacity-80 text-sm font-medium transition-opacity"
+        >
           View All
-        </Button>
+        </button>
       </div>
       <div className="p-6">
         {actions.length === 0 ? (
           <div className="text-center py-8">
             <svg
-              className="mx-auto h-12 w-12 text-gray-400 mb-3"
+              className="mx-auto h-12 w-12 text-theme-text opacity-40 mb-3"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -31,8 +33,8 @@ export function RecentActivity({ actions, onViewAll }: RecentActivityProps) {
                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
-            <p className="text-gray-500">No recent activity</p>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-theme-text opacity-70">No recent activity</p>
+            <p className="text-sm text-theme-text opacity-60 mt-1">
               Start by creating a playlist or discovering new music
             </p>
           </div>
@@ -41,7 +43,7 @@ export function RecentActivity({ actions, onViewAll }: RecentActivityProps) {
             {actions.map((action) => (
               <li
                 key={action.id}
-                className="flex items-start gap-3 pb-4 border-b border-gray-100 last:border-0"
+                className="flex items-start gap-3 pb-4 border-b border-theme-border last:border-0"
               >
                 <div
                   className={`w-2 h-2 rounded-full mt-2 shrink-0 ${
@@ -55,10 +57,10 @@ export function RecentActivity({ actions, onViewAll }: RecentActivityProps) {
                   }`}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">
+                  <p className="font-medium text-theme-text truncate">
                     {action.actionType.replace(/([A-Z])/g, ' $1').trim()}
                   </p>
-                  <p className="text-sm text-gray-500 mt-0.5">
+                  <p className="text-sm text-theme-text opacity-70 mt-0.5">
                     {new Date(action.createdAt).toLocaleString()}
                   </p>
                 </div>

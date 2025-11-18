@@ -1,9 +1,11 @@
 import { useAuth } from 'react-oidc-context';
 import { Link, useLocation } from 'react-router-dom';
 import { useUIStore } from '../../stores/useUIStore';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export function Sidebar() {
   const { isSidebarOpen, toggleSidebar, isTransitioning } = useUIStore();
+  const { hasCustomTheme } = useTheme();
   const auth = useAuth();
   const location = useLocation();
 
@@ -26,18 +28,17 @@ export function Sidebar() {
         className={`
           hidden md:block
           fixed left-0 top-0 h-screen
-          bg-theme-sidebar text-white
+          bg-theme-sidebar ${hasCustomTheme ? 'text-theme-text' : 'text-gray-50'}
           shadow-xl z-30
           ${isSidebarOpen ? 'w-64' : 'w-0'}
           ${isTransitioning ? 'transition-all duration-300 ease-in-out' : ''}
           overflow-hidden
         `}
-        style={{ color: 'white' }}
       >
         <div className="p-4 flex flex-col h-full">
           <div className="mb-8 shrink-0">
-            <h1 className="text-2xl font-bold whitespace-nowrap">Spotify Agent</h1>
-            <p className="text-sm text-green-200 truncate">{auth.user?.profile?.email}</p>
+            <h1 className="text-2xl font-bold text-theme-accent whitespace-nowrap">Spotify Agent</h1>
+            <p className={`text-sm opacity-70 truncate ${hasCustomTheme ? 'text-theme-text' : 'text-gray-50'}`}>{auth.user?.profile?.email}</p>
           </div>
           
           <nav className="flex-1 overflow-y-auto">
@@ -55,8 +56,8 @@ export function Sidebar() {
                       flex items-center gap-3 px-4 py-2 rounded-lg
                       transition-colors whitespace-nowrap
                       ${location.pathname === item.path 
-                        ? 'bg-theme-primary font-semibold' 
-                        : 'hover:bg-theme-primary hover:bg-opacity-70'
+                        ? `bg-theme-primary font-semibold ${hasCustomTheme ? 'text-theme-text' : 'text-gray-50'}` 
+                        : `hover:bg-theme-accent  ${hasCustomTheme ? 'text-theme-text' : 'text-gray-50'} hover:bg-opacity-70`
                       }
                     `}
                   >
@@ -83,7 +84,7 @@ export function Sidebar() {
       >
         {/* Backdrop */}
         <div
-          className="absolute inset-0 bg-black bg-opacity-50"
+          className="absolute inset-0 bg-theme-background bg-opacity-50"
           onClick={toggleSidebar}
           aria-hidden="true"
         />
@@ -92,18 +93,17 @@ export function Sidebar() {
         <div
           className={`
             absolute top-0 left-0 right-0
-            bg-theme-sidebar text-white
+            bg-theme-sidebar ${hasCustomTheme ? 'text-theme-text' : 'text-gray-50'}
             shadow-lg
             transform transition-transform duration-300 ease-in-out
             ${isSidebarOpen ? 'translate-y-0' : '-translate-y-full'}
           `}
-          style={{ color: 'white' }}
         >
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h1 className="text-xl font-bold">Spotify Agent</h1>
-                <p className="text-xs text-green-200 truncate">{auth.user?.profile?.email}</p>
+                <p className={`text-xs opacity-70 truncate ${hasCustomTheme ? 'text-theme-text' : 'text-gray-50'}`}>{auth.user?.profile?.email}</p>
               </div>
               <button
                 onClick={toggleSidebar}

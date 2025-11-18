@@ -51,7 +51,7 @@ export function SuggestionResults({
         </div>
       </div>
       <div className="flex items-center justify-between mb-4">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-theme-text opacity-70">
           Context: <span className="italic">{suggestions.context}</span>
         </p>
         <div className="flex items-center gap-2">
@@ -79,31 +79,31 @@ export function SuggestionResults({
         {suggestions.suggestions.map((track) => (
           <div
             key={track.id}
-            className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-green-300 transition-colors"
+            className="flex items-start gap-4 p-4 bg-theme-card rounded-lg border border-theme-border hover:border-theme-accent transition-colors"
           >
             <input
               type="checkbox"
               checked={selectedTracks.has(track.uri)}
               onChange={() => onToggleTrack(track.uri)}
-              className="mt-1 h-5 w-5 text-green-600 border-gray-300 rounded focus:ring-green-500"
+              className="mt-1 h-5 w-5 text-theme-text border-theme-border rounded focus:ring-theme-accent"
             />
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-900 truncate">{track.name}</h3>
-              <p className="text-sm text-gray-600 truncate">
+              <h3 className="font-semibold text-theme-text truncate">{track.name}</h3>
+              <p className="text-sm text-theme-text opacity-70 truncate">
                 {track.artists.join(', ')}
               </p>
-              <p className="text-xs text-gray-500 mt-1 italic">{track.reason}</p>
+              <p className="text-xs text-theme-text opacity-60 mt-1 italic">{track.reason}</p>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-theme-text opacity-60">
                 ♪ {track.popularity}
               </span>
               <a
                 href={track.uri}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-md transition-colors"
+                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-theme-text bg-theme-background hover:bg-theme-accent rounded-md transition-colors"
               >
                 <svg
                   className="w-4 h-4 mr-1"

@@ -151,7 +151,16 @@ public class AIService : IAIService
             {
                 var errorText = await response.Content.ReadAsStringAsync();
                 _logger.LogError("AI API request failed: {StatusCode} {Error}", response.StatusCode, errorText);
-                return new AIResponse("", Error: $"AI API request failed: {response.StatusCode}");
+                
+                var errorMessage = response.StatusCode switch
+                {
+                    System.Net.HttpStatusCode.BadGateway => "AI service is temporarily unavailable (502 Bad Gateway). Please try again later.",
+                    System.Net.HttpStatusCode.ServiceUnavailable => "AI service is temporarily unavailable (503 Service Unavailable). Please try again later.",
+                    System.Net.HttpStatusCode.GatewayTimeout => "AI service request timed out (504 Gateway Timeout). Please try again later.",
+                    _ => $"AI API request failed: {response.StatusCode}"
+                };
+                
+                return new AIResponse("", Error: errorMessage);
             }
 
             var responseText = await response.Content.ReadAsStringAsync();

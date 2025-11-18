@@ -12,7 +12,7 @@ export function Header() {
         <div className="flex items-center gap-4">
           <button
             onClick={toggleSidebar}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-green-600"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-theme-accent"
             aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'}
           >
             {isSidebarOpen ? (
@@ -44,6 +44,7 @@ export function Header() {
           </div>
           <Button
             variant="ghost"
+            className='text-theme-accent hover:text-theme-accent hover:opacity-80'
             onClick={async () => {
               try {
                 // Remove user from session

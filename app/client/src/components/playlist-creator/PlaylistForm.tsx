@@ -86,11 +86,12 @@ export function PlaylistForm({
             checked={useAdvanced}
             onChange={(e) => setUseAdvanced(e.target.checked)}
             disabled={isLoading}
+            className="text-theme-text"
           />
         </div>
 
         {useAdvanced && (
-          <div className="space-y-4 pl-6 border-l-2 border-green-200">
+          <div className="space-y-4 pl-6 border-l-2 border-theme-border">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-theme-text mb-2">
@@ -107,7 +108,7 @@ export function PlaylistForm({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-theme-text opacity-80 mb-2">
                   Max Energy (0-100)
                 </label>
                 <TextInput
@@ -124,7 +125,7 @@ export function PlaylistForm({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-theme-text opacity-80 mb-2">
                   Min Tempo (BPM)
                 </label>
                 <TextInput
@@ -138,7 +139,7 @@ export function PlaylistForm({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-theme-text opacity-80 mb-2">
                   Max Tempo (BPM)
                 </label>
                 <TextInput

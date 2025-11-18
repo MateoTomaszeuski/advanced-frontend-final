@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
@@ -25,12 +26,17 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
-
-    const variantStyles = {
-      primary: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500',
-      secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500',
+    const { hasCustomTheme } = useTheme();
+    const variantStyles = hasCustomTheme ? {
+      primary: 'bg-theme-background text-theme-text hover:bg-theme-accent hover:text-theme-primary focus:ring-theme-accent',
+      secondary: 'bg-theme-secondary text-theme-text hover:bg-theme-accent hover:text-theme-primary focus:ring-theme-accent',
       danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
-      ghost: 'bg-transparent hover:bg-green-50 text-green-700 focus:ring-green-500',
+      ghost: 'bg-transparent hover:bg-theme-accent text-theme-accent focus:ring-theme-accent',
+    } : {
+      primary: 'bg-theme-background text-gray-600 hover:bg-theme-primary hover:text-gray-100 focus:ring-theme-accent',
+      secondary: 'bg-theme-background text-gray-600 hover:bg-theme-secondary hover:text-gray-100 focus:ring-theme-accent',
+      danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+      ghost: 'bg-transparent hover:bg-theme-accent text-theme-accent focus:ring-theme-accent',
     };
 
     const sizeStyles = {

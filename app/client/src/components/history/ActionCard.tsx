@@ -35,7 +35,7 @@ export function ActionCard({ action }: ActionCardProps) {
       case 'SuggestMusicByContext':
         return 'bg-green-100 text-green-700';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-theme-card text-theme-text opacity-80';
     }
   };
 
@@ -48,9 +48,9 @@ export function ActionCard({ action }: ActionCardProps) {
       case 'Failed':
         return 'bg-red-50 text-red-600';
       case 'AwaitingApproval':
-        return 'bg-yellow-50 text-yellow-600';
+        return 'bg-yellow-100 text-yellow-800';
       default:
-        return 'bg-gray-50 text-gray-600';
+        return 'bg-theme-card text-theme-text opacity-80';
     }
   };
 
@@ -78,18 +78,18 @@ export function ActionCard({ action }: ActionCardProps) {
             <span className={`px-3 py-1 rounded text-xs font-medium ${getStatusColor(action.status)}`}>
               {action.status}
             </span>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-theme-text opacity-60">
               Conversation #{action.conversationId}
             </span>
           </div>
 
           {action.inputPrompt && (
-            <p className="text-sm text-gray-700 mb-2 font-medium">
+            <p className="text-sm text-theme-text opacity-80 mb-2 font-medium">
               {action.inputPrompt}
             </p>
           )}
 
-          <div className="flex items-center gap-6 text-xs text-gray-500">
+          <div className="flex items-center gap-6 text-xs text-theme-text opacity-60">
             <span>
               Started: {new Date(action.createdAt).toLocaleString()}
             </span>
@@ -117,7 +117,7 @@ export function ActionCard({ action }: ActionCardProps) {
 
       {action.parameters && typeof action.parameters === 'object' ? (
         <details className="mt-3">
-          <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-800 font-medium">
+          <summary className="cursor-pointer text-sm text-theme-text opacity-70 hover:opacity-100 font-medium">
             View Parameters
           </summary>
           <pre className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded text-xs overflow-x-auto">

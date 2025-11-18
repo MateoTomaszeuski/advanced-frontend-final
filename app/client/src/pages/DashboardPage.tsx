@@ -11,9 +11,11 @@ import { useState, useEffect } from 'react';
 import { agentApi } from '../services/api';
 import type { AppAnalytics, AgentAction } from '../types/api';
 import { showToast } from '../utils/toast';
+import { useTheme } from '../contexts/ThemeContext';
 
 export function DashboardPage() {
   const { status, currentTask } = useAgentStore();
+  const { hasCustomTheme } = useTheme();
   const navigate = useNavigate();
   const [analytics, setAnalytics] = useState<AppAnalytics | null>(null);
   const [recentActions, setRecentActions] = useState<AgentAction[]>([]);
@@ -51,7 +53,7 @@ export function DashboardPage() {
         </svg>
       ),
       path: '/playlist-creator',
-      color: 'bg-green-100 text-green-700',
+      color: hasCustomTheme ? 'bg-theme-accent bg-opacity-20 text-theme-accent' : 'bg-green-100 text-green-700',
     },
     {
       title: 'Discover New Music',
@@ -67,7 +69,7 @@ export function DashboardPage() {
         </svg>
       ),
       path: '/discover',
-      color: 'bg-blue-100 text-blue-700',
+      color: hasCustomTheme ? 'bg-theme-primary bg-opacity-20 text-theme-primary' : 'bg-blue-100 text-blue-700',
     },
     {
       title: 'Scan Duplicates',
@@ -83,7 +85,7 @@ export function DashboardPage() {
         </svg>
       ),
       path: '/duplicate-cleaner',
-      color: 'bg-yellow-100 text-yellow-700',
+      color: hasCustomTheme ? 'bg-theme-secondary bg-opacity-20 text-theme-secondary' : 'bg-yellow-100 text-yellow-700',
     },
     {
       title: 'Get Suggestions',
@@ -99,7 +101,7 @@ export function DashboardPage() {
         </svg>
       ),
       path: '/suggestions',
-      color: 'bg-purple-100 text-purple-700',
+      color: hasCustomTheme ? 'bg-theme-accent bg-opacity-30 text-theme-accent' : 'bg-purple-100 text-purple-700',
     },
   ];
 
@@ -130,13 +132,32 @@ export function DashboardPage() {
               )
             }
             iconBgColor={
-              status === 'idle'
-                ? 'bg-gray-100'
-                : status === 'processing'
-                  ? 'bg-green-100'
-                  : status === 'awaiting-approval'
-                    ? 'bg-yellow-100'
-                    : 'bg-red-100'
+              hasCustomTheme
+                ? status === 'idle'
+                  ? 'bg-theme-card opacity-70'
+                  : status === 'processing'
+                    ? 'bg-theme-accent bg-opacity-20'
+                    : status === 'awaiting-approval'
+                      ? 'bg-theme-secondary bg-opacity-20'
+                      : 'bg-theme-primary bg-opacity-20'
+                : status === 'idle'
+                  ? 'bg-gray-100'
+                  : status === 'processing'
+                    ? 'bg-green-100'
+                    : status === 'awaiting-approval'
+                      ? 'bg-yellow-100'
+                      : 'bg-red-100'
+            }
+            iconColor={
+              hasCustomTheme
+                ? status === 'idle'
+                  ? 'text-theme-text opacity-60'
+                  : status === 'processing'
+                    ? 'text-theme-accent'
+                    : status === 'awaiting-approval'
+                      ? 'text-theme-secondary'
+                      : 'text-theme-primary'
+                : undefined
             }
           />
 
@@ -154,8 +175,8 @@ export function DashboardPage() {
                 />
               </svg>
             }
-            iconBgColor="bg-green-100"
-            iconColor="text-green-700"
+            iconBgColor={hasCustomTheme ? 'bg-theme-accent bg-opacity-20' : 'bg-green-100'}
+            iconColor={hasCustomTheme ? 'text-theme-accent' : 'text-green-700'}
           />
 
           <MetricCard
@@ -167,8 +188,8 @@ export function DashboardPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             }
-            iconBgColor="bg-green-100"
-            iconColor="text-green-700"
+            iconBgColor={hasCustomTheme ? 'bg-theme-accent bg-opacity-20' : 'bg-green-100'}
+            iconColor={hasCustomTheme ? 'text-theme-accent' : 'text-green-700'}
           />
 
           <MetricCard
@@ -180,8 +201,8 @@ export function DashboardPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             }
-            iconBgColor="bg-red-100"
-            iconColor="text-red-700"
+            iconBgColor={hasCustomTheme ? 'bg-theme-primary bg-opacity-20' : 'bg-red-100'}
+            iconColor={hasCustomTheme ? 'text-theme-primary' : 'text-red-700'}
           />
         </div>
 
@@ -226,8 +247,8 @@ export function DashboardPage() {
                     />
                   </svg>
                 }
-                iconBgColor="bg-purple-100"
-                iconColor="text-purple-700"
+                iconBgColor={hasCustomTheme ? 'bg-theme-accent bg-opacity-20' : 'bg-purple-100'}
+                iconColor={hasCustomTheme ? 'text-theme-accent' : 'text-purple-700'}
                 onClick={() => navigate('/analytics')}
               />
 
@@ -250,8 +271,8 @@ export function DashboardPage() {
                     />
                   </svg>
                 }
-                iconBgColor="bg-indigo-100"
-                iconColor="text-indigo-700"
+                iconBgColor={hasCustomTheme ? 'bg-theme-primary bg-opacity-20' : 'bg-indigo-100'}
+                iconColor={hasCustomTheme ? 'text-theme-primary' : 'text-indigo-700'}
                 onClick={() => navigate('/agent-control')}
               />
 
@@ -268,8 +289,8 @@ export function DashboardPage() {
                     />
                   </svg>
                 }
-                iconBgColor="bg-gray-100"
-                iconColor="text-gray-700"
+                iconBgColor={hasCustomTheme ? 'bg-theme-secondary bg-opacity-20' : 'bg-gray-100'}
+                iconColor={hasCustomTheme ? 'text-theme-secondary' : 'text-gray-700'}
                 onClick={() => navigate('/settings')}
               />
             </div>
