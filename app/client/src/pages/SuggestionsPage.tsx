@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { SpotifyConnectionAlert } from '../components/SpotifyConnectionAlert';
 import { InfoBox } from '../components/InfoBox';
@@ -18,7 +18,6 @@ export function SuggestionsPage() {
   const [conversationId, setConversationId] = useState<number | null>(null);
   const [selectedTracks, setSelectedTracks] = useState<Set<string>>(new Set());
   const [isAdding, setIsAdding] = useState(false);
-  const conversationCreated = useRef(false);
 
   const { isLoading, createConversation, suggestMusic } = useAgent();
 
@@ -33,44 +32,22 @@ export function SuggestionsPage() {
   };
 
   useEffect(() => {
-    let mounted = true;
-
-    const init = async () => {
-      if (conversationCreated.current) return;
-      conversationCreated.current = true;
-
-      try {
-        const conversation = await createConversation('Music Suggestions Session');
-        if (mounted) {
-          setConversationId(conversation.id);
-        }
-      } catch (error) {
-        console.error('Failed to create conversation:', error);
-        conversationCreated.current = false;
-      }
-
-      try {
-        const data = await spotifyApi.getPlaylists() as SpotifyPlaylist[];
-        if (mounted) {
-          setPlaylists(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch playlists:', error);
-      }
-    };
-
-    init();
-
-    return () => {
-      mounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchPlaylists();
   }, []);
 
   const handleGenerate = async () => {
-    if (!selectedPlaylist || !context || !conversationId) return;
+    if (!selectedPlaylist || !context) return;
 
     try {
+      if (!conversationId) {
+        const conversation = await createConversation('Music Suggestions Session');
+        setConversationId(conversation.id);
+        const result = await suggestMusic(conversation.id, selectedPlaylist, context, parseInt(limit));
+        setSuggestions(result);
+        setSelectedTracks(new Set());
+        return;
+      }
+
       const result = await suggestMusic(conversationId, selectedPlaylist, context, parseInt(limit));
       setSuggestions(result);
       setSelectedTracks(new Set());

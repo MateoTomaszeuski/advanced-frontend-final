@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { SpotifyConnectionAlert } from '../components/SpotifyConnectionAlert';
 import { InfoBox } from '../components/InfoBox';
@@ -14,7 +14,6 @@ export function DuplicateCleanerPage() {
   const [scanResult, setScanResult] = useState<RemoveDuplicatesResponse | null>(null);
   const [selectedToRemove, setSelectedToRemove] = useState<Set<string>>(new Set());
   const [conversationId, setConversationId] = useState<number | null>(null);
-  const conversationCreated = useRef(false);
 
   const { isLoading, createConversation, scanDuplicates, confirmRemoveDuplicates } = useAgent();
 
@@ -29,44 +28,22 @@ export function DuplicateCleanerPage() {
   };
 
   useEffect(() => {
-    let mounted = true;
-
-    const init = async () => {
-      if (conversationCreated.current) return;
-      conversationCreated.current = true;
-
-      try {
-        const conversation = await createConversation('Duplicate Cleaner Session');
-        if (mounted) {
-          setConversationId(conversation.id);
-        }
-      } catch (error) {
-        console.error('Failed to create conversation:', error);
-        conversationCreated.current = false;
-      }
-
-      try {
-        const data = await spotifyApi.getPlaylists() as SpotifyPlaylist[];
-        if (mounted) {
-          setPlaylists(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch playlists:', error);
-      }
-    };
-
-    init();
-
-    return () => {
-      mounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchPlaylists();
   }, []);
 
   const handleScan = async () => {
-    if (!selectedPlaylist || !conversationId) return;
+    if (!selectedPlaylist) return;
 
     try {
+      if (!conversationId) {
+        const conversation = await createConversation('Duplicate Cleaner Session');
+        setConversationId(conversation.id);
+        const result = await scanDuplicates(conversation.id, selectedPlaylist);
+        setScanResult(result);
+        setSelectedToRemove(new Set());
+        return;
+      }
+
       const result = await scanDuplicates(conversationId, selectedPlaylist);
       setScanResult(result);
       setSelectedToRemove(new Set());
