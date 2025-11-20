@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { SpotifyConnectionAlert } from '../components/SpotifyConnectionAlert';
 import { InfoBox } from '../components/InfoBox';
@@ -16,7 +16,6 @@ export function DiscoverPage() {
   const [limit, setLimit] = useState('10');
   const [spotifyConnected, setSpotifyConnected] = useState(false);
   const [checkingConnection, setCheckingConnection] = useState(true);
-  const conversationCreated = useRef(false);
   const auth = useAuth();
   
   const { discoverNewMusic, createConversation, isLoading } = useAgent();
@@ -44,31 +43,18 @@ export function DiscoverPage() {
     checkSpotifyConnection();
   }, [auth.isAuthenticated]);
 
-  useEffect(() => {
-    const initConversation = async () => {
-      if (!currentConversation && spotifyConnected && !conversationCreated.current) {
-        conversationCreated.current = true;
-        try {
-          const conv = await createConversation('Music Discovery');
-          setCurrentConversation(conv);
-        } catch (error) {
-          console.error('Failed to create conversation:', error);
-          conversationCreated.current = false;
-        }
-      }
-    };
-    initConversation();
-  }, [currentConversation, spotifyConnected, createConversation, setCurrentConversation]);
-
   const handleDiscover = async () => {
-    if (!currentConversation) {
-      showToast.error('No conversation found. Please refresh the page.');
-      return;
-    }
-
     try {
+      let conversationId = currentConversation?.id;
+      
+      if (!conversationId) {
+        const conv = await createConversation('Music Discovery');
+        setCurrentConversation(conv);
+        conversationId = conv.id;
+      }
+
       await discoverNewMusic({
-        conversationId: currentConversation.id,
+        conversationId,
         limit: parseInt(limit),
       });
     } catch (error) {
