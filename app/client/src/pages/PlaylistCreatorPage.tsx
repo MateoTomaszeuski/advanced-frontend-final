@@ -28,11 +28,6 @@ interface RecentPlaylist {
 export function PlaylistCreatorPage() {
   const [prompt, setPrompt] = useState('');
   const [maxTracks, setMaxTracks] = useState('20');
-  const [minEnergy, setMinEnergy] = useState('');
-  const [maxEnergy, setMaxEnergy] = useState('');
-  const [minTempo, setMinTempo] = useState('');
-  const [maxTempo, setMaxTempo] = useState('');
-  const [useAdvanced, setUseAdvanced] = useState(false);
   const [spotifyConnected, setSpotifyConnected] = useState(false);
   const [checkingConnection, setCheckingConnection] = useState(true);
   const [recentPlaylists, setRecentPlaylists] = useState<RecentPlaylist[]>([]);
@@ -93,13 +88,6 @@ export function PlaylistCreatorPage() {
       maxTracks: parseInt(maxTracks) || 20,
     };
 
-    if (useAdvanced) {
-      if (minEnergy) preferences.minEnergy = parseInt(minEnergy);
-      if (maxEnergy) preferences.maxEnergy = parseInt(maxEnergy);
-      if (minTempo) preferences.minTempo = parseInt(minTempo);
-      if (maxTempo) preferences.maxTempo = parseInt(maxTempo);
-    }
-
     try {
       let conversationId = currentConversation?.id;
       
@@ -129,11 +117,6 @@ export function PlaylistCreatorPage() {
 
   const handleClear = () => {
     setPrompt('');
-    setUseAdvanced(false);
-    setMinEnergy('');
-    setMaxEnergy('');
-    setMinTempo('');
-    setMaxTempo('');
   };
 
   return (
@@ -152,7 +135,6 @@ export function PlaylistCreatorPage() {
             items={[
               'Be specific about the mood or activity (workout, study, party, etc.)',
               'Mention genres if you have a preference',
-              'Use advanced options to fine-tune energy and tempo',
               'The AI will automatically name your playlist based on your description',
             ]}
           />
@@ -169,16 +151,6 @@ export function PlaylistCreatorPage() {
           setPrompt={setPrompt}
           maxTracks={maxTracks}
           setMaxTracks={setMaxTracks}
-          useAdvanced={useAdvanced}
-          setUseAdvanced={setUseAdvanced}
-          minEnergy={minEnergy}
-          setMinEnergy={setMinEnergy}
-          maxEnergy={maxEnergy}
-          setMaxEnergy={setMaxEnergy}
-          minTempo={minTempo}
-          setMinTempo={setMinTempo}
-          maxTempo={maxTempo}
-          setMaxTempo={setMaxTempo}
           isLoading={isLoading}
           onSubmit={handleSubmit}
           onClear={handleClear}

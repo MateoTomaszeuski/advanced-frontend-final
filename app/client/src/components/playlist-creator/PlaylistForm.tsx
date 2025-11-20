@@ -1,23 +1,12 @@
 import { Button } from '../forms/Button';
 import { TextInput } from '../forms/TextInput';
 import { SelectDropdown } from '../forms/SelectDropdown';
-import { Checkbox } from '../forms/Checkbox';
 
 interface PlaylistFormProps {
   prompt: string;
   setPrompt: (value: string) => void;
   maxTracks: string;
   setMaxTracks: (value: string) => void;
-  useAdvanced: boolean;
-  setUseAdvanced: (value: boolean) => void;
-  minEnergy: string;
-  setMinEnergy: (value: string) => void;
-  maxEnergy: string;
-  setMaxEnergy: (value: string) => void;
-  minTempo: string;
-  setMinTempo: (value: string) => void;
-  maxTempo: string;
-  setMaxTempo: (value: string) => void;
   isLoading: boolean;
   onSubmit: (e: React.FormEvent) => void;
   onClear: () => void;
@@ -28,16 +17,6 @@ export function PlaylistForm({
   setPrompt,
   maxTracks,
   setMaxTracks,
-  useAdvanced,
-  setUseAdvanced,
-  minEnergy,
-  setMinEnergy,
-  maxEnergy,
-  setMaxEnergy,
-  minTempo,
-  setMinTempo,
-  maxTempo,
-  setMaxTempo,
   isLoading,
   onSubmit,
   onClear,
@@ -79,82 +58,6 @@ export function PlaylistForm({
             disabled={isLoading}
           />
         </div>
-
-        <div>
-          <Checkbox
-            label="Advanced Options"
-            checked={useAdvanced}
-            onChange={(e) => setUseAdvanced(e.target.checked)}
-            disabled={isLoading}
-            className="text-theme-text"
-          />
-        </div>
-
-        {useAdvanced && (
-          <div className="space-y-4 pl-6 border-l-2 border-theme-border">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-theme-text mb-2">
-                  Minimum Energy (0-1)
-                </label>
-                <TextInput
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={minEnergy}
-                  onChange={(e) => setMinEnergy(e.target.value)}
-                  placeholder="0"
-                  disabled={isLoading}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-theme-text opacity-80 mb-2">
-                  Max Energy (0-100)
-                </label>
-                <TextInput
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={maxEnergy}
-                  onChange={(e) => setMaxEnergy(e.target.value)}
-                  placeholder="100"
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-theme-text opacity-80 mb-2">
-                  Min Tempo (BPM)
-                </label>
-                <TextInput
-                  type="number"
-                  min="0"
-                  max="300"
-                  value={minTempo}
-                  onChange={(e) => setMinTempo(e.target.value)}
-                  placeholder="60"
-                  disabled={isLoading}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-theme-text opacity-80 mb-2">
-                  Max Tempo (BPM)
-                </label>
-                <TextInput
-                  type="number"
-                  min="0"
-                  max="300"
-                  value={maxTempo}
-                  onChange={(e) => setMaxTempo(e.target.value)}
-                  placeholder="180"
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-          </div>
-        )}
 
         <div className="flex gap-3 pt-4">
           <Button
