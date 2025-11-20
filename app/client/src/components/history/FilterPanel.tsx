@@ -1,4 +1,5 @@
 import { Button } from '../forms/Button';
+import { SelectDropdown } from '../forms/SelectDropdown';
 
 interface FilterPanelProps {
   filterType: string;
@@ -15,44 +16,40 @@ export function FilterPanel({
   setFilterStatus,
   onClearFilters,
 }: FilterPanelProps) {
+  const actionTypeOptions = [
+    { value: '', label: 'All Types' },
+    { value: 'CreateSmartPlaylist', label: 'Smart Playlist' },
+    { value: 'DiscoverNewMusic', label: 'Music Discovery' },
+    { value: 'ScanDuplicates', label: 'Scan Duplicates' },
+    { value: 'RemoveDuplicates', label: 'Remove Duplicates' },
+    { value: 'SuggestMusicByContext', label: 'Music Suggestions' },
+  ];
+
+  const statusOptions = [
+    { value: '', label: 'All Statuses' },
+    { value: 'Processing', label: 'Processing' },
+    { value: 'Completed', label: 'Completed' },
+    { value: 'Failed', label: 'Failed' },
+    { value: 'AwaitingApproval', label: 'Awaiting Approval' },
+  ];
+
   return (
     <div className="bg-theme-card rounded-lg shadow mb-6 p-6">
       <h2 className="text-xl font-semibold text-theme-text mb-4">Filters</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-theme-text opacity-80 mb-2">
-            Action Type
-          </label>
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-          >
-            <option value="">All Types</option>
-            <option value="CreateSmartPlaylist">Smart Playlist</option>
-            <option value="DiscoverNewMusic">Music Discovery</option>
-            <option value="ScanDuplicates">Scan Duplicates</option>
-            <option value="RemoveDuplicates">Remove Duplicates</option>
-            <option value="SuggestMusicByContext">Music Suggestions</option>
-          </select>
-        </div>
+        <SelectDropdown
+          label="Action Type"
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value)}
+          options={actionTypeOptions}
+        />
 
-        <div>
-          <label className="block text-sm font-medium text-theme-text opacity-80 mb-2">
-            Status
-          </label>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-          >
-            <option value="">All Statuses</option>
-            <option value="Processing">Processing</option>
-            <option value="Completed">Completed</option>
-            <option value="Failed">Failed</option>
-            <option value="AwaitingApproval">Awaiting Approval</option>
-          </select>
-        </div>
+        <SelectDropdown
+          label="Status"
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          options={statusOptions}
+        />
       </div>
 
       {(filterType || filterStatus) && (
