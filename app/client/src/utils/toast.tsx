@@ -81,9 +81,9 @@ export const showToast = {
       {
         loading: messages.loading,
         success: messages.success,
-        error: (err) => {
+        error: (err: unknown) => {
           const errorMessage = typeof err === 'string' ? err : messages.error;
-          return (t) => (
+          return (t: { id: string }) => (
             <div className="flex items-center justify-between gap-3 w-full">
               <span className="flex-1">{errorMessage}</span>
               <button
