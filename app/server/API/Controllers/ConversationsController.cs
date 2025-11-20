@@ -9,8 +9,7 @@ namespace API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class ConversationsController : ControllerBase
-{
+public class ConversationsController : ControllerBase {
     private readonly IConversationRepository _conversationRepository;
     private readonly IAgentActionRepository _actionRepository;
     private readonly ILogger<ConversationsController> _logger;
@@ -18,19 +17,16 @@ public class ConversationsController : ControllerBase
     public ConversationsController(
         IConversationRepository conversationRepository,
         IAgentActionRepository actionRepository,
-        ILogger<ConversationsController> logger)
-    {
+        ILogger<ConversationsController> logger) {
         _conversationRepository = conversationRepository;
         _actionRepository = actionRepository;
         _logger = logger;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetConversations()
-    {
+    public async Task<IActionResult> GetConversations() {
         var user = this.GetCurrentUser();
-        if (user == null)
-        {
+        if (user == null) {
             return this.UnauthorizedUser();
         }
 
@@ -38,8 +34,7 @@ public class ConversationsController : ControllerBase
 
         var conversations = await _conversationRepository.GetByUserIdAsync(user.Id);
 
-        return Ok(conversations.Select(c => new
-        {
+        return Ok(conversations.Select(c => new {
             c.Id,
             c.Title,
             c.CreatedAt,
@@ -49,11 +44,9 @@ public class ConversationsController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetConversation(int id)
-    {
+    public async Task<IActionResult> GetConversation(int id) {
         var user = this.GetCurrentUser();
-        if (user == null)
-        {
+        if (user == null) {
             return this.UnauthorizedUser();
         }
 
@@ -61,13 +54,11 @@ public class ConversationsController : ControllerBase
 
         var conversation = await _conversationRepository.GetByIdAsync(id);
 
-        if (conversation == null)
-        {
+        if (conversation == null) {
             return NotFound(new { error = "Conversation not found" });
         }
 
-        if (conversation.UserId != user.Id)
-        {
+        if (conversation.UserId != user.Id) {
             _logger.LogWarning("User {Email} attempted to access conversation {Id} owned by user {OwnerId}",
                 user.Email, id, conversation.UserId);
             return Forbid();
@@ -75,14 +66,12 @@ public class ConversationsController : ControllerBase
 
         var actions = await _actionRepository.GetByConversationIdAsync(id);
 
-        return Ok(new
-        {
+        return Ok(new {
             conversation.Id,
             conversation.Title,
             conversation.CreatedAt,
             conversation.UpdatedAt,
-            Actions = actions.Select(a => new
-            {
+            Actions = actions.Select(a => new {
                 a.Id,
                 a.ActionType,
                 a.Status,
@@ -97,18 +86,15 @@ public class ConversationsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateConversation([FromBody] CreateConversationRequest request)
-    {
+    public async Task<IActionResult> CreateConversation([FromBody] CreateConversationRequest request) {
         var user = this.GetCurrentUser();
-        if (user == null)
-        {
+        if (user == null) {
             return this.UnauthorizedUser();
         }
 
         _logger.LogInformation("Creating conversation for user: {Email}", user.Email);
 
-        var conversation = new Conversation
-        {
+        var conversation = new Conversation {
             UserId = user.Id,
             Title = request.Title,
             CreatedAt = DateTime.UtcNow,
@@ -117,8 +103,7 @@ public class ConversationsController : ControllerBase
 
         conversation = await _conversationRepository.CreateAsync(conversation);
 
-        return CreatedAtAction(nameof(GetConversation), new { id = conversation.Id }, new
-        {
+        return CreatedAtAction(nameof(GetConversation), new { id = conversation.Id }, new {
             conversation.Id,
             conversation.Title,
             conversation.CreatedAt,
@@ -127,11 +112,9 @@ public class ConversationsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteConversation(int id)
-    {
+    public async Task<IActionResult> DeleteConversation(int id) {
         var user = this.GetCurrentUser();
-        if (user == null)
-        {
+        if (user == null) {
             return this.UnauthorizedUser();
         }
 
@@ -139,13 +122,11 @@ public class ConversationsController : ControllerBase
 
         var conversation = await _conversationRepository.GetByIdAsync(id);
 
-        if (conversation == null)
-        {
+        if (conversation == null) {
             return NotFound(new { error = "Conversation not found" });
         }
 
-        if (conversation.UserId != user.Id)
-        {
+        if (conversation.UserId != user.Id) {
             _logger.LogWarning("User {Email} attempted to delete conversation {Id} owned by user {OwnerId}",
                 user.Email, id, conversation.UserId);
             return Forbid();

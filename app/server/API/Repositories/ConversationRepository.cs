@@ -4,8 +4,7 @@ using Dapper;
 
 namespace API.Repositories;
 
-public interface IConversationRepository
-{
+public interface IConversationRepository {
     Task<Conversation?> GetByIdAsync(int id);
     Task<IEnumerable<Conversation>> GetByUserIdAsync(int userId);
     Task<IEnumerable<Conversation>> GetAllByUserIdAsync(int userId);
@@ -14,19 +13,16 @@ public interface IConversationRepository
     Task DeleteAsync(int id);
 }
 
-public class ConversationRepository : IConversationRepository
-{
+public class ConversationRepository : IConversationRepository {
     private readonly IDbConnectionFactory _dbConnectionFactory;
 
-    public ConversationRepository(IDbConnectionFactory dbConnectionFactory)
-    {
+    public ConversationRepository(IDbConnectionFactory dbConnectionFactory) {
         _dbConnectionFactory = dbConnectionFactory;
     }
 
-    public async Task<Conversation?> GetByIdAsync(int id)
-    {
+    public async Task<Conversation?> GetByIdAsync(int id) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = @"
             SELECT id as Id, user_id as UserId, title as Title,
                    created_at as CreatedAt, updated_at as UpdatedAt
@@ -36,10 +32,9 @@ public class ConversationRepository : IConversationRepository
         return await connection.QueryFirstOrDefaultAsync<Conversation>(sql, new { Id = id });
     }
 
-    public async Task<IEnumerable<Conversation>> GetByUserIdAsync(int userId)
-    {
+    public async Task<IEnumerable<Conversation>> GetByUserIdAsync(int userId) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = @"
             SELECT c.id as Id, c.user_id as UserId, c.title as Title,
                    c.created_at as CreatedAt, c.updated_at as UpdatedAt,
@@ -53,10 +48,9 @@ public class ConversationRepository : IConversationRepository
         return await connection.QueryAsync<Conversation>(sql, new { UserId = userId });
     }
 
-    public async Task<IEnumerable<Conversation>> GetAllByUserIdAsync(int userId)
-    {
+    public async Task<IEnumerable<Conversation>> GetAllByUserIdAsync(int userId) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = @"
             SELECT id as Id, user_id as UserId, title as Title,
                    created_at as CreatedAt, updated_at as UpdatedAt
@@ -67,10 +61,9 @@ public class ConversationRepository : IConversationRepository
         return await connection.QueryAsync<Conversation>(sql, new { UserId = userId });
     }
 
-    public async Task<Conversation> CreateAsync(Conversation conversation)
-    {
+    public async Task<Conversation> CreateAsync(Conversation conversation) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = @"
             INSERT INTO conversations (user_id, title, created_at, updated_at)
             VALUES (@UserId, @Title, @CreatedAt, @UpdatedAt)
@@ -80,10 +73,9 @@ public class ConversationRepository : IConversationRepository
         return await connection.QuerySingleAsync<Conversation>(sql, conversation);
     }
 
-    public async Task UpdateAsync(Conversation conversation)
-    {
+    public async Task UpdateAsync(Conversation conversation) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = @"
             UPDATE conversations
             SET title = @Title,
@@ -93,10 +85,9 @@ public class ConversationRepository : IConversationRepository
         await connection.ExecuteAsync(sql, conversation);
     }
 
-    public async Task DeleteAsync(int id)
-    {
+    public async Task DeleteAsync(int id) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = "DELETE FROM conversations WHERE id = @Id";
         await connection.ExecuteAsync(sql, new { Id = id });
     }

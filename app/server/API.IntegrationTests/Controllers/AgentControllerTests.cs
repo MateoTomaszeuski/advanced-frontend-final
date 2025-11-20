@@ -9,24 +9,20 @@ using TUnit.Core;
 
 namespace API.IntegrationTests.Controllers;
 
-public class AgentControllerTests
-{
+public class AgentControllerTests {
     private WebApplicationFactory<Program>? _factory;
     private HttpClient? _client;
     private string? _authToken;
 
     [Before(Test)]
-    public async Task Setup()
-    {
+    public async Task Setup() {
         var connectionString = "Host=localhost;Port=5433;Database=testdb;Username=testuser;Password=testpass";
 
         await InitializeDatabase(connectionString);
 
         _factory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureServices(services =>
-                {
+            .WithWebHostBuilder(builder => {
+                builder.ConfigureServices(services => {
                     Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", connectionString);
                 });
             });
@@ -37,8 +33,7 @@ public class AgentControllerTests
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
     }
 
-    private async Task InitializeDatabase(string connectionString)
-    {
+    private async Task InitializeDatabase(string connectionString) {
         await using var connection = new Npgsql.NpgsqlConnection(connectionString);
         await connection.OpenAsync();
 
@@ -50,8 +45,7 @@ public class AgentControllerTests
         await command.ExecuteNonQueryAsync();
     }
 
-    private string GenerateMockJwtToken(string email, string displayName)
-    {
+    private string GenerateMockJwtToken(string email, string displayName) {
         var header = Convert.ToBase64String(Encoding.UTF8.GetBytes("{\"alg\":\"HS256\",\"typ\":\"JWT\"}"));
         var payload = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{{\"email\":\"{email}\",\"name\":\"{displayName}\"}}"));
         var signature = Convert.ToBase64String(Encoding.UTF8.GetBytes("mock-signature"));
@@ -59,12 +53,10 @@ public class AgentControllerTests
     }
 
     [Test]
-    public async Task CreateSmartPlaylist_WithoutAuth_ReturnsUnauthorized()
-    {
+    public async Task CreateSmartPlaylist_WithoutAuth_ReturnsUnauthorized() {
         _client!.DefaultRequestHeaders.Authorization = null;
 
-        var request = new
-        {
+        var request = new {
             ConversationId = 1,
             Prompt = "Upbeat workout music"
         };
@@ -75,12 +67,10 @@ public class AgentControllerTests
     }
 
     [Test]
-    public async Task DiscoverNewMusic_WithoutAuth_ReturnsUnauthorized()
-    {
+    public async Task DiscoverNewMusic_WithoutAuth_ReturnsUnauthorized() {
         _client!.DefaultRequestHeaders.Authorization = null;
 
-        var request = new
-        {
+        var request = new {
             ConversationId = 1,
             Limit = 10
         };
@@ -91,8 +81,7 @@ public class AgentControllerTests
     }
 
     [After(Test)]
-    public void Cleanup()
-    {
+    public void Cleanup() {
         _client?.Dispose();
         _factory?.Dispose();
     }

@@ -7,14 +7,12 @@ using Testcontainers.PostgreSql;
 
 namespace API.UnitTests.Repositories;
 
-public class UserRepositoryTests : IAsyncDisposable
-{
+public class UserRepositoryTests : IAsyncDisposable {
     private readonly PostgreSqlContainer _postgresContainer;
     private IDbConnectionFactory? _dbFactory;
     private UserRepository? _repository;
 
-    public UserRepositoryTests()
-    {
+    public UserRepositoryTests() {
         _postgresContainer = new PostgreSqlBuilder()
             .WithDatabase("testdb")
             .WithUsername("testuser")
@@ -23,8 +21,7 @@ public class UserRepositoryTests : IAsyncDisposable
     }
 
     [Before(Test)]
-    public async Task Setup()
-    {
+    public async Task Setup() {
         await _postgresContainer.StartAsync();
         var connectionString = _postgresContainer.GetConnectionString();
 
@@ -34,8 +31,7 @@ public class UserRepositoryTests : IAsyncDisposable
         _repository = new UserRepository(_dbFactory);
     }
 
-    private async Task InitializeDatabase(string connectionString)
-    {
+    private async Task InitializeDatabase(string connectionString) {
         var initSql = @"
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -47,19 +43,17 @@ public class UserRepositoryTests : IAsyncDisposable
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
             );";
-        
+
         await using var connection = new Npgsql.NpgsqlConnection(connectionString);
         await connection.OpenAsync();
-        
+
         await using var command = new Npgsql.NpgsqlCommand(initSql, connection);
         await command.ExecuteNonQueryAsync();
     }
 
     [Test]
-    public async Task CreateAsync_CreatesUserSuccessfully()
-    {
-        var user = new User
-        {
+    public async Task CreateAsync_CreatesUserSuccessfully() {
+        var user = new User {
             Email = "test@example.com",
             DisplayName = "Test User",
             CreatedAt = DateTime.UtcNow,
@@ -75,10 +69,8 @@ public class UserRepositoryTests : IAsyncDisposable
     }
 
     [Test]
-    public async Task GetByEmailAsync_ReturnsExistingUser()
-    {
-        var user = new User
-        {
+    public async Task GetByEmailAsync_ReturnsExistingUser() {
+        var user = new User {
             Email = "existing@example.com",
             DisplayName = "Existing User",
             CreatedAt = DateTime.UtcNow,
@@ -95,18 +87,15 @@ public class UserRepositoryTests : IAsyncDisposable
     }
 
     [Test]
-    public async Task GetByEmailAsync_ReturnsNullForNonExistentUser()
-    {
+    public async Task GetByEmailAsync_ReturnsNullForNonExistentUser() {
         var result = await _repository!.GetByEmailAsync("nonexistent@example.com");
 
         result.Should().BeNull();
     }
 
     [Test]
-    public async Task UpdateAsync_UpdatesUserSuccessfully()
-    {
-        var user = new User
-        {
+    public async Task UpdateAsync_UpdatesUserSuccessfully() {
+        var user = new User {
             Email = "update@example.com",
             DisplayName = "Original Name",
             CreatedAt = DateTime.UtcNow,
@@ -127,10 +116,8 @@ public class UserRepositoryTests : IAsyncDisposable
     }
 
     [Test]
-    public async Task DeleteAsync_DeletesUserSuccessfully()
-    {
-        var user = new User
-        {
+    public async Task DeleteAsync_DeletesUserSuccessfully() {
+        var user = new User {
             Email = "delete@example.com",
             DisplayName = "Delete User",
             CreatedAt = DateTime.UtcNow,
@@ -144,8 +131,7 @@ public class UserRepositoryTests : IAsyncDisposable
         deleted.Should().BeNull();
     }
 
-    public async ValueTask DisposeAsync()
-    {
+    public async ValueTask DisposeAsync() {
         await _postgresContainer.DisposeAsync();
     }
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { SpotifyConnectionAlert } from '../components/SpotifyConnectionAlert';
 import { InfoBox } from '../components/InfoBox';
@@ -37,7 +37,6 @@ export function PlaylistCreatorPage() {
   const [checkingConnection, setCheckingConnection] = useState(true);
   const [recentPlaylists, setRecentPlaylists] = useState<RecentPlaylist[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(false);
-  const conversationCreated = useRef(false);
   const auth = useAuth();
   
   const { createSmartPlaylist, createConversation, isLoading } = useAgent();
@@ -66,22 +65,6 @@ export function PlaylistCreatorPage() {
   }, [auth.isAuthenticated]);
 
   useEffect(() => {
-    const initConversation = async () => {
-      if (!currentConversation && spotifyConnected && !conversationCreated.current) {
-        conversationCreated.current = true;
-        try {
-          const conv = await createConversation('Smart Playlist Creation');
-          setCurrentConversation(conv);
-        } catch (error) {
-          console.error('Failed to create conversation:', error);
-          conversationCreated.current = false;
-        }
-      }
-    };
-    initConversation();
-  }, [currentConversation, spotifyConnected, createConversation, setCurrentConversation]);
-
-  useEffect(() => {
     const fetchRecent = async () => {
       if (!spotifyConnected || !auth.isAuthenticated) return;
       
@@ -106,11 +89,6 @@ export function PlaylistCreatorPage() {
       return;
     }
 
-    if (!currentConversation) {
-      showToast.error('No conversation found. Please refresh the page.');
-      return;
-    }
-
     const preferences: PlaylistPreferences = {
       maxTracks: parseInt(maxTracks) || 20,
     };
@@ -123,8 +101,16 @@ export function PlaylistCreatorPage() {
     }
 
     try {
+      let conversationId = currentConversation?.id;
+      
+      if (!conversationId) {
+        const conv = await createConversation('Smart Playlist Creation');
+        setCurrentConversation(conv);
+        conversationId = conv.id;
+      }
+
       await createSmartPlaylist({
-        conversationId: currentConversation.id,
+        conversationId,
         prompt,
         preferences,
       });

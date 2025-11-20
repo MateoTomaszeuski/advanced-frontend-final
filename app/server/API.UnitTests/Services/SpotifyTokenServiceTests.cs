@@ -1,3 +1,4 @@
+using API.Interfaces;
 using API.Models;
 using API.Services;
 using FluentAssertions;
@@ -7,15 +8,13 @@ using TUnit.Core;
 
 namespace API.UnitTests.Services;
 
-public class SpotifyTokenServiceTests
-{
+public class SpotifyTokenServiceTests {
     private readonly Mock<ISpotifyService> _mockSpotifyService;
     private readonly Mock<IUserService> _mockUserService;
     private readonly Mock<ILogger<SpotifyTokenService>> _mockLogger;
     private readonly SpotifyTokenService _tokenService;
 
-    public SpotifyTokenServiceTests()
-    {
+    public SpotifyTokenServiceTests() {
         _mockSpotifyService = new Mock<ISpotifyService>();
         _mockUserService = new Mock<IUserService>();
         _mockLogger = new Mock<ILogger<SpotifyTokenService>>();
@@ -27,10 +26,8 @@ public class SpotifyTokenServiceTests
     }
 
     [Test]
-    public void IsTokenExpired_WhenNoTokenExpiry_ReturnsTrue()
-    {
-        var user = new User
-        {
+    public void IsTokenExpired_WhenNoTokenExpiry_ReturnsTrue() {
+        var user = new User {
             Id = 1,
             Email = "test@example.com",
             SpotifyAccessToken = "token",
@@ -44,10 +41,8 @@ public class SpotifyTokenServiceTests
     }
 
     [Test]
-    public void IsTokenExpired_WhenTokenExpired_ReturnsTrue()
-    {
-        var user = new User
-        {
+    public void IsTokenExpired_WhenTokenExpired_ReturnsTrue() {
+        var user = new User {
             Id = 1,
             Email = "test@example.com",
             SpotifyAccessToken = "token",
@@ -61,10 +56,8 @@ public class SpotifyTokenServiceTests
     }
 
     [Test]
-    public void IsTokenExpired_WhenTokenValidWithBuffer_ReturnsFalse()
-    {
-        var user = new User
-        {
+    public void IsTokenExpired_WhenTokenValidWithBuffer_ReturnsFalse() {
+        var user = new User {
             Id = 1,
             Email = "test@example.com",
             SpotifyAccessToken = "token",
@@ -78,10 +71,8 @@ public class SpotifyTokenServiceTests
     }
 
     [Test]
-    public void IsTokenExpired_WhenTokenWithinBufferWindow_ReturnsTrue()
-    {
-        var user = new User
-        {
+    public void IsTokenExpired_WhenTokenWithinBufferWindow_ReturnsTrue() {
+        var user = new User {
             Id = 1,
             Email = "test@example.com",
             SpotifyAccessToken = "token",
@@ -95,10 +86,8 @@ public class SpotifyTokenServiceTests
     }
 
     [Test]
-    public async Task GetValidAccessTokenAsync_WhenNoAccessToken_ThrowsException()
-    {
-        var user = new User
-        {
+    public async Task GetValidAccessTokenAsync_WhenNoAccessToken_ThrowsException() {
+        var user = new User {
             Id = 1,
             Email = "test@example.com",
             SpotifyAccessToken = null
@@ -111,11 +100,9 @@ public class SpotifyTokenServiceTests
     }
 
     [Test]
-    public async Task GetValidAccessTokenAsync_WhenTokenValid_ReturnsExistingToken()
-    {
+    public async Task GetValidAccessTokenAsync_WhenTokenValid_ReturnsExistingToken() {
         var validToken = "valid-token";
-        var user = new User
-        {
+        var user = new User {
             Id = 1,
             Email = "test@example.com",
             SpotifyAccessToken = validToken,
@@ -130,14 +117,12 @@ public class SpotifyTokenServiceTests
     }
 
     [Test]
-    public async Task GetValidAccessTokenAsync_WhenTokenExpired_RefreshesToken()
-    {
+    public async Task GetValidAccessTokenAsync_WhenTokenExpired_RefreshesToken() {
         var oldToken = "old-token";
         var newToken = "new-token";
         var refreshToken = "refresh-token";
 
-        var user = new User
-        {
+        var user = new User {
             Id = 1,
             Email = "test@example.com",
             SpotifyAccessToken = oldToken,
@@ -158,16 +143,14 @@ public class SpotifyTokenServiceTests
         result.Should().Be(newToken);
         user.SpotifyAccessToken.Should().Be(newToken);
         user.SpotifyTokenExpiry.Should().BeCloseTo(DateTime.UtcNow.AddHours(1), TimeSpan.FromMinutes(1));
-        
+
         _mockSpotifyService.Verify(s => s.RefreshAccessTokenAsync(refreshToken), Times.Once);
         _mockUserService.Verify(s => s.UpdateUserAsync(user), Times.Once);
     }
 
     [Test]
-    public async Task GetValidAccessTokenAsync_WhenNoRefreshToken_ThrowsException()
-    {
-        var user = new User
-        {
+    public async Task GetValidAccessTokenAsync_WhenNoRefreshToken_ThrowsException() {
+        var user = new User {
             Id = 1,
             Email = "test@example.com",
             SpotifyAccessToken = "token",
@@ -182,10 +165,8 @@ public class SpotifyTokenServiceTests
     }
 
     [Test]
-    public async Task GetValidAccessTokenAsync_WhenRefreshFails_ThrowsException()
-    {
-        var user = new User
-        {
+    public async Task GetValidAccessTokenAsync_WhenRefreshFails_ThrowsException() {
+        var user = new User {
             Id = 1,
             Email = "test@example.com",
             SpotifyAccessToken = "token",

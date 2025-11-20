@@ -8,16 +8,14 @@ using Dapper;
 
 namespace API.UnitTests.Repositories;
 
-public class AgentActionRepositoryTests : IAsyncDisposable
-{
+public class AgentActionRepositoryTests : IAsyncDisposable {
     private readonly PostgreSqlContainer _postgresContainer;
     private IDbConnectionFactory _connectionFactory = null!;
     private AgentActionRepository _repository = null!;
     private ConversationRepository _conversationRepository = null!;
     private UserRepository _userRepository = null!;
 
-    public AgentActionRepositoryTests()
-    {
+    public AgentActionRepositoryTests() {
         _postgresContainer = new PostgreSqlBuilder()
             .WithImage("postgres:15")
             .WithDatabase("testdb")
@@ -27,8 +25,7 @@ public class AgentActionRepositoryTests : IAsyncDisposable
     }
 
     [Before(Test)]
-    public async Task Setup()
-    {
+    public async Task Setup() {
         await _postgresContainer.StartAsync();
 
         _connectionFactory = new DbConnectionFactory(_postgresContainer.GetConnectionString());
@@ -37,7 +34,7 @@ public class AgentActionRepositoryTests : IAsyncDisposable
         _userRepository = new UserRepository(_connectionFactory);
 
         using var connection = await _connectionFactory.CreateConnectionAsync();
-        
+
         await connection.ExecuteAsync(@"
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -74,25 +71,21 @@ public class AgentActionRepositoryTests : IAsyncDisposable
     }
 
     [Test]
-    public async Task CreateAsync_CreatesAgentAction()
-    {
-        var user = await _userRepository.CreateAsync(new User
-        {
+    public async Task CreateAsync_CreatesAgentAction() {
+        var user = await _userRepository.CreateAsync(new User {
             Email = "test@example.com",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
 
-        var conversation = await _conversationRepository.CreateAsync(new Conversation
-        {
+        var conversation = await _conversationRepository.CreateAsync(new Conversation {
             UserId = user.Id,
             Title = "Test Conversation",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
 
-        var action = new AgentAction
-        {
+        var action = new AgentAction {
             ConversationId = conversation.Id,
             ActionType = "CreateSmartPlaylist",
             Status = "Processing",
@@ -110,25 +103,21 @@ public class AgentActionRepositoryTests : IAsyncDisposable
     }
 
     [Test]
-    public async Task GetByIdAsync_ReturnsAction()
-    {
-        var user = await _userRepository.CreateAsync(new User
-        {
+    public async Task GetByIdAsync_ReturnsAction() {
+        var user = await _userRepository.CreateAsync(new User {
             Email = "test@example.com",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
 
-        var conversation = await _conversationRepository.CreateAsync(new Conversation
-        {
+        var conversation = await _conversationRepository.CreateAsync(new Conversation {
             UserId = user.Id,
             Title = "Test",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
 
-        var created = await _repository.CreateAsync(new AgentAction
-        {
+        var created = await _repository.CreateAsync(new AgentAction {
             ConversationId = conversation.Id,
             ActionType = "Test",
             Status = "Completed",
@@ -142,25 +131,21 @@ public class AgentActionRepositoryTests : IAsyncDisposable
     }
 
     [Test]
-    public async Task UpdateAsync_UpdatesAction()
-    {
-        var user = await _userRepository.CreateAsync(new User
-        {
+    public async Task UpdateAsync_UpdatesAction() {
+        var user = await _userRepository.CreateAsync(new User {
             Email = "test@example.com",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
 
-        var conversation = await _conversationRepository.CreateAsync(new Conversation
-        {
+        var conversation = await _conversationRepository.CreateAsync(new Conversation {
             UserId = user.Id,
             Title = "Test",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
 
-        var action = await _repository.CreateAsync(new AgentAction
-        {
+        var action = await _repository.CreateAsync(new AgentAction {
             ConversationId = conversation.Id,
             ActionType = "Test",
             Status = "Processing",
@@ -178,33 +163,28 @@ public class AgentActionRepositoryTests : IAsyncDisposable
     }
 
     [Test]
-    public async Task GetByConversationIdAsync_ReturnsActionsForConversation()
-    {
-        var user = await _userRepository.CreateAsync(new User
-        {
+    public async Task GetByConversationIdAsync_ReturnsActionsForConversation() {
+        var user = await _userRepository.CreateAsync(new User {
             Email = "test@example.com",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
 
-        var conversation = await _conversationRepository.CreateAsync(new Conversation
-        {
+        var conversation = await _conversationRepository.CreateAsync(new Conversation {
             UserId = user.Id,
             Title = "Test",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
 
-        await _repository.CreateAsync(new AgentAction
-        {
+        await _repository.CreateAsync(new AgentAction {
             ConversationId = conversation.Id,
             ActionType = "Action1",
             Status = "Completed",
             CreatedAt = DateTime.UtcNow
         });
 
-        await _repository.CreateAsync(new AgentAction
-        {
+        await _repository.CreateAsync(new AgentAction {
             ConversationId = conversation.Id,
             ActionType = "Action2",
             Status = "Processing",
@@ -219,25 +199,21 @@ public class AgentActionRepositoryTests : IAsyncDisposable
     }
 
     [Test]
-    public async Task DeleteAsync_DeletesAction()
-    {
-        var user = await _userRepository.CreateAsync(new User
-        {
+    public async Task DeleteAsync_DeletesAction() {
+        var user = await _userRepository.CreateAsync(new User {
             Email = "test@example.com",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
 
-        var conversation = await _conversationRepository.CreateAsync(new Conversation
-        {
+        var conversation = await _conversationRepository.CreateAsync(new Conversation {
             UserId = user.Id,
             Title = "Test",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
 
-        var action = await _repository.CreateAsync(new AgentAction
-        {
+        var action = await _repository.CreateAsync(new AgentAction {
             ConversationId = conversation.Id,
             ActionType = "Test",
             Status = "Completed",
@@ -251,25 +227,21 @@ public class AgentActionRepositoryTests : IAsyncDisposable
     }
 
     [Test]
-    public async Task GetRecentPlaylistCreationsAsync_ReturnsOnlyPlaylistActions()
-    {
-        var user = await _userRepository.CreateAsync(new User
-        {
+    public async Task GetRecentPlaylistCreationsAsync_ReturnsOnlyPlaylistActions() {
+        var user = await _userRepository.CreateAsync(new User {
             Email = "test@example.com",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
 
-        var conversation = await _conversationRepository.CreateAsync(new Conversation
-        {
+        var conversation = await _conversationRepository.CreateAsync(new Conversation {
             UserId = user.Id,
             Title = "Test",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
 
-        var playlist1 = await _repository.CreateAsync(new AgentAction
-        {
+        var playlist1 = await _repository.CreateAsync(new AgentAction {
             ConversationId = conversation.Id,
             ActionType = "CreateSmartPlaylist",
             Status = "Completed",
@@ -277,8 +249,7 @@ public class AgentActionRepositoryTests : IAsyncDisposable
             CreatedAt = DateTime.UtcNow
         });
 
-        await _repository.CreateAsync(new AgentAction
-        {
+        await _repository.CreateAsync(new AgentAction {
             ConversationId = conversation.Id,
             ActionType = "ScanDuplicates",
             Status = "Completed",
@@ -292,8 +263,7 @@ public class AgentActionRepositoryTests : IAsyncDisposable
         resultsList[0].ActionType.Should().Be("CreateSmartPlaylist");
     }
 
-    public async ValueTask DisposeAsync()
-    {
+    public async ValueTask DisposeAsync() {
         await _postgresContainer.DisposeAsync();
     }
 }

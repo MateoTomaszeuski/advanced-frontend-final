@@ -7,16 +7,14 @@ using Testcontainers.PostgreSql;
 
 namespace API.UnitTests.Repositories;
 
-public class ConversationRepositoryTests : IAsyncDisposable
-{
+public class ConversationRepositoryTests : IAsyncDisposable {
     private readonly PostgreSqlContainer _postgresContainer;
     private IDbConnectionFactory? _dbFactory;
     private ConversationRepository? _repository;
     private UserRepository? _userRepository;
     private int _testUserId;
 
-    public ConversationRepositoryTests()
-    {
+    public ConversationRepositoryTests() {
         _postgresContainer = new PostgreSqlBuilder()
             .WithDatabase("testdb")
             .WithUsername("testuser")
@@ -25,8 +23,7 @@ public class ConversationRepositoryTests : IAsyncDisposable
     }
 
     [Before(Test)]
-    public async Task Setup()
-    {
+    public async Task Setup() {
         await _postgresContainer.StartAsync();
         var connectionString = _postgresContainer.GetConnectionString();
 
@@ -36,8 +33,7 @@ public class ConversationRepositoryTests : IAsyncDisposable
         _repository = new ConversationRepository(_dbFactory);
         _userRepository = new UserRepository(_dbFactory);
 
-        var user = await _userRepository.CreateAsync(new User
-        {
+        var user = await _userRepository.CreateAsync(new User {
             Email = "test@example.com",
             DisplayName = "Test User",
             CreatedAt = DateTime.UtcNow,
@@ -46,8 +42,7 @@ public class ConversationRepositoryTests : IAsyncDisposable
         _testUserId = user.Id;
     }
 
-    private async Task InitializeDatabase(string connectionString)
-    {
+    private async Task InitializeDatabase(string connectionString) {
         var initSql = @"
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -80,19 +75,17 @@ public class ConversationRepositoryTests : IAsyncDisposable
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 completed_at TIMESTAMP
             );";
-        
+
         await using var connection = new Npgsql.NpgsqlConnection(connectionString);
         await connection.OpenAsync();
-        
+
         await using var command = new Npgsql.NpgsqlCommand(initSql, connection);
         await command.ExecuteNonQueryAsync();
     }
 
     [Test]
-    public async Task CreateAsync_CreatesConversationSuccessfully()
-    {
-        var conversation = new Conversation
-        {
+    public async Task CreateAsync_CreatesConversationSuccessfully() {
+        var conversation = new Conversation {
             UserId = _testUserId,
             Title = "Test Conversation",
             CreatedAt = DateTime.UtcNow,
@@ -108,18 +101,15 @@ public class ConversationRepositoryTests : IAsyncDisposable
     }
 
     [Test]
-    public async Task GetByUserIdAsync_ReturnsUserConversations()
-    {
-        await _repository!.CreateAsync(new Conversation
-        {
+    public async Task GetByUserIdAsync_ReturnsUserConversations() {
+        await _repository!.CreateAsync(new Conversation {
             UserId = _testUserId,
             Title = "Conversation 1",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
 
-        await _repository.CreateAsync(new Conversation
-        {
+        await _repository.CreateAsync(new Conversation {
             UserId = _testUserId,
             Title = "Conversation 2",
             CreatedAt = DateTime.UtcNow,
@@ -133,10 +123,8 @@ public class ConversationRepositoryTests : IAsyncDisposable
     }
 
     [Test]
-    public async Task UpdateAsync_UpdatesConversationSuccessfully()
-    {
-        var conversation = await _repository!.CreateAsync(new Conversation
-        {
+    public async Task UpdateAsync_UpdatesConversationSuccessfully() {
+        var conversation = await _repository!.CreateAsync(new Conversation {
             UserId = _testUserId,
             Title = "Original Title",
             CreatedAt = DateTime.UtcNow,
@@ -154,10 +142,8 @@ public class ConversationRepositoryTests : IAsyncDisposable
     }
 
     [Test]
-    public async Task DeleteAsync_DeletesConversationSuccessfully()
-    {
-        var conversation = await _repository!.CreateAsync(new Conversation
-        {
+    public async Task DeleteAsync_DeletesConversationSuccessfully() {
+        var conversation = await _repository!.CreateAsync(new Conversation {
             UserId = _testUserId,
             Title = "To Delete",
             CreatedAt = DateTime.UtcNow,
@@ -170,8 +156,7 @@ public class ConversationRepositoryTests : IAsyncDisposable
         deleted.Should().BeNull();
     }
 
-    public async ValueTask DisposeAsync()
-    {
+    public async ValueTask DisposeAsync() {
         await _postgresContainer.DisposeAsync();
     }
 }

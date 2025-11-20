@@ -7,30 +7,25 @@ namespace API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class TestController : ControllerBase
-{
+public class TestController : ControllerBase {
     private readonly ILogger<TestController> _logger;
 
-    public TestController(ILogger<TestController> logger)
-    {
+    public TestController(ILogger<TestController> logger) {
         _logger = logger;
     }
 
     [HttpGet("me")]
-    public IActionResult GetMe()
-    {
+    public IActionResult GetMe() {
         var email = this.GetUserEmail();
         var user = this.GetCurrentUser();
 
-        if (email == null || user == null)
-        {
+        if (email == null || user == null) {
             return this.UnauthorizedUser();
         }
 
         _logger.LogInformation("Test endpoint accessed by user: {Email}", email);
 
-        return Ok(new
-        {
+        return Ok(new {
             email = email,
             userId = user.Id,
             displayName = user.DisplayName,
@@ -39,13 +34,11 @@ public class TestController : ControllerBase
     }
 
     [HttpGet("ping")]
-    public IActionResult Ping()
-    {
+    public IActionResult Ping() {
         var email = this.GetUserEmail();
         _logger.LogInformation("Ping endpoint accessed by user: {Email}", email ?? "anonymous");
 
-        return Ok(new
-        {
+        return Ok(new {
             message = "pong",
             timestamp = DateTime.UtcNow,
             userEmail = email

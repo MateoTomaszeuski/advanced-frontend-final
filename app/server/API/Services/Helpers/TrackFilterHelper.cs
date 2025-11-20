@@ -1,25 +1,22 @@
 using API.DTOs.Agent;
 using API.DTOs.Spotify;
+using API.Interfaces;
 
 namespace API.Services.Helpers;
 
-public class TrackFilterHelper
-{
+public class TrackFilterHelper {
     private readonly ISpotifyService _spotifyService;
 
-    public TrackFilterHelper(ISpotifyService spotifyService)
-    {
+    public TrackFilterHelper(ISpotifyService spotifyService) {
         _spotifyService = spotifyService;
     }
 
     public async Task<SpotifyTrack[]> FilterByPreferencesAsync(
         string accessToken,
         SpotifyTrack[] tracks,
-        PlaylistPreferences preferences)
-    {
+        PlaylistPreferences preferences) {
         if (preferences.MinEnergy == null && preferences.MaxEnergy == null &&
-            preferences.MinTempo == null && preferences.MaxTempo == null)
-        {
+            preferences.MinTempo == null && preferences.MaxTempo == null) {
             return tracks;
         }
 
@@ -28,13 +25,11 @@ public class TrackFilterHelper
 
         var filteredTracks = new List<SpotifyTrack>();
 
-        for (int i = 0; i < tracks.Length && i < audioFeatures.Length; i++)
-        {
+        for (int i = 0; i < tracks.Length && i < audioFeatures.Length; i++) {
             var track = tracks[i];
             var features = audioFeatures[i];
 
-            if (MeetsPreferences(features, preferences))
-            {
+            if (MeetsPreferences(features, preferences)) {
                 filteredTracks.Add(track);
             }
         }
@@ -42,8 +37,7 @@ public class TrackFilterHelper
         return filteredTracks.ToArray();
     }
 
-    private static bool MeetsPreferences(AudioFeatures features, PlaylistPreferences preferences)
-    {
+    private static bool MeetsPreferences(AudioFeatures features, PlaylistPreferences preferences) {
         if (preferences.MinEnergy.HasValue && features.Energy * 100 < preferences.MinEnergy.Value)
             return false;
 

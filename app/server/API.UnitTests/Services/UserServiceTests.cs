@@ -8,25 +8,21 @@ using TUnit.Core;
 
 namespace API.UnitTests.Services;
 
-public class UserServiceTests
-{
+public class UserServiceTests {
     private readonly Mock<IUserRepository> _mockUserRepository;
     private readonly Mock<ILogger<UserService>> _mockLogger;
     private readonly UserService _userService;
 
-    public UserServiceTests()
-    {
+    public UserServiceTests() {
         _mockUserRepository = new Mock<IUserRepository>();
         _mockLogger = new Mock<ILogger<UserService>>();
         _userService = new UserService(_mockUserRepository.Object, _mockLogger.Object);
     }
 
     [Test]
-    public async Task GetOrCreateUserAsync_WhenUserExists_ReturnsExistingUser()
-    {
+    public async Task GetOrCreateUserAsync_WhenUserExists_ReturnsExistingUser() {
         var email = "test@example.com";
-        var existingUser = new User
-        {
+        var existingUser = new User {
             Id = 1,
             Email = email,
             DisplayName = "Test User",
@@ -47,8 +43,7 @@ public class UserServiceTests
     }
 
     [Test]
-    public async Task GetOrCreateUserAsync_WhenUserDoesNotExist_CreatesNewUser()
-    {
+    public async Task GetOrCreateUserAsync_WhenUserDoesNotExist_CreatesNewUser() {
         var email = "newuser@example.com";
         var displayName = "New User";
 
@@ -56,8 +51,7 @@ public class UserServiceTests
             .Setup(r => r.GetByEmailAsync(email))
             .ReturnsAsync((User?)null);
 
-        var createdUser = new User
-        {
+        var createdUser = new User {
             Id = 2,
             Email = email,
             DisplayName = displayName,
@@ -74,16 +68,14 @@ public class UserServiceTests
         result.Should().NotBeNull();
         result.Email.Should().Be(email);
         result.DisplayName.Should().Be(displayName);
-        _mockUserRepository.Verify(r => r.CreateAsync(It.Is<User>(u => 
+        _mockUserRepository.Verify(r => r.CreateAsync(It.Is<User>(u =>
             u.Email == email && u.DisplayName == displayName)), Times.Once);
     }
 
     [Test]
-    public async Task GetUserByEmailAsync_ReturnsUser()
-    {
+    public async Task GetUserByEmailAsync_ReturnsUser() {
         var email = "test@example.com";
-        var user = new User
-        {
+        var user = new User {
             Id = 1,
             Email = email,
             CreatedAt = DateTime.UtcNow,
@@ -101,10 +93,8 @@ public class UserServiceTests
     }
 
     [Test]
-    public async Task UpdateUserAsync_UpdatesUserAndSetsUpdatedAt()
-    {
-        var user = new User
-        {
+    public async Task UpdateUserAsync_UpdatesUserAndSetsUpdatedAt() {
+        var user = new User {
             Id = 1,
             Email = "test@example.com",
             DisplayName = "Updated Name",

@@ -69,7 +69,7 @@ describe('useAgent', () => {
       ).rejects.toThrow('Failed to create');
 
       expect(toast.error).toHaveBeenCalledWith(
-        'Failed to create',
+        expect.any(Function),
         expect.objectContaining({
           duration: Infinity,
           style: expect.any(Object),
@@ -152,7 +152,7 @@ describe('useAgent', () => {
       ).rejects.toThrow('Invalid prompt');
 
       expect(toast.error).toHaveBeenCalledWith(
-        'Invalid prompt',
+        expect.any(Function),
         expect.objectContaining({
           duration: Infinity,
           style: expect.any(Object),
@@ -265,7 +265,7 @@ describe('useAgent', () => {
       ).rejects.toThrow('Discovery failed');
 
       expect(toast.error).toHaveBeenCalledWith(
-        'Discovery failed',
+        expect.any(Function),
         expect.objectContaining({
           duration: Infinity,
           style: expect.any(Object),

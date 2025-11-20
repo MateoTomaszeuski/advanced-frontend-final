@@ -1,7 +1,6 @@
 namespace API.Models;
 
-public class Conversation
-{
+public class Conversation {
     public int Id { get; set; }
     public int UserId { get; set; }
     public required string Title { get; set; }

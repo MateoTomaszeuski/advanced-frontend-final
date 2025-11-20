@@ -18,16 +18,20 @@ export function SuggestionsPage() {
   const [conversationId, setConversationId] = useState<number | null>(null);
   const [selectedTracks, setSelectedTracks] = useState<Set<string>>(new Set());
   const [isAdding, setIsAdding] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const { isLoading, createConversation, suggestMusic } = useAgent();
 
   const fetchPlaylists = async () => {
+    setIsSyncing(true);
     try {
       const data = await spotifyApi.getPlaylists() as SpotifyPlaylist[];
       console.log(`Fetched ${data.length} playlists from API`);
       setPlaylists(data);
     } catch (error) {
       console.error('Failed to fetch playlists:', error);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -128,6 +132,7 @@ export function SuggestionsPage() {
           onGenerate={handleGenerate}
           onSync={fetchPlaylists}
           isLoading={isLoading}
+          isSyncing={isSyncing}
           conversationId={conversationId}
         />
 

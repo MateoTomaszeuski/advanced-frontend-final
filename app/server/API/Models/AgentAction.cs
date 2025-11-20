@@ -2,8 +2,7 @@ using System.Text.Json;
 
 namespace API.Models;
 
-public class AgentAction
-{
+public class AgentAction {
     public int Id { get; set; }
     public int ConversationId { get; set; }
     public required string ActionType { get; set; }

@@ -10,27 +10,23 @@ using TUnit.Core;
 
 namespace API.IntegrationTests.Controllers;
 
-public class ConversationsControllerTests
-{
+public class ConversationsControllerTests {
     private WebApplicationFactory<Program>? _factory;
     private HttpClient? _client;
     private string? _connectionString;
 
     [Before(Test)]
-    public async Task Setup()
-    {
+    public async Task Setup() {
         _connectionString = "Host=localhost;Port=5433;Database=testdb;Username=testuser;Password=testpass";
 
         await InitializeDatabase();
 
         _factory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureServices(services =>
-                {
+            .WithWebHostBuilder(builder => {
+                builder.ConfigureServices(services => {
                     var dbFactoryDescriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(IDbConnectionFactory));
-                    
+
                     if (dbFactoryDescriptor != null)
                         services.Remove(dbFactoryDescriptor);
 
@@ -42,8 +38,7 @@ public class ConversationsControllerTests
         _client = _factory.CreateClient();
     }
 
-    private async Task InitializeDatabase()
-    {
+    private async Task InitializeDatabase() {
         await using var connection = new Npgsql.NpgsqlConnection(_connectionString);
         await connection.OpenAsync();
 
@@ -56,16 +51,14 @@ public class ConversationsControllerTests
     }
 
     [Test]
-    public async Task GetConversations_WithoutAuth_ReturnsUnauthorized()
-    {
+    public async Task GetConversations_WithoutAuth_ReturnsUnauthorized() {
         var response = await _client!.GetAsync("/api/conversations");
-        
+
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Test]
-    public async Task CreateConversation_WithAuth_CreatesConversation()
-    {
+    public async Task CreateConversation_WithAuth_CreatesConversation() {
         var testUser = await CreateTestUser("test@example.com");
         _client!.DefaultRequestHeaders.Add("X-Test-User-Id", testUser.Id.ToString());
 
@@ -78,13 +71,11 @@ public class ConversationsControllerTests
         conversation!.Title.Should().Be("Test Conversation");
     }
 
-    private async Task<User> CreateTestUser(string email)
-    {
+    private async Task<User> CreateTestUser(string email) {
         var factory = new DbConnectionFactory(_connectionString!);
         var repository = new UserRepository(factory);
-        
-        return await repository.CreateAsync(new User
-        {
+
+        return await repository.CreateAsync(new User {
             Email = email,
             DisplayName = "Test User",
             CreatedAt = DateTime.UtcNow,
@@ -93,8 +84,7 @@ public class ConversationsControllerTests
     }
 
     [After(Test)]
-    public void Cleanup()
-    {
+    public void Cleanup() {
         _client?.Dispose();
         _factory?.Dispose();
     }

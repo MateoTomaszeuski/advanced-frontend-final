@@ -1,7 +1,6 @@
 namespace API.Models;
 
-public class UserTheme
-{
+public class UserTheme {
     public int Id { get; set; }
     public int UserId { get; set; }
     public required string ThemeData { get; set; }

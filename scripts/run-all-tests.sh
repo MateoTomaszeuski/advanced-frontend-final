@@ -78,7 +78,7 @@ echo ""
 echo "📋 Frontend Linting..."
 cd app/client
 pnpm i
-pnpm run lint
+pnpm run lint:ci
 cd "${PROJECT_ROOT}"
 
 # Frontend Integration Tests

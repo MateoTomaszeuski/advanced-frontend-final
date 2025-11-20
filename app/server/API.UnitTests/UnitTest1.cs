@@ -1,10 +1,8 @@
 ﻿namespace API.UnitTests;
 
-public class UnitTest1
-{
+public class UnitTest1 {
     [Test]
-    public async Task Test1()
-    {
+    public async Task Test1() {
         var value = 1 + 1;
         await Assert.That(value).IsEqualTo(2);
     }

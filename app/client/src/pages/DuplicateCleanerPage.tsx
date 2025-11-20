@@ -14,16 +14,20 @@ export function DuplicateCleanerPage() {
   const [scanResult, setScanResult] = useState<RemoveDuplicatesResponse | null>(null);
   const [selectedToRemove, setSelectedToRemove] = useState<Set<string>>(new Set());
   const [conversationId, setConversationId] = useState<number | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const { isLoading, createConversation, scanDuplicates, confirmRemoveDuplicates } = useAgent();
 
   const fetchPlaylists = async () => {
+    setIsSyncing(true);
     try {
       const data = await spotifyApi.getPlaylists() as SpotifyPlaylist[];
       console.log(`Fetched ${data.length} playlists from API`);
       setPlaylists(data);
     } catch (error) {
       console.error('Failed to fetch playlists:', error);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -122,6 +126,7 @@ export function DuplicateCleanerPage() {
           onScan={handleScan}
           onSync={fetchPlaylists}
           isLoading={isLoading}
+          isSyncing={isSyncing}
           conversationId={conversationId}
         />
 

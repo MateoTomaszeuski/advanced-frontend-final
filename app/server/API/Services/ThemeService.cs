@@ -1,4 +1,5 @@
 using API.DTOs.Theme;
+using API.Interfaces;
 using API.Models;
 using API.Models.AI;
 using API.Repositories;
@@ -6,16 +7,7 @@ using System.Text.Json;
 
 namespace API.Services;
 
-public interface IThemeService
-{
-    Task<ThemeDataDto> GenerateThemeAsync(string description);
-    Task<ThemeResponse> SaveThemeAsync(int userId, ThemeDataDto themeData, string description);
-    Task<ThemeResponse?> GetUserThemeAsync(int userId);
-    Task DeleteThemeAsync(int userId);
-}
-
-public class ThemeService : IThemeService
-{
+public class ThemeService : IThemeService {
     private readonly IThemeRepository _themeRepository;
     private readonly IAIService _aiService;
     private readonly ILogger<ThemeService> _logger;
@@ -23,15 +15,13 @@ public class ThemeService : IThemeService
     public ThemeService(
         IThemeRepository themeRepository,
         IAIService aiService,
-        ILogger<ThemeService> logger)
-    {
+        ILogger<ThemeService> logger) {
         _themeRepository = themeRepository;
         _aiService = aiService;
         _logger = logger;
     }
 
-    public async Task<ThemeDataDto> GenerateThemeAsync(string description)
-    {
+    public async Task<ThemeDataDto> GenerateThemeAsync(string description) {
         var tools = new List<AITool>
         {
             new AITool(
@@ -100,21 +90,18 @@ public class ThemeService : IThemeService
         var response = await _aiService.GetChatCompletionAsync(messages, tools);
 
         // Check if AI service returned an error
-        if (!string.IsNullOrEmpty(response.Error))
-        {
+        if (!string.IsNullOrEmpty(response.Error)) {
             throw new InvalidOperationException($"Failed to generate theme: {response.Error}");
         }
 
-        if (response.ToolCalls == null || !response.ToolCalls.Any())
-        {
+        if (response.ToolCalls == null || !response.ToolCalls.Any()) {
             throw new InvalidOperationException("AI did not generate a theme. Please try a different description.");
         }
 
         var toolCall = response.ToolCalls.First(tc => tc.Name == "setAppTheme");
         var themeArgs = toolCall.Arguments;
 
-        return new ThemeDataDto
-        {
+        return new ThemeDataDto {
             PrimaryColor = themeArgs["primaryColor"]?.ToString() ?? "#3B82F6",
             SecondaryColor = themeArgs["secondaryColor"]?.ToString() ?? "#8B5CF6",
             AccentColor = themeArgs["accentColor"]?.ToString() ?? "#10B981",
@@ -126,32 +113,26 @@ public class ThemeService : IThemeService
         };
     }
 
-    public async Task<ThemeResponse> SaveThemeAsync(int userId, ThemeDataDto themeData, string description)
-    {
+    public async Task<ThemeResponse> SaveThemeAsync(int userId, ThemeDataDto themeData, string description) {
         var existingTheme = await _themeRepository.GetByUserIdAsync(userId);
         var now = DateTime.UtcNow;
 
         var themeDataJson = JsonSerializer.Serialize(themeData);
 
-        if (existingTheme != null)
-        {
+        if (existingTheme != null) {
             existingTheme.ThemeData = themeDataJson;
             existingTheme.Description = description;
             existingTheme.UpdatedAt = now;
             await _themeRepository.UpdateAsync(existingTheme);
 
-            return new ThemeResponse
-            {
+            return new ThemeResponse {
                 ThemeData = themeData,
                 Description = description,
                 CreatedAt = existingTheme.CreatedAt,
                 UpdatedAt = now
             };
-        }
-        else
-        {
-            var newTheme = new UserTheme
-            {
+        } else {
+            var newTheme = new UserTheme {
                 UserId = userId,
                 ThemeData = themeDataJson,
                 Description = description,
@@ -161,8 +142,7 @@ public class ThemeService : IThemeService
 
             var created = await _themeRepository.CreateAsync(newTheme);
 
-            return new ThemeResponse
-            {
+            return new ThemeResponse {
                 ThemeData = themeData,
                 Description = description,
                 CreatedAt = created.CreatedAt,
@@ -171,20 +151,18 @@ public class ThemeService : IThemeService
         }
     }
 
-    public async Task<ThemeResponse?> GetUserThemeAsync(int userId)
-    {
+    public async Task<ThemeResponse?> GetUserThemeAsync(int userId) {
         var theme = await _themeRepository.GetByUserIdAsync(userId);
-        
+
         if (theme == null)
             return null;
 
         var themeData = JsonSerializer.Deserialize<ThemeDataDto>(theme.ThemeData);
-        
+
         if (themeData == null)
             return null;
 
-        return new ThemeResponse
-        {
+        return new ThemeResponse {
             ThemeData = themeData,
             Description = theme.Description,
             CreatedAt = theme.CreatedAt,
@@ -192,8 +170,7 @@ public class ThemeService : IThemeService
         };
     }
 
-    public async Task DeleteThemeAsync(int userId)
-    {
+    public async Task DeleteThemeAsync(int userId) {
         await _themeRepository.DeleteAsync(userId);
     }
 }

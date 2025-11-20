@@ -31,12 +31,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       primary: 'bg-theme-background text-theme-text hover:bg-theme-accent hover:text-theme-primary focus:ring-theme-accent',
       secondary: 'bg-theme-secondary text-theme-text hover:bg-theme-accent hover:text-theme-primary focus:ring-theme-accent',
       danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
-      ghost: 'bg-transparent hover:bg-theme-accent text-theme-accent focus:ring-theme-accent',
+      ghost: 'bg-transparent hover:bg-theme-accent text-theme-primary focus:ring-theme-accent',
     } : {
       primary: 'bg-theme-background text-gray-600 hover:bg-theme-primary hover:text-gray-100 focus:ring-theme-accent',
       secondary: 'bg-theme-background text-gray-600 hover:bg-theme-secondary hover:text-gray-100 focus:ring-theme-accent',
       danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
-      ghost: 'bg-transparent hover:bg-theme-accent text-theme-accent focus:ring-theme-accent',
+      ghost: 'bg-transparent text-theme-primary hover:bg-theme-accent hover:text-gray-100 focus:ring-theme-accent',
     };
 
     const sizeStyles = {

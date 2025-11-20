@@ -3,22 +3,18 @@ using System.Data;
 
 namespace API.Data;
 
-public interface IDbConnectionFactory
-{
+public interface IDbConnectionFactory {
     Task<IDbConnection> CreateConnectionAsync();
 }
 
-public class DbConnectionFactory : IDbConnectionFactory
-{
+public class DbConnectionFactory : IDbConnectionFactory {
     private readonly string _connectionString;
 
-    public DbConnectionFactory(string connectionString)
-    {
+    public DbConnectionFactory(string connectionString) {
         _connectionString = connectionString;
     }
 
-    public async Task<IDbConnection> CreateConnectionAsync()
-    {
+    public async Task<IDbConnection> CreateConnectionAsync() {
         var connection = new NpgsqlConnection(_connectionString);
         await connection.OpenAsync();
         return connection;

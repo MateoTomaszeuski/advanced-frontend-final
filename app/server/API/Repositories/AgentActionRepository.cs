@@ -1,12 +1,11 @@
-    using API.Data;
+using API.Data;
 using API.Models;
 using Dapper;
 using System.Text.Json;
 
 namespace API.Repositories;
 
-public interface IAgentActionRepository
-{
+public interface IAgentActionRepository {
     Task<AgentAction?> GetByIdAsync(int id);
     Task<IEnumerable<AgentAction>> GetByConversationIdAsync(int conversationId);
     Task<IEnumerable<AgentAction>> GetAllByConversationIdAsync(int conversationId);
@@ -20,19 +19,16 @@ public interface IAgentActionRepository
     Task<int> GetTotalDuplicatesRemovedAsync(int userId);
 }
 
-public class AgentActionRepository : IAgentActionRepository
-{
+public class AgentActionRepository : IAgentActionRepository {
     private readonly IDbConnectionFactory _dbConnectionFactory;
 
-    public AgentActionRepository(IDbConnectionFactory dbConnectionFactory)
-    {
+    public AgentActionRepository(IDbConnectionFactory dbConnectionFactory) {
         _dbConnectionFactory = dbConnectionFactory;
     }
 
-    public async Task<AgentAction?> GetByIdAsync(int id)
-    {
+    public async Task<AgentAction?> GetByIdAsync(int id) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = @"
             SELECT id as Id, conversation_id as ConversationId,
                    action_type as ActionType, status as Status,
@@ -46,10 +42,9 @@ public class AgentActionRepository : IAgentActionRepository
         return action?.ToAgentAction();
     }
 
-    public async Task<IEnumerable<AgentAction>> GetByConversationIdAsync(int conversationId)
-    {
+    public async Task<IEnumerable<AgentAction>> GetByConversationIdAsync(int conversationId) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = @"
             SELECT id as Id, conversation_id as ConversationId,
                    action_type as ActionType, status as Status,
@@ -64,15 +59,13 @@ public class AgentActionRepository : IAgentActionRepository
         return actions.Select(a => a.ToAgentAction());
     }
 
-    public async Task<IEnumerable<AgentAction>> GetAllByConversationIdAsync(int conversationId)
-    {
+    public async Task<IEnumerable<AgentAction>> GetAllByConversationIdAsync(int conversationId) {
         return await GetByConversationIdAsync(conversationId);
     }
 
-    public async Task<AgentAction> CreateAsync(AgentAction action)
-    {
+    public async Task<AgentAction> CreateAsync(AgentAction action) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = @"
             INSERT INTO agent_actions 
                 (conversation_id, action_type, status, input_prompt, parameters, result, error_message, created_at, completed_at)
@@ -89,10 +82,9 @@ public class AgentActionRepository : IAgentActionRepository
         return result.ToAgentAction();
     }
 
-    public async Task UpdateAsync(AgentAction action)
-    {
+    public async Task UpdateAsync(AgentAction action) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = @"
             UPDATE agent_actions
             SET status = @Status,
@@ -105,18 +97,16 @@ public class AgentActionRepository : IAgentActionRepository
         await connection.ExecuteAsync(sql, dto);
     }
 
-    public async Task DeleteAsync(int id)
-    {
+    public async Task DeleteAsync(int id) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = "DELETE FROM agent_actions WHERE id = @Id";
         await connection.ExecuteAsync(sql, new { Id = id });
     }
 
-    public async Task<IEnumerable<AgentAction>> GetRecentPlaylistCreationsAsync(int userId, int limit)
-    {
+    public async Task<IEnumerable<AgentAction>> GetRecentPlaylistCreationsAsync(int userId, int limit) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = @"
             SELECT aa.id as Id, aa.conversation_id as ConversationId,
                    aa.action_type as ActionType, aa.status as Status,
@@ -136,10 +126,9 @@ public class AgentActionRepository : IAgentActionRepository
         return actions.Select(a => a.ToAgentAction());
     }
 
-    public async Task<Dictionary<string, int>> GetActionTypeCountsAsync(int userId)
-    {
+    public async Task<Dictionary<string, int>> GetActionTypeCountsAsync(int userId) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = @"
             SELECT aa.action_type, COUNT(*) as count
             FROM agent_actions aa
@@ -151,10 +140,9 @@ public class AgentActionRepository : IAgentActionRepository
         return results.ToDictionary(r => r.action_type, r => r.count);
     }
 
-    public async Task<Dictionary<string, int>> GetActionsOverTimeAsync(int userId, int days)
-    {
+    public async Task<Dictionary<string, int>> GetActionsOverTimeAsync(int userId, int days) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         var sql = $@"
             SELECT DATE(aa.created_at) as date, COUNT(*) as count
             FROM agent_actions aa
@@ -169,10 +157,9 @@ public class AgentActionRepository : IAgentActionRepository
         return results.ToDictionary(r => r.date.ToString("yyyy-MM-dd"), r => r.count);
     }
 
-    public async Task<int> GetTotalDuplicatesFoundAsync(int userId)
-    {
+    public async Task<int> GetTotalDuplicatesFoundAsync(int userId) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = @"
             SELECT COALESCE(SUM(
                 CAST(COALESCE(result->>'totalDuplicates', '0') AS INTEGER)
@@ -187,10 +174,9 @@ public class AgentActionRepository : IAgentActionRepository
         return await connection.ExecuteScalarAsync<int>(sql, new { UserId = userId });
     }
 
-    public async Task<int> GetTotalDuplicatesRemovedAsync(int userId)
-    {
+    public async Task<int> GetTotalDuplicatesRemovedAsync(int userId) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = @"
             SELECT COALESCE(SUM(
                 CAST(COALESCE(result->>'removedCount', '0') AS INTEGER)
@@ -206,8 +192,7 @@ public class AgentActionRepository : IAgentActionRepository
     }
 }
 
-internal class AgentActionDto
-{
+internal class AgentActionDto {
     public int Id { get; set; }
     public int ConversationId { get; set; }
     public required string ActionType { get; set; }
@@ -219,10 +204,8 @@ internal class AgentActionDto
     public DateTime CreatedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
 
-    public AgentAction ToAgentAction()
-    {
-        return new AgentAction
-        {
+    public AgentAction ToAgentAction() {
+        return new AgentAction {
             Id = Id,
             ConversationId = ConversationId,
             ActionType = ActionType,
@@ -236,10 +219,8 @@ internal class AgentActionDto
         };
     }
 
-    public static AgentActionDto FromAgentAction(AgentAction action)
-    {
-        return new AgentActionDto
-        {
+    public static AgentActionDto FromAgentAction(AgentAction action) {
+        return new AgentActionDto {
             Id = action.Id,
             ConversationId = action.ConversationId,
             ActionType = action.ActionType,

@@ -4,8 +4,7 @@ using Dapper;
 
 namespace API.Repositories;
 
-public interface IUserRepository
-{
+public interface IUserRepository {
     Task<User?> GetByIdAsync(int id);
     Task<User?> GetByEmailAsync(string email);
     Task<User> CreateAsync(User user);
@@ -13,19 +12,16 @@ public interface IUserRepository
     Task DeleteAsync(int id);
 }
 
-public class UserRepository : IUserRepository
-{
+public class UserRepository : IUserRepository {
     private readonly IDbConnectionFactory _dbConnectionFactory;
 
-    public UserRepository(IDbConnectionFactory dbConnectionFactory)
-    {
+    public UserRepository(IDbConnectionFactory dbConnectionFactory) {
         _dbConnectionFactory = dbConnectionFactory;
     }
 
-    public async Task<User?> GetByIdAsync(int id)
-    {
+    public async Task<User?> GetByIdAsync(int id) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = @"
             SELECT id as Id, email as Email, display_name as DisplayName,
                    spotify_access_token as SpotifyAccessToken, 
@@ -38,10 +34,9 @@ public class UserRepository : IUserRepository
         return await connection.QueryFirstOrDefaultAsync<User>(sql, new { Id = id });
     }
 
-    public async Task<User?> GetByEmailAsync(string email)
-    {
+    public async Task<User?> GetByEmailAsync(string email) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = @"
             SELECT id as Id, email as Email, display_name as DisplayName,
                    spotify_access_token as SpotifyAccessToken, 
@@ -54,10 +49,9 @@ public class UserRepository : IUserRepository
         return await connection.QueryFirstOrDefaultAsync<User>(sql, new { Email = email });
     }
 
-    public async Task<User> CreateAsync(User user)
-    {
+    public async Task<User> CreateAsync(User user) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = @"
             INSERT INTO users (email, display_name, created_at, updated_at)
             VALUES (@Email, @DisplayName, @CreatedAt, @UpdatedAt)
@@ -73,10 +67,9 @@ public class UserRepository : IUserRepository
         return await connection.QuerySingleAsync<User>(sql, user);
     }
 
-    public async Task UpdateAsync(User user)
-    {
+    public async Task UpdateAsync(User user) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = @"
             UPDATE users
             SET display_name = @DisplayName,
@@ -89,10 +82,9 @@ public class UserRepository : IUserRepository
         await connection.ExecuteAsync(sql, user);
     }
 
-    public async Task DeleteAsync(int id)
-    {
+    public async Task DeleteAsync(int id) {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
-        
+
         const string sql = "DELETE FROM users WHERE id = @Id";
         await connection.ExecuteAsync(sql, new { Id = id });
     }

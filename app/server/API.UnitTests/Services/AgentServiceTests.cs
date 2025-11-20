@@ -1,52 +1,37 @@
-using System.Text.Json;
 using API.DTOs.Agent;
-using API.DTOs.Spotify;
-using API.Hubs;
+using API.Interfaces;
 using API.Models;
-using API.Repositories;
 using API.Services;
 using FluentAssertions;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Logging;
 using Moq;
 using TUnit.Core;
 
 namespace API.UnitTests.Services;
 
-public class AgentServiceTests
-{
-    private readonly Mock<IAgentActionRepository> _mockActionRepository;
-    private readonly Mock<ISpotifyService> _mockSpotifyService;
-    private readonly Mock<ISpotifyTokenService> _mockTokenService;
-    private readonly Mock<IAIService> _mockAIService;
-    private readonly Mock<ILogger<AgentService>> _mockLogger;
-    private readonly Mock<IHubContext<AgentHub>> _mockHubContext;
+public class AgentServiceTests {
+    private readonly Mock<API.Interfaces.IDuplicateCleanerService> _mockDuplicateCleanerService;
+    private readonly Mock<API.Interfaces.IPlaylistCreatorService> _mockPlaylistCreatorService;
+    private readonly Mock<API.Interfaces.IMusicDiscoveryService> _mockMusicDiscoveryService;
+    private readonly Mock<API.Interfaces.IMusicSuggestionService> _mockMusicSuggestionService;
     private readonly AgentService _agentService;
 
-    public AgentServiceTests()
-    {
-        _mockActionRepository = new Mock<IAgentActionRepository>();
-        _mockSpotifyService = new Mock<ISpotifyService>();
-        _mockTokenService = new Mock<ISpotifyTokenService>();
-        _mockAIService = new Mock<IAIService>();
-        _mockLogger = new Mock<ILogger<AgentService>>();
-        _mockHubContext = new Mock<IHubContext<AgentHub>>();
+    public AgentServiceTests() {
+        _mockDuplicateCleanerService = new Mock<API.Interfaces.IDuplicateCleanerService>();
+        _mockPlaylistCreatorService = new Mock<API.Interfaces.IPlaylistCreatorService>();
+        _mockMusicDiscoveryService = new Mock<API.Interfaces.IMusicDiscoveryService>();
+        _mockMusicSuggestionService = new Mock<API.Interfaces.IMusicSuggestionService>();
 
         _agentService = new AgentService(
-            _mockActionRepository.Object,
-            _mockSpotifyService.Object,
-            _mockTokenService.Object,
-            _mockAIService.Object,
-            _mockLogger.Object,
-            _mockHubContext.Object
+            _mockDuplicateCleanerService.Object,
+            _mockPlaylistCreatorService.Object,
+            _mockMusicDiscoveryService.Object,
+            _mockMusicSuggestionService.Object
         );
     }
 
     [Test]
-    public async Task CreateSmartPlaylistAsync_WithValidUser_CreatesPlaylist()
-    {
-        var user = new User
-        {
+    public async Task CreateSmartPlaylistAsync_DelegatesToPlaylistCreatorService() {
+        var user = new User {
             Id = 1,
             Email = "test@example.com",
             SpotifyAccessToken = "valid-token",
@@ -59,119 +44,28 @@ public class AgentServiceTests
             Preferences: null
         );
 
-        var tracks = new[]
-        {
-            new SpotifyTrack(
-                "track1",
-                "Track 1",
-                "spotify:track:1",
-                new[] { new SpotifyArtist("artist1", "Artist 1", "spotify:artist:1") },
-                new SpotifyAlbum("album1", "Album 1", "spotify:album:1", Array.Empty<SpotifyImage>()),
-                180000,
-                80
-            )
-        };
+        var conversationId = 1;
 
-        var playlist = new SpotifyPlaylist(
-            "playlist1",
-            "AI Workout Mix",
-            "AI-generated playlist: Create a workout playlist",
-            "spotify:playlist:1",
-            1
+        var expectedResponse = new AgentActionResponse(
+            ActionId: 1,
+            ActionType: "CreateSmartPlaylist",
+            Status: "Completed",
+            Result: new { playlistId = "123", trackCount = 20 }
         );
 
-        _mockActionRepository
-            .Setup(r => r.CreateAsync(It.IsAny<AgentAction>()))
-            .ReturnsAsync((AgentAction action) =>
-            {
-                action.Id = 1;
-                return action;
-            });
+        _mockPlaylistCreatorService
+            .Setup(s => s.CreateSmartPlaylistAsync(user, request, conversationId))
+            .ReturnsAsync(expectedResponse);
 
-        _mockSpotifyService
-            .Setup(s => s.SearchTracksAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
-            .ReturnsAsync(tracks);
+        var result = await _agentService.CreateSmartPlaylistAsync(user, request, conversationId);
 
-        _mockSpotifyService
-            .Setup(s => s.GetCurrentUserIdAsync(It.IsAny<string>()))
-            .ReturnsAsync("spotify-user-123");
-
-        _mockSpotifyService
-            .Setup(s => s.CreatePlaylistAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CreatePlaylistRequest>()))
-            .ReturnsAsync(playlist);
-
-        _mockSpotifyService
-            .Setup(s => s.AddTracksToPlaylistAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string[]>()))
-            .Returns(Task.CompletedTask);
-
-        _mockActionRepository
-            .Setup(r => r.UpdateAsync(It.IsAny<AgentAction>()))
-            .Returns(Task.CompletedTask);
-
-        var result = await _agentService.CreateSmartPlaylistAsync(user, request, 1);
-
-        result.Should().NotBeNull();
-        result.Status.Should().Be("Completed");
-        result.ActionId.Should().Be(1);
-        result.Result.Should().NotBeNull();
-
-        _mockActionRepository.Verify(r => r.CreateAsync(It.Is<AgentAction>(a =>
-            a.ActionType == "CreateSmartPlaylist" &&
-            a.Status == "Processing"
-        )), Times.Once);
-
-        _mockActionRepository.Verify(r => r.UpdateAsync(It.Is<AgentAction>(a =>
-            a.Status == "Completed" &&
-            a.Result != null
-        )), Times.Once);
+        result.Should().Be(expectedResponse);
+        _mockPlaylistCreatorService.Verify(s => s.CreateSmartPlaylistAsync(user, request, conversationId), Times.Once);
     }
 
     [Test]
-    public async Task CreateSmartPlaylistAsync_WithoutSpotifyToken_ReturnsFailure()
-    {
-        var user = new User
-        {
-            Id = 1,
-            Email = "test@example.com",
-            SpotifyAccessToken = null,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        var request = new CreateSmartPlaylistRequest(
-            Prompt: "Create a workout playlist",
-            Preferences: null
-        );
-
-        _mockActionRepository
-            .Setup(r => r.CreateAsync(It.IsAny<AgentAction>()))
-            .ReturnsAsync((AgentAction action) =>
-            {
-                action.Id = 1;
-                return action;
-            });
-
-        _mockActionRepository
-            .Setup(r => r.UpdateAsync(It.IsAny<AgentAction>()))
-            .Returns(Task.CompletedTask);
-
-        var result = await _agentService.CreateSmartPlaylistAsync(user, request, 1);
-
-        result.Should().NotBeNull();
-        result.Status.Should().Be("Failed");
-        result.ErrorMessage.Should().Contain("Spotify account");
-
-        _mockActionRepository.Verify(r => r.UpdateAsync(It.Is<AgentAction>(a =>
-            a.Status == "Failed" &&
-            a.ErrorMessage != null
-        )), Times.Once);
-    }
-
-    [Test]
-    public async Task DiscoverNewMusicAsync_WithValidUser_CreatesDiscoveryPlaylist()
-    {
-        var user = new User
-        {
+    public async Task DiscoverNewMusicAsync_DelegatesToMusicDiscoveryService() {
+        var user = new User {
             Id = 1,
             Email = "test@example.com",
             SpotifyAccessToken = "valid-token",
@@ -179,85 +73,122 @@ public class AgentServiceTests
             UpdatedAt = DateTime.UtcNow
         };
 
-        var request = new DiscoverNewMusicRequest(
-            Limit: 10,
-            SourcePlaylistIds: null
+        var request = new DiscoverNewMusicRequest(Limit: 20);
+        var conversationId = 1;
+
+        var expectedResponse = new AgentActionResponse(
+            ActionId: 1,
+            ActionType: "DiscoverNewMusic",
+            Status: "Completed",
+            Result: new { playlistId = "456", trackCount = 20 }
         );
 
-        var savedTracks = new[]
-        {
-            new SpotifyTrack(
-                "saved1",
-                "Saved Track 1",
-                "spotify:track:saved1",
-                new[] { new SpotifyArtist("artist1", "Artist 1", "spotify:artist:1") },
-                new SpotifyAlbum("album1", "Album 1", "spotify:album:1", Array.Empty<SpotifyImage>()),
-                180000,
-                80
-            )
+        _mockMusicDiscoveryService
+            .Setup(s => s.DiscoverNewMusicAsync(user, request, conversationId))
+            .ReturnsAsync(expectedResponse);
+
+        var result = await _agentService.DiscoverNewMusicAsync(user, request, conversationId);
+
+        result.Should().Be(expectedResponse);
+        _mockMusicDiscoveryService.Verify(s => s.DiscoverNewMusicAsync(user, request, conversationId), Times.Once);
+    }
+
+    [Test]
+    public async Task ScanForDuplicatesAsync_DelegatesToDuplicateCleanerService() {
+        var user = new User {
+            Id = 1,
+            Email = "test@example.com",
+            SpotifyAccessToken = "valid-token",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
-        var recommendations = new[]
-        {
-            new SpotifyTrack(
-                "new1",
-                "New Track 1",
-                "spotify:track:new1",
-                new[] { new SpotifyArtist("artist2", "Artist 2", "spotify:artist:2") },
-                new SpotifyAlbum("album2", "Album 2", "spotify:album:2", Array.Empty<SpotifyImage>()),
-                200000,
-                75
-            )
-        };
+        var playlistId = "playlist123";
+        var conversationId = 1;
 
-        var playlist = new SpotifyPlaylist(
-            "playlist1",
-            $"Discover Weekly - {DateTime.UtcNow:MMM dd, yyyy}",
-            "AI-generated music discovery based on your listening habits",
-            "spotify:playlist:1",
-            1
+        var expectedResponse = new RemoveDuplicatesResponse(
+            PlaylistId: playlistId,
+            PlaylistName: "Test Playlist",
+            TotalDuplicateGroups: 0,
+            TotalDuplicateTracks: 0,
+            DuplicateGroups: Array.Empty<DuplicateGroup>()
         );
 
-        _mockActionRepository
-            .Setup(r => r.CreateAsync(It.IsAny<AgentAction>()))
-            .ReturnsAsync((AgentAction action) =>
-            {
-                action.Id = 1;
-                return action;
-            });
+        _mockDuplicateCleanerService
+            .Setup(s => s.ScanForDuplicatesAsync(user, playlistId, conversationId))
+            .ReturnsAsync(expectedResponse);
 
-        _mockSpotifyService
-            .Setup(s => s.GetUserSavedTracksAsync(It.IsAny<string>(), It.IsAny<int>()))
-            .ReturnsAsync(savedTracks);
+        var result = await _agentService.ScanForDuplicatesAsync(user, playlistId, conversationId);
 
-        _mockSpotifyService
-            .Setup(s => s.GetRecommendationsAsync(It.IsAny<string>(), It.IsAny<string[]>(), It.IsAny<int>()))
-            .ReturnsAsync(recommendations);
+        result.Should().Be(expectedResponse);
+        _mockDuplicateCleanerService.Verify(s => s.ScanForDuplicatesAsync(user, playlistId, conversationId), Times.Once);
+    }
 
-        _mockSpotifyService
-            .Setup(s => s.GetCurrentUserIdAsync(It.IsAny<string>()))
-            .ReturnsAsync("spotify-user-123");
+    [Test]
+    public async Task ConfirmRemoveDuplicatesAsync_DelegatesToDuplicateCleanerService() {
+        var user = new User {
+            Id = 1,
+            Email = "test@example.com",
+            SpotifyAccessToken = "valid-token",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
 
-        _mockSpotifyService
-            .Setup(s => s.CreatePlaylistAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CreatePlaylistRequest>()))
-            .ReturnsAsync(playlist);
+        var request = new ConfirmRemoveDuplicatesRequest(
+            PlaylistId: "playlist123",
+            TrackUrisToRemove: Array.Empty<string>()
+        );
+        var conversationId = 1;
 
-        _mockSpotifyService
-            .Setup(s => s.AddTracksToPlaylistAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string[]>()))
-            .Returns(Task.CompletedTask);
+        var expectedResponse = new AgentActionResponse(
+            ActionId: 1,
+            ActionType: "RemoveDuplicates",
+            Status: "Completed",
+            Result: new { removedCount = 0 }
+        );
 
-        _mockActionRepository
-            .Setup(r => r.UpdateAsync(It.IsAny<AgentAction>()))
-            .Returns(Task.CompletedTask);
+        _mockDuplicateCleanerService
+            .Setup(s => s.ConfirmRemoveDuplicatesAsync(user, request, conversationId))
+            .ReturnsAsync(expectedResponse);
 
-        var result = await _agentService.DiscoverNewMusicAsync(user, request, 1);
+        var result = await _agentService.ConfirmRemoveDuplicatesAsync(user, request, conversationId);
 
-        result.Should().NotBeNull();
-        result.Status.Should().Be("Completed");
-        result.ActionId.Should().Be(1);
+        result.Should().Be(expectedResponse);
+        _mockDuplicateCleanerService.Verify(s => s.ConfirmRemoveDuplicatesAsync(user, request, conversationId), Times.Once);
+    }
 
-        _mockActionRepository.Verify(r => r.CreateAsync(It.Is<AgentAction>(a =>
-            a.ActionType == "DiscoverNewMusic"
-        )), Times.Once);
+    [Test]
+    public async Task SuggestMusicByContextAsync_DelegatesToMusicSuggestionService() {
+        var user = new User {
+            Id = 1,
+            Email = "test@example.com",
+            SpotifyAccessToken = "valid-token",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        var request = new SuggestMusicRequest(
+            PlaylistId: "playlist123",
+            Context: "workout",
+            Limit: 10
+        );
+        var conversationId = 1;
+
+        var expectedResponse = new SuggestMusicResponse(
+            PlaylistId: "playlist123",
+            PlaylistName: "Test Playlist",
+            Context: "workout",
+            SuggestionCount: 10,
+            Suggestions: Array.Empty<SuggestedTrack>()
+        );
+
+        _mockMusicSuggestionService
+            .Setup(s => s.SuggestMusicByContextAsync(user, request, conversationId))
+            .ReturnsAsync(expectedResponse);
+
+        var result = await _agentService.SuggestMusicByContextAsync(user, request, conversationId);
+
+        result.Should().Be(expectedResponse);
+        _mockMusicSuggestionService.Verify(s => s.SuggestMusicByContextAsync(user, request, conversationId), Times.Once);
     }
 }

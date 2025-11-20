@@ -1,7 +1,9 @@
 using API.DTOs.Agent;
 using API.Extensions;
+using API.Interfaces;
 using API.Repositories;
 using API.Services;
+using API.Services.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,41 +12,48 @@ namespace API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class AgentController : ControllerBase
-{
-    private readonly IConversationRepository _conversationRepository;
-    private readonly IAgentActionRepository _actionRepository;
+public class AgentController : ControllerBase {
     private readonly IAgentService _agentService;
+    private readonly IAgentActionRepository _actionRepository;
+    private readonly IAgentAnalyticsService _analyticsService;
+    private readonly IAgentHistoryService _historyService;
+    private readonly ConversationValidator _conversationValidator;
     private readonly ILogger<AgentController> _logger;
 
     public AgentController(
         IConversationRepository conversationRepository,
         IAgentActionRepository actionRepository,
         IAgentService agentService,
-        ILogger<AgentController> logger)
-    {
-        _conversationRepository = conversationRepository;
-        _actionRepository = actionRepository;
+        IAgentAnalyticsService analyticsService,
+        IAgentHistoryService historyService,
+        ILogger<AgentController> logger) {
         _agentService = agentService;
+        _actionRepository = actionRepository;
+        _analyticsService = analyticsService;
+        _historyService = historyService;
+        _conversationValidator = new ConversationValidator(conversationRepository);
         _logger = logger;
     }
 
-    [HttpPost("create-smart-playlist")]
-    public async Task<IActionResult> CreateSmartPlaylist([FromBody] CreateSmartPlaylistWithConversationRequest request)
-    {
-        var user = this.GetCurrentUser();
-        if (user == null)
-        {
-            return this.UnauthorizedUser();
+    private async Task<(bool isValid, IActionResult? errorResult)> ValidateConversationAccessAsync(
+        int conversationId,
+        int userId) {
+        var (isValid, _) = await _conversationValidator.ValidateUserOwnsConversationAsync(conversationId, userId);
+        if (!isValid) {
+            return (false, BadRequest(new { error = "Invalid conversation" }));
         }
+        return (true, null);
+    }
+
+    [HttpPost("create-smart-playlist")]
+    public async Task<IActionResult> CreateSmartPlaylist([FromBody] CreateSmartPlaylistWithConversationRequest request) {
+        var user = this.GetCurrentUser();
+        if (user == null) return this.UnauthorizedUser();
 
         _logger.LogInformation("CreateSmartPlaylist request from user: {Email}", user.Email);
 
-        var conversation = await _conversationRepository.GetByIdAsync(request.ConversationId);
-        if (conversation == null || conversation.UserId != user.Id)
-        {
-            return BadRequest(new { error = "Invalid conversation" });
-        }
+        var (isValid, errorResult) = await ValidateConversationAccessAsync(request.ConversationId, user.Id);
+        if (!isValid) return errorResult!;
 
         var result = await _agentService.CreateSmartPlaylistAsync(
             user,
@@ -52,8 +61,7 @@ public class AgentController : ControllerBase
             request.ConversationId
         );
 
-        if (result.Status == "Failed")
-        {
+        if (result.Status == "Failed") {
             return BadRequest(result);
         }
 
@@ -61,21 +69,14 @@ public class AgentController : ControllerBase
     }
 
     [HttpPost("discover-new-music")]
-    public async Task<IActionResult> DiscoverNewMusic([FromBody] DiscoverNewMusicWithConversationRequest request)
-    {
+    public async Task<IActionResult> DiscoverNewMusic([FromBody] DiscoverNewMusicWithConversationRequest request) {
         var user = this.GetCurrentUser();
-        if (user == null)
-        {
-            return this.UnauthorizedUser();
-        }
+        if (user == null) return this.UnauthorizedUser();
 
         _logger.LogInformation("DiscoverNewMusic request from user: {Email}", user.Email);
 
-        var conversation = await _conversationRepository.GetByIdAsync(request.ConversationId);
-        if (conversation == null || conversation.UserId != user.Id)
-        {
-            return BadRequest(new { error = "Invalid conversation" });
-        }
+        var (isValid, errorResult) = await ValidateConversationAccessAsync(request.ConversationId, user.Id);
+        if (!isValid) return errorResult!;
 
         var result = await _agentService.DiscoverNewMusicAsync(
             user,
@@ -83,8 +84,7 @@ public class AgentController : ControllerBase
             request.ConversationId
         );
 
-        if (result.Status == "Failed")
-        {
+        if (result.Status == "Failed") {
             return BadRequest(result);
         }
 
@@ -92,65 +92,39 @@ public class AgentController : ControllerBase
     }
 
     [HttpGet("actions/{actionId}")]
-    public async Task<IActionResult> GetAction(int actionId)
-    {
+    public async Task<IActionResult> GetAction(int actionId) {
         var user = this.GetCurrentUser();
-        if (user == null)
-        {
-            return this.UnauthorizedUser();
-        }
+        if (user == null) return this.UnauthorizedUser();
 
         _logger.LogInformation("GetAction request for action {ActionId} from user: {Email}", actionId, user.Email);
 
-        var action = await _actionRepository.GetByIdAsync(actionId);
+        var (action, isOwner) = await _historyService.GetActionByIdAsync(actionId, user.Id);
 
-        if (action == null)
-        {
+        if (action == null) {
             return NotFound(new { error = "Action not found" });
         }
 
-        var conversation = await _conversationRepository.GetByIdAsync(action.ConversationId);
-        if (conversation == null || conversation.UserId != user.Id)
-        {
+        if (!isOwner) {
             _logger.LogWarning("User {Email} attempted to access action {ActionId} from another user",
                 user.Email, actionId);
             return Forbid();
         }
 
-        return Ok(new
-        {
-            action.Id,
-            action.ActionType,
-            action.Status,
-            action.InputPrompt,
-            action.Parameters,
-            action.Result,
-            action.ErrorMessage,
-            action.CreatedAt,
-            action.CompletedAt
-        });
+        return Ok(action);
     }
 
     [HttpPost("scan-duplicates")]
-    public async Task<IActionResult> ScanDuplicates([FromBody] ScanDuplicatesWithConversationRequest request)
-    {
+    public async Task<IActionResult> ScanDuplicates([FromBody] ScanDuplicatesWithConversationRequest request) {
         var user = this.GetCurrentUser();
-        if (user == null)
-        {
-            return this.UnauthorizedUser();
-        }
+        if (user == null) return this.UnauthorizedUser();
 
-        _logger.LogInformation("ScanDuplicates request from user: {Email} for playlist: {PlaylistId}", 
+        _logger.LogInformation("ScanDuplicates request from user: {Email} for playlist: {PlaylistId}",
             user.Email, request.PlaylistId);
 
-        var conversation = await _conversationRepository.GetByIdAsync(request.ConversationId);
-        if (conversation == null || conversation.UserId != user.Id)
-        {
-            return BadRequest(new { error = "Invalid conversation" });
-        }
+        var (isValid, errorResult) = await ValidateConversationAccessAsync(request.ConversationId, user.Id);
+        if (!isValid) return errorResult!;
 
-        try
-        {
+        try {
             var result = await _agentService.ScanForDuplicatesAsync(
                 user,
                 request.PlaylistId,
@@ -158,30 +132,21 @@ public class AgentController : ControllerBase
             );
 
             return Ok(result);
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             _logger.LogError(ex, "Error scanning for duplicates");
             return BadRequest(new { error = ex.Message });
         }
     }
 
     [HttpPost("confirm-remove-duplicates")]
-    public async Task<IActionResult> ConfirmRemoveDuplicates([FromBody] ConfirmRemoveDuplicatesWithConversationRequest request)
-    {
+    public async Task<IActionResult> ConfirmRemoveDuplicates([FromBody] ConfirmRemoveDuplicatesWithConversationRequest request) {
         var user = this.GetCurrentUser();
-        if (user == null)
-        {
-            return this.UnauthorizedUser();
-        }
+        if (user == null) return this.UnauthorizedUser();
 
         _logger.LogInformation("ConfirmRemoveDuplicates request from user: {Email}", user.Email);
 
-        var conversation = await _conversationRepository.GetByIdAsync(request.ConversationId);
-        if (conversation == null || conversation.UserId != user.Id)
-        {
-            return BadRequest(new { error = "Invalid conversation" });
-        }
+        var (isValid, errorResult) = await ValidateConversationAccessAsync(request.ConversationId, user.Id);
+        if (!isValid) return errorResult!;
 
         var result = await _agentService.ConfirmRemoveDuplicatesAsync(
             user,
@@ -189,8 +154,7 @@ public class AgentController : ControllerBase
             request.ConversationId
         );
 
-        if (result.Status == "Failed")
-        {
+        if (result.Status == "Failed") {
             return BadRequest(result);
         }
 
@@ -198,25 +162,17 @@ public class AgentController : ControllerBase
     }
 
     [HttpPost("suggest-music")]
-    public async Task<IActionResult> SuggestMusic([FromBody] SuggestMusicWithConversationRequest request)
-    {
+    public async Task<IActionResult> SuggestMusic([FromBody] SuggestMusicWithConversationRequest request) {
         var user = this.GetCurrentUser();
-        if (user == null)
-        {
-            return this.UnauthorizedUser();
-        }
+        if (user == null) return this.UnauthorizedUser();
 
-        _logger.LogInformation("SuggestMusic request from user: {Email} for playlist: {PlaylistId}", 
+        _logger.LogInformation("SuggestMusic request from user: {Email} for playlist: {PlaylistId}",
             user.Email, request.PlaylistId);
 
-        var conversation = await _conversationRepository.GetByIdAsync(request.ConversationId);
-        if (conversation == null || conversation.UserId != user.Id)
-        {
-            return BadRequest(new { error = "Invalid conversation" });
-        }
+        var (isValid, errorResult) = await ValidateConversationAccessAsync(request.ConversationId, user.Id);
+        if (!isValid) return errorResult!;
 
-        try
-        {
+        try {
             var result = await _agentService.SuggestMusicByContextAsync(
                 user,
                 new SuggestMusicRequest(request.PlaylistId, request.Context, request.Limit),
@@ -224,210 +180,80 @@ public class AgentController : ControllerBase
             );
 
             return Ok(result);
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             _logger.LogError(ex, "Error suggesting music");
             return BadRequest(new { error = ex.Message });
         }
     }
 
     [HttpGet("recent-playlists")]
-    public async Task<IActionResult> GetRecentlyCreatedPlaylists([FromQuery] int limit = 10)
-    {
+    public async Task<IActionResult> GetRecentlyCreatedPlaylists([FromQuery] int limit = 10) {
         var user = this.GetCurrentUser();
-        if (user == null)
-        {
+        if (user == null) {
             return this.UnauthorizedUser();
         }
 
         _logger.LogInformation("GetRecentlyCreatedPlaylists request from user: {Email}", user.Email);
 
-        try
-        {
-            var actions = await _actionRepository.GetRecentPlaylistCreationsAsync(user.Id, limit);
-            
-            return Ok(actions.Select(a => new
-            {
-                a.Id,
-                a.ActionType,
-                a.InputPrompt,
-                Result = a.Result,
-                a.CreatedAt
-            }));
-        }
-        catch (Exception ex)
-        {
+        try {
+            var result = await _historyService.GetRecentPlaylistsAsync(user.Id, limit);
+            return Ok(result);
+        } catch (Exception ex) {
             _logger.LogError(ex, "Error getting recent playlists");
             return StatusCode(500, new { error = "Failed to fetch recent playlists" });
         }
     }
 
     [HttpGet("history")]
-    public async Task<IActionResult> GetHistory([FromQuery] string? actionType = null, [FromQuery] string? status = null, [FromQuery] int limit = 50)
-    {
+    public async Task<IActionResult> GetHistory([FromQuery] string? actionType = null, [FromQuery] string? status = null, [FromQuery] int limit = 50) {
         var user = this.GetCurrentUser();
-        if (user == null)
-        {
+        if (user == null) {
             return this.UnauthorizedUser();
         }
 
         _logger.LogInformation("GetHistory request for user: {Email}", user.Email);
 
-        try
-        {
-            var allConversations = await _conversationRepository.GetAllByUserIdAsync(user.Id);
-            var conversationIds = allConversations.Select(c => c.Id).ToHashSet();
-
-            var allActions = new List<Models.AgentAction>();
-
-            foreach (var convId in conversationIds)
-            {
-                var actions = await _actionRepository.GetAllByConversationIdAsync(convId);
-                allActions.AddRange(actions);
-            }
-
-            var filteredActions = allActions.AsEnumerable();
-
-            if (!string.IsNullOrEmpty(actionType))
-            {
-                filteredActions = filteredActions.Where(a => a.ActionType.Equals(actionType, StringComparison.OrdinalIgnoreCase));
-            }
-
-            if (!string.IsNullOrEmpty(status))
-            {
-                filteredActions = filteredActions.Where(a => a.Status.Equals(status, StringComparison.OrdinalIgnoreCase));
-            }
-
-            var result = filteredActions
-                .OrderByDescending(a => a.CreatedAt)
-                .Take(limit)
-                .Select(a => new
-                {
-                    a.Id,
-                    a.ConversationId,
-                    a.ActionType,
-                    a.Status,
-                    a.InputPrompt,
-                    a.Parameters,
-                    a.Result,
-                    a.ErrorMessage,
-                    a.CreatedAt,
-                    a.CompletedAt
-                });
-
+        try {
+            var result = await _historyService.GetHistoryAsync(user.Id, actionType, status, limit);
             return Ok(result);
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             _logger.LogError(ex, "Error getting action history");
             return StatusCode(500, new { error = "Failed to get recent playlists" });
         }
     }
 
     [HttpDelete("history")]
-    public async Task<IActionResult> ClearHistory()
-    {
+    public async Task<IActionResult> ClearHistory() {
         var user = this.GetCurrentUser();
-        if (user == null)
-        {
+        if (user == null) {
             return this.UnauthorizedUser();
         }
 
         _logger.LogInformation("ClearHistory request from user: {Email}", user.Email);
 
-        try
-        {
-            var allConversations = await _conversationRepository.GetAllByUserIdAsync(user.Id);
-            var conversationIds = allConversations.Select(c => c.Id).ToList();
-
-            var deletedCount = 0;
-            foreach (var convId in conversationIds)
-            {
-                var actions = await _actionRepository.GetAllByConversationIdAsync(convId);
-                foreach (var action in actions)
-                {
-                    await _actionRepository.DeleteAsync(action.Id);
-                    deletedCount++;
-                }
-            }
-
+        try {
+            var deletedCount = await _historyService.ClearHistoryAsync(user.Id);
             _logger.LogInformation("Deleted {Count} actions for user: {Email}", deletedCount, user.Email);
             return Ok(new { message = $"Deleted {deletedCount} actions", deletedCount });
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             _logger.LogError(ex, "Error clearing history for user: {Email}", user.Email);
             return StatusCode(500, new { error = "Failed to clear history" });
         }
     }
 
     [HttpGet("analytics")]
-    public async Task<IActionResult> GetAppAnalytics()
-    {
+    public async Task<IActionResult> GetAppAnalytics() {
         var user = this.GetCurrentUser();
-        if (user == null)
-        {
+        if (user == null) {
             return this.UnauthorizedUser();
         }
 
         _logger.LogInformation("GetAppAnalytics request from user: {Email}", user.Email);
 
-        try
-        {
-            // Get action type counts
-            var actionTypeCounts = await _actionRepository.GetActionTypeCountsAsync(user.Id);
-            
-            // Get actions over time (last 30 days)
-            var actionsOverTime = await _actionRepository.GetActionsOverTimeAsync(user.Id, 30);
-            
-            // Get total conversations
-            var conversations = await _conversationRepository.GetAllByUserIdAsync(user.Id);
-            var totalConversations = conversations.Count();
-            
-            // Calculate totals
-            var totalActions = actionTypeCounts.Values.Sum();
-            var smartPlaylists = actionTypeCounts.GetValueOrDefault("CreateSmartPlaylist", 0);
-            var musicDiscovery = actionTypeCounts.GetValueOrDefault("DiscoverNewMusic", 0);
-            var duplicateScans = actionTypeCounts.GetValueOrDefault("ScanDuplicates", 0);
-            var duplicateRemovals = actionTypeCounts.GetValueOrDefault("RemoveDuplicates", 0);
-            var musicSuggestions = actionTypeCounts.GetValueOrDefault("SuggestMusicByContext", 0);
-            
-            // Get duplicate stats
-            var totalDuplicatesFound = await _actionRepository.GetTotalDuplicatesFoundAsync(user.Id);
-            var totalDuplicatesRemoved = await _actionRepository.GetTotalDuplicatesRemovedAsync(user.Id);
-            var avgDuplicates = duplicateScans > 0 ? (double)totalDuplicatesFound / duplicateScans : 0;
-            
-            var analytics = new API.DTOs.Analytics.AppAnalyticsResponse(
-                UserActivity: new API.DTOs.Analytics.UserActivityStats(
-                    TotalActions: totalActions,
-                    CompletedActions: totalActions,
-                    FailedActions: 0,
-                    TotalConversations: totalConversations,
-                    TotalPlaylistsCreated: smartPlaylists + musicDiscovery,
-                    TotalTracksDiscovered: musicDiscovery * 10 // Estimate
-                ),
-                ActionTypes: new API.DTOs.Analytics.ActionTypeStats(
-                    SmartPlaylists: smartPlaylists,
-                    MusicDiscovery: musicDiscovery,
-                    DuplicateScans: duplicateScans,
-                    DuplicateRemovals: duplicateRemovals,
-                    MusicSuggestions: musicSuggestions
-                ),
-                ActionsOverTime: actionsOverTime,
-                PlaylistsByGenre: new Dictionary<string, int>(), // TODO: Parse from action results
-                Duplicates: new API.DTOs.Analytics.DuplicateStats(
-                    TotalScans: duplicateScans,
-                    TotalDuplicatesFound: totalDuplicatesFound,
-                    TotalDuplicatesRemoved: totalDuplicatesRemoved,
-                    AverageDuplicatesPerPlaylist: avgDuplicates
-                )
-            );
-
+        try {
+            var analytics = await _analyticsService.GetAppAnalyticsAsync(user.Id);
             return Ok(analytics);
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             _logger.LogError(ex, "Error getting app analytics");
             return StatusCode(500, new { error = "Failed to get analytics" });
         }

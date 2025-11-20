@@ -3,10 +3,8 @@ using API.DTOs.Spotify;
 
 namespace API.Services.Helpers;
 
-public static class SpotifyJsonParser
-{
-    public static SpotifyTrack ParseTrack(JsonElement track)
-    {
+public static class SpotifyJsonParser {
+    public static SpotifyTrack ParseTrack(JsonElement track) {
         return new SpotifyTrack(
             track.GetProperty("id").GetString()!,
             track.GetProperty("name").GetString()!,
@@ -22,8 +20,7 @@ public static class SpotifyJsonParser
         );
     }
 
-    public static SpotifyAlbum ParseAlbum(JsonElement album)
-    {
+    public static SpotifyAlbum ParseAlbum(JsonElement album) {
         return new SpotifyAlbum(
             album.GetProperty("id").GetString()!,
             album.GetProperty("name").GetString()!,
@@ -36,8 +33,7 @@ public static class SpotifyJsonParser
         );
     }
 
-    public static AudioFeatures ParseAudioFeatures(JsonElement af)
-    {
+    public static AudioFeatures ParseAudioFeatures(JsonElement af) {
         return new AudioFeatures(
             (float)af.GetProperty("danceability").GetDouble(),
             (float)af.GetProperty("energy").GetDouble(),

@@ -1,7 +1,6 @@
 namespace API.DTOs.Theme;
 
-public class ThemeDataDto
-{
+public class ThemeDataDto {
     public required string PrimaryColor { get; set; }
     public required string SecondaryColor { get; set; }
     public required string AccentColor { get; set; }

@@ -8,7 +8,7 @@ export function AgentStatusBanner({ task }: AgentStatusBannerProps) {
       <div className="flex items-start gap-4">
         <div className="shrink-0 mt-1">
           <div className="relative">
-            <div className="animate-spin h-6 w-6 border-3 border-theme-border border-t-transparent rounded-full"></div>
+            <div className="animate-spin h-6 w-6 border-3 border-theme-accent border-t-transparent rounded-full"></div>
             <div className="absolute inset-0 animate-pulse">
               <div className="h-6 w-6 border-3 border-theme-border border-t-transparent rounded-full"></div>
             </div>
@@ -16,7 +16,7 @@ export function AgentStatusBanner({ task }: AgentStatusBannerProps) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-theme-background text-white">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-theme-background text-">
               PROCESSING
             </span>
             <span className="text-xs text-theme-text font-mono">

@@ -2,10 +2,8 @@ using API.Models.AI;
 
 namespace API.Services;
 
-public static class AITools
-{
-    public static List<AITool> GetSpotifyTools()
-    {
+public static class AITools {
+    public static List<AITool> GetSpotifyTools() {
         return new List<AITool>
         {
             new AITool(
@@ -105,8 +103,7 @@ public static class AITools
         };
     }
 
-    public static string GetSystemPrompt()
-    {
+    public static string GetSystemPrompt() {
         return @"You are a helpful AI assistant with access to Spotify music tools. You can help users:
 
 1. Create smart playlists based on their mood, activity, or preferences
