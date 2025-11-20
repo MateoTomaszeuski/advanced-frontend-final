@@ -31,7 +31,7 @@ export function MetricCard({
           )}
         </div>
         <div className={`w-12 h-12 rounded-full ${iconBgColor} flex items-center justify-center`}>
-          <div className={iconColor}>{icon}</div>
+          <div className={`${iconColor} [&_svg]:stroke-current`}>{icon}</div>
         </div>
       </div>
     </div>

@@ -48,19 +48,20 @@ export function DashboardPage() {
       title: 'Create Smart Playlist',
       description: 'Generate a playlist using AI based on your description',
       icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24">
+          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
       ),
       path: '/playlist-creator',
-      color: hasCustomTheme ? 'bg-theme-accent bg-opacity-20 text-theme-accent' : 'bg-green-100 text-green-700',
+      color: hasCustomTheme ? 'bg-theme-background bg-opacity-20 text-theme-accent' : 'bg-green-100 text-green-700',
     },
     {
       title: 'Discover New Music',
       description: 'Find fresh tracks based on your listening history',
       icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24">
           <path
+            stroke="currentColor"
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
@@ -69,14 +70,15 @@ export function DashboardPage() {
         </svg>
       ),
       path: '/discover',
-      color: hasCustomTheme ? 'bg-theme-primary bg-opacity-20 text-theme-primary' : 'bg-blue-100 text-blue-700',
+      color: hasCustomTheme ? 'bg-theme-background bg-opacity-20 text-theme-accent' : 'bg-blue-100 text-blue-700',
     },
     {
       title: 'Scan Duplicates',
       description: 'Find and remove duplicate songs from playlists',
       icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24">
           <path
+            stroke="currentColor"
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
@@ -85,14 +87,15 @@ export function DashboardPage() {
         </svg>
       ),
       path: '/duplicate-cleaner',
-      color: hasCustomTheme ? 'bg-theme-secondary bg-opacity-20 text-theme-secondary' : 'bg-yellow-100 text-yellow-700',
+      color: hasCustomTheme ? 'bg-theme-background bg-opacity-20 text-theme-accent' : 'bg-yellow-100 text-yellow-700',
     },
     {
       title: 'Get Suggestions',
       description: 'Receive AI-powered music recommendations',
       icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24">
           <path
+            stroke="currentColor"
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
@@ -101,7 +104,7 @@ export function DashboardPage() {
         </svg>
       ),
       path: '/suggestions',
-      color: hasCustomTheme ? 'bg-theme-accent bg-opacity-30 text-theme-accent' : 'bg-purple-100 text-purple-700',
+      color: hasCustomTheme ? 'bg-theme-background bg-opacity-20 text-theme-accent' : 'bg-purple-100 text-purple-700',
     },
   ];
 
@@ -121,8 +124,9 @@ export function DashboardPage() {
               status === 'processing' ? (
                 <div className="animate-spin h-6 w-6 border-2 border-green-600 border-t-transparent rounded-full" />
               ) : (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24">
                   <path
+                    stroke="currentColor"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
@@ -136,10 +140,10 @@ export function DashboardPage() {
                 ? status === 'idle'
                   ? 'bg-theme-card opacity-70'
                   : status === 'processing'
-                    ? 'bg-theme-accent bg-opacity-20'
+                    ? 'bg-theme-background bg-opacity-20'
                     : status === 'awaiting-approval'
                       ? 'bg-theme-secondary bg-opacity-20'
-                      : 'bg-theme-primary bg-opacity-20'
+                      : 'bg-theme-background bg-opacity-20'
                 : status === 'idle'
                   ? 'bg-gray-100'
                   : status === 'processing'
@@ -155,8 +159,8 @@ export function DashboardPage() {
                   : status === 'processing'
                     ? 'text-theme-accent'
                     : status === 'awaiting-approval'
-                      ? 'text-theme-secondary'
-                      : 'text-theme-primary'
+                      ? 'text-theme-accent'
+                      : 'text-theme-accent'
                 : undefined
             }
           />
@@ -165,17 +169,18 @@ export function DashboardPage() {
             label="Total Actions"
             value={analytics?.userActivity.totalActions ?? 0}
             isLoading={isLoading}
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            icon={(
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24">
                 <path
+                  stroke="currentColor"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
                   d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                 />
               </svg>
-            }
-            iconBgColor={hasCustomTheme ? 'bg-theme-accent bg-opacity-20' : 'bg-green-100'}
+            )}
+            iconBgColor={hasCustomTheme ? 'bg-theme-background bg-opacity-20' : 'bg-green-100'}
             iconColor={hasCustomTheme ? 'text-theme-accent' : 'text-green-700'}
           />
 
@@ -183,12 +188,12 @@ export function DashboardPage() {
             label="Completed"
             value={analytics?.userActivity.completedActions ?? 0}
             isLoading={isLoading}
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            icon={(
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-            }
-            iconBgColor={hasCustomTheme ? 'bg-theme-accent bg-opacity-20' : 'bg-green-100'}
+            )}
+            iconBgColor={hasCustomTheme ? 'bg-theme-background bg-opacity-20' : 'bg-green-100'}
             iconColor={hasCustomTheme ? 'text-theme-accent' : 'text-green-700'}
           />
 
@@ -196,13 +201,13 @@ export function DashboardPage() {
             label="Failed"
             value={analytics?.userActivity.failedActions ?? 0}
             isLoading={isLoading}
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            icon={(
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
-            }
-            iconBgColor={hasCustomTheme ? 'bg-theme-primary bg-opacity-20' : 'bg-red-100'}
-            iconColor={hasCustomTheme ? 'text-theme-primary' : 'text-red-700'}
+            )}
+            iconBgColor={hasCustomTheme ? 'bg-theme-background bg-opacity-20' : 'bg-red-100'}
+            iconColor={hasCustomTheme ? 'text-theme-accent' : 'text-red-700'}
           />
         </div>
 
@@ -238,8 +243,9 @@ export function DashboardPage() {
                 title="App Usage Analytics"
                 description="Visualize app usage and insights"
                 icon={
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24">
                     <path
+                      stroke="currentColor"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
@@ -247,7 +253,7 @@ export function DashboardPage() {
                     />
                   </svg>
                 }
-                iconBgColor={hasCustomTheme ? 'bg-theme-accent bg-opacity-20' : 'bg-purple-100'}
+                iconBgColor={hasCustomTheme ? 'bg-theme-background bg-opacity-20' : 'bg-purple-100'}
                 iconColor={hasCustomTheme ? 'text-theme-accent' : 'text-purple-700'}
                 onClick={() => navigate('/analytics')}
               />
@@ -256,14 +262,16 @@ export function DashboardPage() {
                 title="Agent Control Center"
                 description="Monitor and manage agent tasks"
                 icon={
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24">
                     <path
+                      stroke="currentColor"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
                       d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
                     />
                     <path
+                      stroke="currentColor"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
@@ -271,8 +279,8 @@ export function DashboardPage() {
                     />
                   </svg>
                 }
-                iconBgColor={hasCustomTheme ? 'bg-theme-primary bg-opacity-20' : 'bg-indigo-100'}
-                iconColor={hasCustomTheme ? 'text-theme-primary' : 'text-indigo-700'}
+                iconBgColor={hasCustomTheme ? 'bg-theme-background bg-opacity-20' : 'bg-indigo-100'}
+                iconColor={hasCustomTheme ? 'text-theme-accent' : 'text-indigo-700'}
                 onClick={() => navigate('/agent-control')}
               />
 
@@ -280,8 +288,9 @@ export function DashboardPage() {
                 title="Settings"
                 description="Configure your account and preferences"
                 icon={
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24">
                     <path
+                      stroke="currentColor"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
@@ -289,8 +298,8 @@ export function DashboardPage() {
                     />
                   </svg>
                 }
-                iconBgColor={hasCustomTheme ? 'bg-theme-secondary bg-opacity-20' : 'bg-gray-100'}
-                iconColor={hasCustomTheme ? 'text-theme-secondary' : 'text-gray-700'}
+                iconBgColor={hasCustomTheme ? 'bg-theme-background bg-opacity-20' : 'bg-gray-100'}
+                iconColor={hasCustomTheme ? 'text-theme-accent' : 'text-gray-700'}
                 onClick={() => navigate('/settings')}
               />
             </div>

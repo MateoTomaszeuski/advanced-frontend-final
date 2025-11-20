@@ -29,20 +29,21 @@ export const SelectDropdown = forwardRef<HTMLSelectElement, SelectDropdownProps>
           ref={ref}
           className={`
             px-3 py-2 border rounded-lg
+            bg-theme-card text-theme-text
             focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
-            disabled:bg-gray-100 disabled:cursor-not-allowed
+            disabled:opacity-60 disabled:cursor-not-allowed
             ${error ? 'border-red-500' : 'border-theme-border'}
             ${className}
           `}
           {...props}
         >
           {placeholder && (
-            <option value="" disabled>
+            <option value="" disabled className="bg-theme-card text-theme-text">
               {placeholder}
             </option>
           )}
           {options.map((option) => (
-            <option key={option.value} value={option.value} disabled={option.disabled}>
+            <option key={option.value} value={option.value} disabled={option.disabled} className="bg-theme-card text-theme-text">
               {option.label}
             </option>
           ))}

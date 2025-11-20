@@ -314,7 +314,7 @@ export function SettingsPage() {
             Agent Preferences
           </h2>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-theme-background rounded-lg">
               <div className="flex-1">
                 <p className="font-medium text-theme-text flex items-center gap-2">
                   🔔 Notifications
@@ -364,7 +364,7 @@ export function SettingsPage() {
             <span className="text-2xl">🎨</span>
             Appearance
           </h2>
-          <div className="flex items-center justify-between p-4 bg-linear-to-r from-purple-50 to-blue-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-theme-background rounded-lg">
             <div className="flex-1">
               <p className="font-medium text-theme-text">Customize Theme</p>
               <p className="text-sm text-theme-text opacity-70 mt-1">

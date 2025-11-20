@@ -21,8 +21,9 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
             ref={ref}
             className={`
               px-3 py-2 border rounded-lg
+              bg-theme-card text-theme-text
               focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
-              disabled:bg-gray-100 disabled:cursor-not-allowed
+              disabled:opacity-60 disabled:cursor-not-allowed
               ${error ? 'border-red-500' : 'border-theme-border'}
               ${className}
             `}

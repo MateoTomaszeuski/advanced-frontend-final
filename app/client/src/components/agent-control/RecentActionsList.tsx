@@ -52,7 +52,7 @@ export function RecentActionsList({ actions, loading }: RecentActionsListProps) 
           </div>
         ) : (
           actions.map((action) => (
-            <div key={action.id} className="p-6 hover:bg-gray-50 transition-colors">
+            <div key={action.id} className="p-6 hover:bg-theme-background transition-colors">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
