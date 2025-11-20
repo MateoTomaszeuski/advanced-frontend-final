@@ -25,31 +25,35 @@ public class DiscoveryQueryGenerator : IDiscoveryQueryGenerator {
             new AIMessage("system", @"You are a music expert assistant. Analyze the user's favorite tracks and generate search queries to discover similar but new music.
 
 SPOTIFY SEARCH API - OFFICIAL SUPPORTED FILTERS:
-- album: 'album:""Album Name""'
 - artist: 'artist:""Artist Name""'
-- track: 'track:""Track Name""'
 - year: 'year:2020' or 'year:1980-1990'
 - genre: 'genre:rock' 'genre:jazz' 'genre:electronic' 'genre:hip-hop' 'genre:pop' 'genre:indie' 'genre:metal' etc.
 
+REASONING PROCESS:
+1. Analyze the user's top tracks to identify their preferred genres, eras, and artists
+2. Think about SIMILAR well-known artists they might not have discovered yet
+3. Build SIMPLE queries focused on those artists or genre/year combinations
+
 QUERY BUILDING:
-1. Mix keywords with filters for best results
-2. Use artist filters to find similar artists: 'artist:""Similar Artist""'
-3. Use genre filters to explore genres: 'genre:genrename'
-4. Combine multiple filters: 'genre:indie year:2020-2024'
+- Focus on specific well-known artists similar to what they like
+- Use simple genre + year combinations for era-based discovery
+- Keep each query simple - 1 artist OR 1 genre+year combo
+- Avoid complex queries with many keywords
 
 Examples:
-- 'artist:""Arctic Monkeys"" genre:indie genre:rock'
-- 'chill lofi genre:hip-hop genre:electronic'
-- 'upbeat genre:pop year:2020-2024'
+- User likes: 'Tame Impala, Mac DeMarco, MGMT'
+  → Queries: 'artist:""Unknown Mortal Orchestra""', 'artist:""Beach House""', 'genre:indie year:2015-2024'
+- User likes: 'Kendrick Lamar, J. Cole, Drake'
+  → Queries: 'artist:""Tyler, The Creator""', 'artist:""Vince Staples""', 'genre:hip-hop year:2018-2024'
 
-Generate 3-5 diverse search queries based on the genres and artists from the user's top tracks.
+Generate 5-7 simple search queries based on the user's top tracks.
 
 Return your response in the following JSON format:
 {
   ""queries"": [""query1"", ""query2"", ""query3""]
 }
 
-IMPORTANT: Generate diverse, unique queries - do not repeat previous suggestions."),
+IMPORTANT: Focus on well-known artists similar to their taste!"),
             new AIMessage("user", $"[Request #{DateTime.UtcNow.Ticks}] User's top tracks: {string.Join(", ", topSavedTracks.Select(t => $"{t.Name} by {string.Join(", ", t.Artists.Select(a => a.Name))}"))}. Generate search queries to discover similar music.")
         };
 
@@ -108,18 +112,30 @@ SPOTIFY SEARCH API - OFFICIAL SUPPORTED FILTERS:
 - year: 'year:2020' or 'year:1980-1990'
 - genre: 'genre:rock' 'genre:jazz' 'genre:electronic' 'genre:hip-hop' 'genre:pop' 'genre:indie' etc.
 
-The current search queries aren't finding enough NEW tracks (that the user hasn't saved). Generate 3-5 DIFFERENT search queries that:
-1. Explore similar but different artists
-2. Try related or adjacent genres
-3. Search for newer or older tracks in the same style
-4. Use broader or more creative keywords
+REASONING PROCESS:
+1. Look at what the user likes and what queries were already tried
+2. Think of OTHER well-known artists in similar genres/styles
+3. Consider expanding time periods slightly
+4. Keep queries SIMPLE - one artist or one genre+year combo per query
+
+The current search queries aren't finding enough NEW tracks. Generate 5-7 DIFFERENT but SIMPLE search queries:
+- Try different well-known artists from similar genres
+- Expand year ranges slightly (e.g., 2020-2024 → 2018-2024)
+- Use related genres with time periods
+- Keep each query simple and focused
+
+Examples:
+- Already tried: 'artist:""Tame Impala""'
+  → New: 'artist:""King Gizzard""', 'artist:""Pond""', 'genre:indie year:2010-2020'
+- Already tried: 'genre:hip-hop year:2020-2024'
+  → New: 'artist:""JID""', 'artist:""Denzel Curry""', 'genre:hip-hop year:2018-2023'
 
 Return your response in this JSON format:
 {
   ""queries"": [""query1"", ""query2"", ""query3""]
 }
 
-IMPORTANT: Generate diverse alternatives - these must be tracks the user likely hasn't heard!"),
+IMPORTANT: Keep it simple - famous artists work best!"),
             new AIMessage("user", $"[Request #{DateTime.UtcNow.Ticks}] User's top tracks: {string.Join(", ", topSavedTracks.Take(3).Select(t => $"{t.Name} by {string.Join(", ", t.Artists.Select(a => a.Name))}"))}.\nCurrent queries: {string.Join(", ", currentQueries)}\nFound {currentCount} new tracks so far, need {targetCount} total.\n\nGenerate alternative search queries to discover more new music.")
         };
 

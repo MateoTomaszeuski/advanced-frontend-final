@@ -13,6 +13,7 @@ public class DuplicateCleanerService : IDuplicateCleanerService {
     private readonly ISpotifyTrackService _trackService;
     private readonly ISpotifyPlaylistService _playlistService;
     private readonly ISpotifyTokenService _tokenService;
+    private readonly IAgentNotificationService _notificationService;
     private readonly ILogger<DuplicateCleanerService> _logger;
 
     public DuplicateCleanerService(
@@ -20,11 +21,13 @@ public class DuplicateCleanerService : IDuplicateCleanerService {
         ISpotifyTrackService trackService,
         ISpotifyPlaylistService playlistService,
         ISpotifyTokenService tokenService,
+        IAgentNotificationService notificationService,
         ILogger<DuplicateCleanerService> logger) {
         _actionRepository = actionRepository;
         _trackService = trackService;
         _playlistService = playlistService;
         _tokenService = tokenService;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -46,14 +49,29 @@ public class DuplicateCleanerService : IDuplicateCleanerService {
             var accessToken = await _tokenService.GetValidAccessTokenAsync(user);
 
             _logger.LogInformation("Scanning playlist {PlaylistId} for duplicates for user {Email}", playlistId, user.Email);
+            await _notificationService.SendStatusUpdateAsync(user.Email, "processing", "Fetching playlist tracks...");
 
             var playlist = await _playlistService.GetPlaylistAsync(accessToken, playlistId);
             var playlistTracks = await _trackService.GetPlaylistTracksAsync(accessToken, playlistId);
 
+            await _notificationService.SendStatusUpdateAsync(user.Email, "processing", 
+                $"Analyzing {playlistTracks.Length} tracks from '{playlist.Name}' for duplicates...");
+
             var duplicateGroups = new List<DuplicateGroup>();
             var processedTracks = new HashSet<string>();
+            var tracksProcessed = 0;
+            var lastProgressUpdate = 0;
 
             foreach (var track in playlistTracks) {
+                tracksProcessed++;
+                var progressPercent = (tracksProcessed * 100) / playlistTracks.Length;
+                
+                if (progressPercent - lastProgressUpdate >= 20) {
+                    lastProgressUpdate = progressPercent;
+                    await _notificationService.SendStatusUpdateAsync(user.Email, "processing", 
+                        $"Scanning progress: {progressPercent}% ({tracksProcessed}/{playlistTracks.Length} tracks)");
+                }
+
                 if (processedTracks.Contains(track.Id)) continue;
 
                 var normalizedName = TrackNormalizationHelper.NormalizeTrackName(track.Name);
@@ -100,6 +118,14 @@ public class DuplicateCleanerService : IDuplicateCleanerService {
             _logger.LogInformation("Found {GroupCount} duplicate groups with {TrackCount} duplicate tracks",
                 duplicateGroups.Count, totalDuplicateTracks);
 
+            if (duplicateGroups.Count > 0) {
+                await _notificationService.SendStatusUpdateAsync(user.Email, "processing", 
+                    $"Found {duplicateGroups.Count} duplicate groups with {totalDuplicateTracks} duplicate tracks to review");
+            } else {
+                await _notificationService.SendStatusUpdateAsync(user.Email, "processing", 
+                    "No duplicates found in this playlist!");
+            }
+
             var result = new {
                 playlistId = playlist.Id,
                 playlistName = playlist.Name,
@@ -111,6 +137,10 @@ public class DuplicateCleanerService : IDuplicateCleanerService {
             action.Result = JsonSerializer.SerializeToDocument(result);
             action.CompletedAt = DateTime.UtcNow;
             await _actionRepository.UpdateAsync(action);
+
+            await _notificationService.SendStatusUpdateAsync(user.Email, "completed", 
+                $"Scan complete for '{playlist.Name}'!", 
+                new { duplicateGroups = duplicateGroups.Count, totalDuplicates = totalDuplicateTracks });
 
             return new RemoveDuplicatesResponse(
                 playlist.Id,
@@ -126,6 +156,9 @@ public class DuplicateCleanerService : IDuplicateCleanerService {
             action.ErrorMessage = ex.Message;
             action.CompletedAt = DateTime.UtcNow;
             await _actionRepository.UpdateAsync(action);
+
+            await _notificationService.SendStatusUpdateAsync(user.Email, "error", 
+                $"Failed to scan for duplicates: {ex.Message}");
 
             throw;
         }
@@ -151,6 +184,9 @@ public class DuplicateCleanerService : IDuplicateCleanerService {
             _logger.LogInformation("Removing {Count} duplicate tracks from playlist {PlaylistId} for user {Email}",
                 request.TrackUrisToRemove.Length, request.PlaylistId, user.Email);
 
+            await _notificationService.SendStatusUpdateAsync(user.Email, "processing", 
+                $"Removing {request.TrackUrisToRemove.Length} duplicate tracks from playlist...");
+
             await _playlistService.RemoveTracksFromPlaylistAsync(
                 accessToken,
                 request.PlaylistId,
@@ -171,6 +207,10 @@ public class DuplicateCleanerService : IDuplicateCleanerService {
             _logger.LogInformation("Successfully removed {Count} duplicate tracks from playlist {PlaylistId}",
                 request.TrackUrisToRemove.Length, request.PlaylistId);
 
+            await _notificationService.SendStatusUpdateAsync(user.Email, "completed", 
+                $"Successfully removed {request.TrackUrisToRemove.Length} duplicate tracks!", 
+                new { removedCount = request.TrackUrisToRemove.Length });
+
             return new AgentActionResponse(action.Id, action.ActionType, action.Status, result);
         } catch (Exception ex) {
             _logger.LogError(ex, "Error removing duplicates from playlist {PlaylistId}", request.PlaylistId);
@@ -179,6 +219,9 @@ public class DuplicateCleanerService : IDuplicateCleanerService {
             action.ErrorMessage = ex.Message;
             action.CompletedAt = DateTime.UtcNow;
             await _actionRepository.UpdateAsync(action);
+
+            await _notificationService.SendStatusUpdateAsync(user.Email, "error", 
+                $"Failed to remove duplicates: {ex.Message}");
 
             return new AgentActionResponse(action.Id, action.ActionType, action.Status, null, ex.Message);
         }

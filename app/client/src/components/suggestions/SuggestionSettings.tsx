@@ -93,6 +93,11 @@ export function SuggestionSettings({
             { value: '20', label: '20 suggestions' },
             { value: '30', label: '30 suggestions' },
             { value: '50', label: '50 suggestions' },
+            { value: '75', label: '75 suggestions' },
+            { value: '100', label: '100 suggestions' },
+            { value: '150', label: '150 suggestions' },
+            { value: '200', label: '200 suggestions' },
+            { value: '250', label: '250 suggestions' },
           ]}
         />
 

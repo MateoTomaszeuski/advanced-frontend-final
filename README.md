@@ -1717,16 +1717,16 @@ An intelligent Spotify management assistant that automates playlist creation, mu
 - Toasts / global notifications with user preferences
 - Settings page redesigned
 - All toast notifications respect user preferences
-- AI-powered theme customization feature (bonus feature)
 - Code organization and maintainability improvements
 - Service layer refactoring completed
+- Backend AI prompt simplification and optimization
+- Real-time streaming status updates for all agent features
 
 **Features:**
 - **API Client Timeout Improvements**:
   - Added 5-minute timeout using AbortController for all API requests
-  - Previously browser's default timeout (30-60 seconds) was causing failures on large operations
-  - Graceful timeout error handling with user-friendly messages
-  - Fixed "Failed to fetch" errors that occurred when backend completed successfully but frontend timed out
+  - Prevents indefinite hangs on long-running operations
+  - Custom timeout error messages with user guidance
   - Timeout errors now display: "Request timed out or network error occurred. Try reloading the page to see if the operation completed successfully."
 
 - **Settings Page Complete Redesign**:
@@ -1810,7 +1810,98 @@ An intelligent Spotify management assistant that automates playlist creation, mu
   - **TypeScript Improvements**: Fixed type imports in DashboardPage using `type` keyword for `verbatimModuleSyntax` compatibility
   - **User Experience**: History pages show empty state after deletion, new actions display normally after clearing
 
-- **AI-Powered Theme Customization Feature**:
+- **Backend Refactoring - Service Extraction**:
+  - **MusicDiscoveryService** reduced from 468 to 154 lines
+    - Created `DiscoveryQueryGenerator.cs` (171 lines) - AI-powered query generation
+    - Created `TrackDiscoveryHelper.cs` (208 lines) - Track search and discovery logic
+    - Both services registered with dependency injection in Program.cs
+  - **AgentController** reduced from 466 to 332 lines
+    - Created `AgentAnalyticsService.cs` (67 lines) - App usage analytics aggregation
+    - Created `AgentHistoryService.cs` (128 lines) - Action history management
+    - Created `ConversationValidator.cs` helper for ownership validation
+  - **SpotifyController** reduced from 435 to 317 lines 
+    - Created `PlaylistAnalyticsService.cs` (100 lines) - Playlist audio features analytics
+  - **All Tests Passing**: Updated all unit tests with new service dependencies
+
+- **AI Prompt Simplification for Playlist Creation**:
+  - **Problem**: AI was generating overly complex Spotify search queries like `'(artist:"Mantronix" OR artist:"N.W.A" OR artist:"Public Enemy") year:1988-1994'` that returned no results
+  - **Solution**: Completely rewrote `BuildPlaylistCreationPrompt()` in AIPromptBuilder.cs
+  - **New Approach**: "Reasoning-first" methodology
+    - AI first identifies genre/era of user request
+    - AI thinks of 2-3 famous artists that fit that description
+    - AI builds simple queries using those artists: `'artist:"Run-DMC" year:1980-1989'`
+    - One query per search, no complex OR operators or boolean logic
+  - **CRITICAL INSTRUCTION Section**: Added strict formatting rules
+    - "NEVER use OR operators or parentheses"
+    - "Use quotes for multi-word values: artist:\"Daft Punk\""
+    - "Keep queries simple and focused"
+  - **Examples Added**: Showed AI what good queries look like vs bad queries
+    - GOOD: `'artist:"The Beatles" year:1960-1970'`
+    - BAD: `'60s british invasion rock genre:rock'`
+  - **Result**: Playlist creation now consistently finds tracks with simple, effective queries
+
+- **AI Prompt Simplification for Music Discovery**:
+  - **Problem**: Discovery feature also using complex queries and only returning 50/250 requested tracks
+  - **Solution**: Updated `BuildDiscoveryPrompt()` with same reasoning-first approach
+  - **New Features**:
+    - AI analyzes user's top saved tracks to identify music taste
+    - Generates simple queries based on famous artists in user's preferred genres
+    - Includes explicit instructions to avoid complex boolean queries
+    - Added anti-caching timestamp parameter to prevent AI from repeating queries
+  - **Iteration Logic**: Up to 5 attempts to reach target track count
+    - Adaptive query generation: AI adjusts strategy if initial searches fail
+    - Playlist checking: Excludes tracks user already has in any playlist
+    - Comprehensive deduplication: Track ID, ISRC, and normalized name matching
+
+- **AI Prompt Simplification for Music Suggestions**:
+  - **Problem**: Suggestions using complex queries and limited to 50 tracks maximum
+  - **Solution**: Updated `BuildSuggestionPrompt()` and `BuildAdaptiveSearchPrompt()`
+  - **New Capabilities**:
+    - Support for up to 250 suggestions (increased from 50)
+    - Playlist context analysis: AI examines existing tracks to understand playlist theme
+    - Adaptive search strategies: AI generates new approaches mid-process if needed
+    - Anti-repetition logic: Excludes tracks already suggested or in playlists
+  - **Iteration System**: 
+    - Outer loop: Up to 5 attempts to generate search strategies
+    - Inner loop: Up to 5 search iterations per strategy
+    - Real-time progress updates via SignalR
+
+- **Streaming Status Updates - Backend Implementation**:
+  - **MusicSuggestionService**: Added comprehensive `SendStatusUpdateAsync()` calls
+    - "Analyzing playlist '{playlistName}'..." at start
+    - "AI generated {count} search strategies based on context" after AI analysis
+    - "Search iteration {x}: Searching with query '{query}'" during each search
+    - "Found {current}/{target} tracks so far" progress updates
+    - "Checking if suggested tracks are in user's playlists..." before deduplication
+    - "Generated {count} music suggestions for '{playlistName}'" at completion
+    - "Failed to generate suggestions: {error}" on error
+  - **DuplicateCleanerService**: Added streaming updates to scan and removal
+    - "Scanning '{playlistName}' for duplicates..." at start
+    - "Scanning progress: {percent}% ({current}/{total} tracks)" every 20%
+    - "Scan complete: Found {count} duplicate groups" at completion
+    - "Removing {count} duplicate tracks from '{playlistName}'..." before removal
+    - "Successfully removed {count} duplicates" on success
+    - Error messages with details on failure
+  - **IAgentNotificationService**: Injected into both services for real-time updates
+
+- **Streaming Status Updates - Frontend Implementation**:
+  - **SuggestionsPage.tsx**: Added AgentStatusBanner component
+    - Imports: `AgentStatusBanner` and `useAgentStore`
+    - Conditional render: `{agentStatus === 'processing' && currentTask && <AgentStatusBanner task={currentTask} />}`
+    - Placement: Between `SpotifyConnectionAlert` and `SuggestionSettings`
+    - Real-time display of AI analysis, search iterations, and progress
+  - **DuplicateCleanerPage.tsx**: Added AgentStatusBanner component
+    - Same pattern as SuggestionsPage
+    - Shows scan progress percentages and duplicate counts
+    - Updates every 20% during scanning operation
+  - **AgentStatusBanner Component**: Reused existing component
+    - Spinning double-ring loader animation
+    - "PROCESSING" badge with timestamp
+    - Current task message display
+    - Animated progress bar
+    - Spotify green theme styling
+
+- **AI-Powered Theme Customization Feature** (deprecated, not in final submission):
   - **Backend Infrastructure**:
     - Created `user_themes` table in PostgreSQL with JSONB theme_data column, description TEXT, unique constraint on user_id
     - Created DTOs: ThemeDataDto (8 colors), GenerateThemeRequest, SaveThemeRequest, ThemeResponse

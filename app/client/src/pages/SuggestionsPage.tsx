@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { SpotifyConnectionAlert } from '../components/SpotifyConnectionAlert';
 import { InfoBox } from '../components/InfoBox';
+import { AgentStatusBanner } from '../components/playlist-creator/AgentStatusBanner';
 import { SuggestionSettings } from '../components/suggestions/SuggestionSettings';
 import { SuggestionResults } from '../components/suggestions/SuggestionResults';
 import { useAgent } from '../hooks/useAgent';
+import { useAgentStore } from '../stores/useAgentStore';
 import { spotifyApi } from '../services/api';
 import { showToast } from '../utils/toast';
 import type { SpotifyPlaylist, SuggestMusicResponse } from '../types/api';
@@ -21,6 +23,8 @@ export function SuggestionsPage() {
   const [isSyncing, setIsSyncing] = useState(false);
 
   const { isLoading, createConversation, suggestMusic } = useAgent();
+  const agentStatus = useAgentStore((state) => state.status);
+  const currentTask = useAgentStore((state) => state.currentTask);
 
   const fetchPlaylists = async () => {
     setIsSyncing(true);
@@ -73,12 +77,23 @@ export function SuggestionsPage() {
   };
 
   const handleAddToPlaylist = async () => {
-    if (!selectedPlaylist || selectedTracks.size === 0) return;
+    if (!selectedPlaylist || selectedTracks.size === 0 || !suggestions) return;
 
     setIsAdding(true);
     try {
       await spotifyApi.addTracksToPlaylist(selectedPlaylist, Array.from(selectedTracks));
       showToast.success(`Added ${selectedTracks.size} tracks to playlist!`);
+      
+      const remainingSuggestions = suggestions.suggestions.filter(
+        track => !selectedTracks.has(track.uri)
+      );
+      
+      setSuggestions({
+        ...suggestions,
+        suggestions: remainingSuggestions,
+        suggestionCount: remainingSuggestions.length,
+      });
+      
       setSelectedTracks(new Set());
     } catch (error) {
       console.error('Failed to add tracks:', error);
@@ -120,6 +135,10 @@ export function SuggestionsPage() {
         </div>
 
         <SpotifyConnectionAlert />
+
+        {agentStatus === 'processing' && currentTask && (
+          <AgentStatusBanner task={currentTask} />
+        )}
 
         <SuggestionSettings
           playlists={playlists}

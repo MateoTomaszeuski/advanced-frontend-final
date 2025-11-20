@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { SpotifyConnectionAlert } from '../components/SpotifyConnectionAlert';
 import { InfoBox } from '../components/InfoBox';
+import { AgentStatusBanner } from '../components/playlist-creator/AgentStatusBanner';
 import { PlaylistSelector } from '../components/duplicate-cleaner/PlaylistSelector';
 import { ScanResults } from '../components/duplicate-cleaner/ScanResults';
 import { useAgent } from '../hooks/useAgent';
+import { useAgentStore } from '../stores/useAgentStore';
 import { spotifyApi } from '../services/api';
 import type { SpotifyPlaylist, RemoveDuplicatesResponse } from '../types/api';
 
@@ -17,6 +19,8 @@ export function DuplicateCleanerPage() {
   const [isSyncing, setIsSyncing] = useState(false);
 
   const { isLoading, createConversation, scanDuplicates, confirmRemoveDuplicates } = useAgent();
+  const agentStatus = useAgentStore((state) => state.status);
+  const currentTask = useAgentStore((state) => state.currentTask);
 
   const fetchPlaylists = async () => {
     setIsSyncing(true);
@@ -118,6 +122,10 @@ export function DuplicateCleanerPage() {
         </div>
 
         <SpotifyConnectionAlert />
+
+        {agentStatus === 'processing' && currentTask && (
+          <AgentStatusBanner task={currentTask} />
+        )}
 
         <PlaylistSelector
           playlists={playlists}

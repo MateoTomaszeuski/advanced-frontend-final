@@ -107,7 +107,7 @@ IMPORTANT: Provide a unique, diverse mix of genres each time - avoid repeating t
         var trackKeys = new HashSet<string>();
 
         var searchIterations = 0;
-        const int maxSearchIterations = 5;
+        const int maxSearchIterations = 10;
         var currentQueries = searchQueries.ToList();
 
         while (allTracks.Count < limit && searchIterations < maxSearchIterations) {
@@ -143,9 +143,24 @@ IMPORTANT: Provide a unique, diverse mix of genres each time - avoid repeating t
                 await _notificationService.SendStatusUpdateAsync(userEmail, "processing",
                     $"After query '{query}': found {tracksFoundInQuery} new tracks, total {allTracks.Count} unique tracks");
             }
+
+            if (allTracks.Count < limit && searchIterations < maxSearchIterations) {
+                _logger.LogInformation("Need {Missing} more tracks, generating new queries...", limit - allTracks.Count);
+                currentQueries = await _queryGenerator.AdaptQueriesAsync(
+                    await GetTopTracksFromUser(allTracks),
+                    currentQueries,
+                    allTracks.Count,
+                    limit,
+                    userEmail
+                );
+            }
         }
 
         return allTracks;
+    }
+
+    private Task<SpotifyTrack[]> GetTopTracksFromUser(List<SpotifyTrack> tracks) {
+        return Task.FromResult(tracks.Take(5).ToArray());
     }
 
     public async Task<List<SpotifyTrack>> FallbackToRecommendationsAsync(

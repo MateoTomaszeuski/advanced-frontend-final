@@ -65,22 +65,72 @@ public class MusicDiscoveryService : IMusicDiscoveryService {
 
             _logger.LogInformation("User has {Count} saved tracks", savedTrackIds.Count);
 
+            await _notificationService.SendStatusUpdateAsync(user.Email, "processing", "Checking your playlists to avoid duplicates...");
+
+            var userPlaylists = await _spotifyService.GetUserPlaylistsAsync(accessToken, 50);
+            _logger.LogInformation("User has {Count} playlists", userPlaylists.Length);
+
+            foreach (var userPlaylist in userPlaylists) {
+                try {
+                    var playlistTracks = await _spotifyService.GetPlaylistTracksAsync(accessToken, userPlaylist.Id);
+                    foreach (var track in playlistTracks) {
+                        savedTrackIds.Add(track.Id);
+                    }
+                } catch (Exception ex) {
+                    _logger.LogWarning(ex, "Failed to get tracks from playlist {PlaylistId}", userPlaylist.Id);
+                }
+            }
+
+            _logger.LogInformation("Total unique tracks across saved songs and playlists: {Count}", savedTrackIds.Count);
+
             var topSavedTracks = savedTracks.OrderByDescending(t => t.Popularity).Take(5).ToArray();
-            List<SpotifyTrack> allDiscoveredTracks;
+            List<SpotifyTrack> allDiscoveredTracks = new List<SpotifyTrack>();
+            var discoveryAttempts = 0;
+            const int maxDiscoveryAttempts = 5;
 
-            if (topSavedTracks.Length == 0) {
-                allDiscoveredTracks = await _trackDiscoveryHelper.DiscoverWithoutSavedTracksAsync(
-                    accessToken, request.Limit, savedTrackIds);
-            } else {
-                var searchQueries = await _queryGenerator.GenerateQueriesAsync(topSavedTracks);
-                _logger.LogInformation("Using {Count} search queries for discovery", searchQueries.Count);
+            while (allDiscoveredTracks.Count < request.Limit && discoveryAttempts < maxDiscoveryAttempts) {
+                discoveryAttempts++;
+                var remainingNeeded = request.Limit - allDiscoveredTracks.Count;
+                
+                _logger.LogInformation("Discovery attempt {Attempt}: Need {Remaining} more tracks (have {Current})", 
+                    discoveryAttempts, remainingNeeded, allDiscoveredTracks.Count);
+                
+                await _notificationService.SendStatusUpdateAsync(user.Email, "processing", 
+                    $"Discovery attempt {discoveryAttempts}: Looking for {remainingNeeded} more unique tracks...");
 
-                allDiscoveredTracks = await _trackDiscoveryHelper.DiscoverFromSearchQueriesAsync(
-                    accessToken, searchQueries, request.Limit, savedTrackIds, user.Email);
+                List<SpotifyTrack> newDiscoveredTracks;
 
-                if (allDiscoveredTracks.Count < request.Limit) {
-                    allDiscoveredTracks = await _trackDiscoveryHelper.FallbackToRecommendationsAsync(
-                        accessToken, topSavedTracks, request.Limit, allDiscoveredTracks, savedTrackIds);
+                if (topSavedTracks.Length == 0) {
+                    newDiscoveredTracks = await _trackDiscoveryHelper.DiscoverWithoutSavedTracksAsync(
+                        accessToken, remainingNeeded, savedTrackIds);
+                } else {
+                    var searchQueries = await _queryGenerator.GenerateQueriesAsync(topSavedTracks);
+                    _logger.LogInformation("Using {Count} search queries for discovery", searchQueries.Count);
+
+                    newDiscoveredTracks = await _trackDiscoveryHelper.DiscoverFromSearchQueriesAsync(
+                        accessToken, searchQueries, remainingNeeded, savedTrackIds, user.Email);
+
+                    if (newDiscoveredTracks.Count < remainingNeeded) {
+                        newDiscoveredTracks = await _trackDiscoveryHelper.FallbackToRecommendationsAsync(
+                            accessToken, topSavedTracks, remainingNeeded, newDiscoveredTracks, savedTrackIds);
+                    }
+                }
+
+                var uniqueNewTracks = 0;
+                foreach (var track in newDiscoveredTracks) {
+                    if (savedTrackIds.Add(track.Id)) {
+                        allDiscoveredTracks.Add(track);
+                        uniqueNewTracks++;
+                        if (allDiscoveredTracks.Count >= request.Limit) break;
+                    }
+                }
+
+                _logger.LogInformation("Discovery attempt {Attempt}: Found {Unique} unique new tracks, total: {Total}", 
+                    discoveryAttempts, uniqueNewTracks, allDiscoveredTracks.Count);
+
+                if (uniqueNewTracks == 0) {
+                    _logger.LogWarning("No new unique tracks found in attempt {Attempt}, stopping discovery", discoveryAttempts);
+                    break;
                 }
             }
 

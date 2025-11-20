@@ -42,61 +42,122 @@ public class MusicSuggestionService : IMusicSuggestionService {
         _logger.LogInformation("Generating music suggestions for playlist {PlaylistId} with context: {Context}",
             request.PlaylistId, request.Context);
 
+        await _notificationService.SendStatusUpdateAsync(user.Email, "processing", "Analyzing playlist and checking your music library...");
+
         var playlist = await _playlistService.GetPlaylistAsync(accessToken, request.PlaylistId);
         var playlistTracks = await _trackService.GetPlaylistTracksAsync(accessToken, request.PlaylistId);
+        var existingTrackIds = playlistTracks.Select(t => t.Id).ToHashSet();
+
+        var userPlaylists = await _spotifyService.GetUserPlaylistsAsync(accessToken, 50);
+        _logger.LogInformation("Checking {Count} user playlists to avoid duplicates", userPlaylists.Length);
+
+        foreach (var userPlaylist in userPlaylists) {
+            try {
+                var tracks = await _trackService.GetPlaylistTracksAsync(accessToken, userPlaylist.Id);
+                foreach (var track in tracks) {
+                    existingTrackIds.Add(track.Id);
+                }
+            } catch (Exception ex) {
+                _logger.LogWarning(ex, "Failed to get tracks from playlist {PlaylistId}", userPlaylist.Id);
+            }
+        }
+
+        _logger.LogInformation("Total tracks to exclude: {Count}", existingTrackIds.Count);
+        await _notificationService.SendStatusUpdateAsync(user.Email, "processing", 
+            $"Found {existingTrackIds.Count} existing tracks across all playlists to exclude");
+
+        await _notificationService.SendStatusUpdateAsync(user.Email, "processing", 
+            "Asking AI to analyze playlist and generate search strategies...");
 
         var topTracks = playlistTracks.OrderByDescending(t => t.Popularity).Take(10).ToArray();
-
-        var (searchQueries, explanation) = await GenerateSuggestionQueriesAsync(playlist, topTracks, request.Context);
-
         var allSuggestions = new List<SuggestedTrack>();
-        var existingTrackIds = playlistTracks.Select(t => t.Id).ToHashSet();
         var suggestionIds = new HashSet<string>();
-        var currentSearchQueries = searchQueries.ToList();
-        var searchIterations = 0;
-        const int maxSearchIterations = 3;
-        var targetCount = Math.Min(request.Limit, 50);
+        var suggestionAttempts = 0;
+        const int maxSuggestionAttempts = 5;
+        var targetCount = Math.Min(request.Limit, 250);
 
-        while (allSuggestions.Count < targetCount && searchIterations < maxSearchIterations) {
-            searchIterations++;
+        while (allSuggestions.Count < targetCount && suggestionAttempts < maxSuggestionAttempts) {
+            suggestionAttempts++;
+            var remainingNeeded = targetCount - allSuggestions.Count;
+            
+            _logger.LogInformation("Suggestion attempt {Attempt}: Need {Remaining} more tracks (have {Current})", 
+                suggestionAttempts, remainingNeeded, allSuggestions.Count);
+            
+            await _notificationService.SendStatusUpdateAsync(user.Email, "processing", 
+                $"Suggestion attempt {suggestionAttempts}: Looking for {remainingNeeded} more unique tracks...");
 
-            foreach (var query in currentSearchQueries.ToList()) {
-                if (allSuggestions.Count >= targetCount) break;
+            var (searchQueries, explanation) = await GenerateSuggestionQueriesAsync(playlist, topTracks, request.Context);
+            await _notificationService.SendStatusUpdateAsync(user.Email, "processing", 
+                $"AI generated {searchQueries.Count} search strategies based on context: '{request.Context}'");
+            var currentSearchQueries = searchQueries.ToList();
+            var searchIterations = 0;
+            const int maxSearchIterations = 3;
 
-                _logger.LogInformation("Searching suggestions (iteration {Iteration}) with query: '{Query}'", searchIterations, query);
-                await _notificationService.SendStatusUpdateAsync(user.Email, "processing", $"Suggestions iteration {searchIterations}: Searching with query '{query}'");
+            var attemptSuggestions = new List<SuggestedTrack>();
+            
+            while (attemptSuggestions.Count < remainingNeeded && searchIterations < maxSearchIterations) {
+                searchIterations++;
 
-                var searchResults = await _spotifyService.SearchTracksAsync(accessToken, query, 50);
+                foreach (var query in currentSearchQueries.ToList()) {
+                    if (attemptSuggestions.Count >= remainingNeeded) break;
 
-                var tracksFoundInThisQuery = 0;
-                foreach (var track in searchResults) {
-                    if (!existingTrackIds.Contains(track.Id) && suggestionIds.Add(track.Id)) {
-                        allSuggestions.Add(new SuggestedTrack(
-                            track.Id,
-                            track.Name,
-                            track.Artists.Select(a => a.Name).ToArray(),
-                            track.Uri,
-                            $"Matches '{query}' - {explanation}",
-                            track.Popularity
-                        ));
-                        tracksFoundInThisQuery++;
+                    _logger.LogInformation("Searching suggestions (attempt {Attempt}, iteration {Iteration}) with query: '{Query}'", 
+                        suggestionAttempts, searchIterations, query);
+                    await _notificationService.SendStatusUpdateAsync(user.Email, "processing", 
+                        $"Searching with query '{query}'");
 
-                        if (allSuggestions.Count >= targetCount) break;
+                    var searchResults = await _spotifyService.SearchTracksAsync(accessToken, query, 50);
+
+                    var tracksFoundInThisQuery = 0;
+                    foreach (var track in searchResults) {
+                        if (!existingTrackIds.Contains(track.Id) && suggestionIds.Add(track.Id)) {
+                            var suggestedTrack = new SuggestedTrack(
+                                track.Id,
+                                track.Name,
+                                track.Artists.Select(a => a.Name).ToArray(),
+                                track.Uri,
+                                $"Matches '{query}' - {explanation}",
+                                track.Popularity
+                            );
+                            attemptSuggestions.Add(suggestedTrack);
+                            existingTrackIds.Add(track.Id);
+                            tracksFoundInThisQuery++;
+
+                            if (attemptSuggestions.Count >= remainingNeeded) break;
+                        }
                     }
+
+                    _logger.LogInformation("After query '{Query}': found {NewTracks} new suggestions, attempt total {Count}",
+                        query, tracksFoundInThisQuery, attemptSuggestions.Count);
+                    await _notificationService.SendStatusUpdateAsync(user.Email, "processing", 
+                        $"After query '{query}': found {tracksFoundInThisQuery} new suggestions, total {allSuggestions.Count + attemptSuggestions.Count}/{targetCount}");
                 }
 
-                _logger.LogInformation("After query '{Query}': found {NewTracks} new suggestions, total {Count}",
-                    query, tracksFoundInThisQuery, allSuggestions.Count);
-                await _notificationService.SendStatusUpdateAsync(user.Email, "processing", $"After query '{query}': found {tracksFoundInThisQuery} new suggestions, total {allSuggestions.Count}");
+                if (attemptSuggestions.Count < remainingNeeded && searchIterations < maxSearchIterations) {
+                    await _notificationService.SendStatusUpdateAsync(user.Email, "processing", 
+                        $"Iteration {searchIterations}/{maxSearchIterations}: Found {attemptSuggestions.Count}/{remainingNeeded} needed. Asking AI for new strategies...");
+                    currentSearchQueries = await AdaptSuggestionQueriesAsync(playlist, topTracks, request.Context, currentSearchQueries, attemptSuggestions.Count, remainingNeeded, user.Email);
+                }
             }
 
-            if (allSuggestions.Count < targetCount && searchIterations < maxSearchIterations) {
-                currentSearchQueries = await AdaptSuggestionQueriesAsync(playlist, topTracks, request.Context, currentSearchQueries, allSuggestions.Count, targetCount, user.Email);
+            allSuggestions.AddRange(attemptSuggestions);
+            _logger.LogInformation("Suggestion attempt {Attempt}: Found {Unique} unique tracks, total: {Total}", 
+                suggestionAttempts, attemptSuggestions.Count, allSuggestions.Count);
+            await _notificationService.SendStatusUpdateAsync(user.Email, "processing", 
+                $"Attempt {suggestionAttempts} complete: Found {attemptSuggestions.Count} new suggestions. Total: {allSuggestions.Count}/{targetCount}");
+
+            if (attemptSuggestions.Count == 0) {
+                _logger.LogWarning("No new unique tracks found in attempt {Attempt}, stopping", suggestionAttempts);
+                break;
             }
         }
 
         _logger.LogInformation("Generated {Count} suggestions for playlist {PlaylistId}",
             allSuggestions.Count, request.PlaylistId);
+
+        await _notificationService.SendStatusUpdateAsync(user.Email, "completed", 
+            $"Successfully generated {allSuggestions.Count} suggestions for '{playlist.Name}'!", 
+            new { suggestionCount = allSuggestions.Count, context = request.Context });
 
         return new SuggestMusicResponse(
             playlist.Id,
@@ -116,34 +177,37 @@ public class MusicSuggestionService : IMusicSuggestionService {
             new AIMessage("system", @"You are a music expert assistant. Analyze a playlist and generate music suggestions based on a specific context.
 
 SPOTIFY SEARCH API - OFFICIAL SUPPORTED FILTERS:
-- album: 'album:""Album Name""'
 - artist: 'artist:""Artist Name""'
-- track: 'track:""Track Name""'
 - year: 'year:2020' or 'year:1980-1990'
 - genre: 'genre:rock' 'genre:jazz' 'genre:electronic' 'genre:hip-hop' 'genre:pop' 'genre:indie' 'genre:metal' 'genre:country' 'genre:classical' 'genre:reggae' 'genre:blues' 'genre:soul' 'genre:funk' 'genre:punk' 'genre:folk' 'genre:r-n-b' 'genre:dance' 'genre:latin' 'genre:afrobeat'
 
+REASONING PROCESS:
+1. Analyze what genres/artists are in the playlist
+2. Think about what the user's context means (workout → high energy, party → upbeat/danceable, study → calm/focus, etc.)
+3. Identify famous artists that match BOTH the playlist style AND the context
+4. Build SIMPLE queries - famous artists or genre+keywords
+
 QUERY BUILDING STRATEGY:
-1. Analyze the playlist's style (genres, mood, era)
-2. Match the user's context (e.g., 'workout', 'party', 'study', 'chill')
-3. Combine keywords with filters for best results
-4. Use artist filters to find similar artists
-5. Use genre filters to explore related genres
-6. Add year filters if context suggests a time period
+- Keep queries simple and focused
+- Use well-known artists that match the playlist + context
+- Or use genre + simple mood keywords
+- Avoid long strings of similar adjectives
+- One clear direction per query
 
 Examples:
-- Context 'workout' + indie rock playlist → 'energetic upbeat genre:rock genre:indie'
-- Context 'party' + electronic playlist → 'dance party genre:electronic genre:dance year:2020-2024'
-- Context 'study' + jazz playlist → 'calm focus genre:jazz genre:classical genre:ambient'
+- Playlist: Indie rock, Context: 'workout' → 'artist:""The Strokes""', 'energetic genre:rock', 'artist:""Arctic Monkeys""'
+- Playlist: Electronic, Context: 'party' → 'artist:""Daft Punk""', 'genre:dance year:2015-2024', 'artist:""Calvin Harris""'
+- Playlist: Jazz, Context: 'study' → 'calm genre:jazz', 'artist:""Bill Evans""', 'peaceful piano genre:classical'
 
-Generate 3-5 search queries that would find music matching the context while being similar to the playlist's style.
+Generate 5-7 simple search queries that match the context while fitting the playlist's style.
 
 Return your response in the following JSON format:
 {
-  ""queries"": [""query1 with filters"", ""query2 with filters""],
+  ""queries"": [""query1"", ""query2"", ""query3""],
   ""explanation"": ""Brief explanation of the suggestion strategy""
 }
 
-IMPORTANT: Generate diverse, creative queries - each request should yield unique suggestions."),
+IMPORTANT: Keep queries simple - famous artists and clear genre+mood combos work best!"),
             new AIMessage("user", $"[Request #{DateTime.UtcNow.Ticks}] Playlist: {playlist.Name}\nTop tracks: {trackSummary}\nContext: {context}\n\nGenerate search queries to find songs that match this context while fitting the playlist's style.")
         };
 
@@ -203,18 +267,30 @@ SPOTIFY SEARCH API - OFFICIAL SUPPORTED FILTERS:
 - year: 'year:2020' or 'year:1980-1990'
 - genre: 'genre:rock' 'genre:jazz' 'genre:electronic' 'genre:hip-hop' 'genre:pop' 'genre:indie' etc.
 
-The current queries aren't finding enough NEW tracks (not already in the playlist). Generate 3-5 DIFFERENT search queries that:
-1. Better match the user's context/mood request
-2. Explore different artists in a similar style
-3. Try related sub-genres or crossover styles
-4. Use more creative or specific keywords
+REASONING PROCESS:
+1. Look at what queries were already tried and the playlist style
+2. Think of OTHER well-known artists that match the context
+3. Consider slightly different time periods or sub-genres
+4. Keep queries SIMPLE - one artist or one genre+keyword combo per query
+
+The current queries aren't finding enough NEW tracks. Generate 5-7 DIFFERENT but SIMPLE search queries:
+- Try different well-known artists that match the context + playlist style
+- Use related genres with mood keywords
+- Expand time periods slightly if relevant
+- Keep each query simple and focused
+
+Examples:
+- Already tried: 'artist:""Daft Punk""'
+  → New: 'artist:""Justice""', 'artist:""Kavinsky""', 'genre:electronic year:2010-2020'
+- Already tried: 'energetic genre:rock'
+  → New: 'artist:""Queens of the Stone Age""', 'artist:""Royal Blood""', 'genre:rock year:2015-2024'
 
 Return your response in this JSON format:
 {
   ""queries"": [""query1"", ""query2"", ""query3""]
 }
 
-IMPORTANT: Generate creative alternatives that match the context!"),
+IMPORTANT: Keep it simple - famous artists work best!"),
             new AIMessage("user", $"[Request #{DateTime.UtcNow.Ticks}] Playlist: {playlist.Name}\nContext requested: {context}\nTop tracks: {string.Join(", ", topTracks.Take(3).Select(t => $"{t.Name} by {string.Join(", ", t.Artists.Select(a => a.Name))}"))}.\nCurrent queries: {string.Join(", ", currentSearchQueries)}\nFound {currentCount} suggestions so far, need {targetCount} total.\n\nGenerate alternative search queries for better contextual suggestions.")
         };
 

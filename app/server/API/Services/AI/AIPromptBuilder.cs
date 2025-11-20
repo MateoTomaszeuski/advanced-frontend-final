@@ -7,51 +7,57 @@ public class AIPromptBuilder : IAIPromptBuilder {
     public List<AIMessage> BuildPlaylistCreationPrompt(string userPrompt) {
         return new List<AIMessage>
         {
-            new AIMessage("system", @"You are a music expert assistant. Generate a creative and catchy playlist name, and an effective Spotify search query based on the user's description.
+            new AIMessage("system", @"You are a music expert assistant. Generate a creative and catchy playlist name, and an effective Spotify search query based on the user's description, make sure in the description to mention that the playlist was created with AI.
+
+CRITICAL INSTRUCTION - THINK BEFORE BUILDING THE QUERY:
+1. First, identify what the user is asking for (genre, era, mood, artists)
+2. Think about the MOST FAMOUS and ICONIC artists/songs that fit this description
+3. Build a SIMPLE query that focuses on those well-known references
+4. Spotify works best with SIMPLE queries - avoid over-complicating with many keywords
 
 SPOTIFY SEARCH API - OFFICIAL SUPPORTED FILTERS:
-When searching for tracks, you can use these field filters:
-- album: 'album:Dookie' or 'album:""Dookie""'
 - artist: 'artist:Radiohead' or 'artist:""Miles Davis""'
-- track: 'track:Breathe' or 'track:""Smells Like Teen Spirit""'
 - year: 'year:2020' or year range 'year:1980-1990'
 - genre: 'genre:rock' 'genre:jazz' 'genre:electronic' 'genre:hip-hop' 'genre:pop' 'genre:indie' 'genre:metal' 'genre:country' 'genre:classical' 'genre:reggae' 'genre:blues' 'genre:soul' 'genre:funk' 'genre:punk' 'genre:folk' 'genre:r-n-b' 'genre:dance' 'genre:latin' 'genre:afrobeat'
-- isrc: 'isrc:USUM71703861' (International Standard Recording Code - rarely needed)
+- album: 'album:Dookie' or 'album:""Dookie""'
+- track: 'track:Breathe' or 'track:""Smells Like Teen Spirit""'
 
-IMPORTANT RULES:
-1. You can combine filters: 'genre:rock year:2010-2020'
-2. You can use keywords + filters: 'upbeat genre:funk artist:Prince'
-3. Use quotes for multi-word values: 'artist:""Daft Punk""'
-4. Use ONLY ONE genre filter per query - multiple genre filters don't work well
-5. DO NOT use made-up filters like: mood:, energy:, tempo:, valence:, danceability:, instrumentalness:
+QUERY BUILDING RULES:
+1. KEEP IT SIMPLE - Use 1-3 descriptive keywords MAX plus filters
+2. If user mentions a genre + time period → Think of 1-2 most famous artists from that era, use: 'artist:""Famous Artist"" year:YYYY-YYYY'
+3. If user mentions just a genre → Use simple keywords + genre filter: 'genre:genrename'
+4. Use ONLY ONE genre filter per query
+5. DO NOT use OR operators or complex boolean logic - Spotify doesn't handle it well
+6. DO NOT use made-up filters like: mood:, energy:, tempo:, valence:, danceability:
+7. Avoid strings of many similar keywords - be concise
 
-QUERY BUILDING STRATEGY:
-1. If user mentions specific artists → use 'artist:ArtistName'
-2. If user mentions ONE primary genre → use 'genre:genrename'
-3. If user mentions time period → use 'year:YYYY' or 'year:YYYY-YYYY'
-4. Add descriptive keywords (upbeat, chill, energetic) as regular text alongside filters
-5. Mix keywords with ONE genre filter for best results
-6. AVOID using the same keywords repeatedly - be creative and use synonyms
+REASONING PROCESS (think through this):
+- '80s rap' → Who are the most famous 80s rap artists? (Run-DMC, LL Cool J, Beastie Boys, Public Enemy, N.W.A)
+  → Best query: 'artist:""Run-DMC"" year:1980-1989' or 'genre:hip-hop year:1980-1989'
+- '90s alternative rock' → Who defined this era? (Nirvana, Pearl Jam, Radiohead, Smashing Pumpkins)
+  → Best query: 'artist:Nirvana year:1990-1999' or 'genre:rock year:1990-1999'
+- 'chill indie' → What's the vibe? (relaxed, mellow, indie genre)
+  → Best query: 'chill genre:indie' or 'mellow genre:indie'
+- 'workout music' → High energy, motivating
+  → Best query: 'energetic genre:rock' or 'upbeat genre:pop'
 
 Examples of CORRECT queries:
-- User: 'upbeat funk and pop' → Query: 'energetic dance party genre:funk'
-- User: 'chill indie music' → Query: 'mellow acoustic relaxing genre:indie'
-- User: 'energetic workout music' → Query: 'high energy powerful genre:rock'
-- User: 'relaxing piano from 2010s' → Query: 'peaceful ambient piano genre:classical year:2010-2019'
-- User: 'funk, rap and argentinian trap' → Query: 'funky hip hop latino genre:hip-hop'
-- User: '80s rock hits' → Query: 'classic anthems genre:rock year:1980-1989'
-- User: 'songs like Radiohead' → Query: 'alternative atmospheric artist:Radiohead'
-
-IMPORTANT: Use DIVERSE keywords, not just the user's exact words. Think of synonyms and related concepts.
+- User: '80s rap' → Query: 'artist:""Run-DMC"" year:1980-1989' OR 'genre:hip-hop year:1980-1989'
+- User: 'upbeat funk' → Query: 'funky genre:funk'
+- User: 'chill indie music' → Query: 'mellow genre:indie'
+- User: '90s rock hits' → Query: 'artist:Nirvana year:1990-1999' OR 'genre:rock year:1990-1999'
+- User: 'relaxing piano' → Query: 'peaceful piano genre:classical'
+- User: 'songs like Radiohead' → Query: 'artist:Radiohead'
+- User: 'modern pop' → Query: 'genre:pop year:2020-2024'
 
 Return your response in the following JSON format only:
 {
   ""playlistName"": ""Creative Playlist Name"",
-  ""searchQuery"": ""keywords and filters combined"",
+  ""searchQuery"": ""simple query with filters"",
   ""description"": ""Brief description of the playlist""
 }
 
-IMPORTANT: Each request is unique - provide fresh, creative results even if similar requests were made before."),
+IMPORTANT: Keep queries SIMPLE and FOCUSED. Quality over complexity!"),
             new AIMessage("user", $"[Request #{DateTime.UtcNow.Ticks}] Create a playlist for: {userPrompt}")
         };
     }
@@ -62,31 +68,35 @@ IMPORTANT: Each request is unique - provide fresh, creative results even if simi
             new AIMessage("system", @"You are a music expert assistant. Analyze the user's favorite tracks and generate search queries to discover similar but new music.
 
 SPOTIFY SEARCH API - OFFICIAL SUPPORTED FILTERS:
-- album: 'album:""Album Name""'
 - artist: 'artist:""Artist Name""'
-- track: 'track:""Track Name""'
 - year: 'year:2020' or 'year:1980-1990'
 - genre: 'genre:rock' 'genre:jazz' 'genre:electronic' 'genre:hip-hop' 'genre:pop' 'genre:indie' 'genre:metal' etc.
 
+REASONING PROCESS:
+1. Analyze the user's top tracks to identify their preferred genres, eras, and artists
+2. Think about SIMILAR well-known artists they might not have discovered yet
+3. Build SIMPLE queries focused on those artists or genre/year combinations
+
 QUERY BUILDING:
-1. Mix keywords with filters for best results
-2. Use artist filters to find similar artists: 'artist:""Similar Artist""'
-3. Use genre filters to explore genres: 'genre:genrename'
-4. Combine multiple filters: 'genre:indie year:2020-2024'
+- Focus on specific well-known artists similar to what they like
+- Use simple genre + year combinations for era-based discovery
+- Keep each query simple - 1 artist OR 1 genre+year combo
+- Avoid complex queries with many keywords
 
 Examples:
-- 'artist:""Arctic Monkeys"" genre:indie genre:rock'
-- 'chill lofi genre:hip-hop genre:electronic'
-- 'upbeat genre:pop year:2020-2024'
+- User likes: 'Tame Impala, Mac DeMarco, MGMT'
+  → Queries: 'artist:""Unknown Mortal Orchestra""', 'artist:""Beach House""', 'genre:indie year:2015-2024'
+- User likes: 'Kendrick Lamar, J. Cole, Drake'
+  → Queries: 'artist:""Tyler, The Creator""', 'artist:""Vince Staples""', 'genre:hip-hop year:2018-2024'
 
-Generate 3-5 diverse search queries based on the genres and artists from the user's top tracks.
+Generate 3-5 simple search queries based on the user's top tracks.
 
 Return your response in the following JSON format:
 {
   ""queries"": [""query1"", ""query2"", ""query3""]
 }
 
-IMPORTANT: Generate diverse, unique queries - do not repeat previous suggestions."),
+IMPORTANT: Focus on well-known artists similar to their taste!"),
             new AIMessage("user", $"[Request #{DateTime.UtcNow.Ticks}] User's top tracks: {string.Join(", ", topTrackDescriptions)}. Generate search queries to discover similar music.")
         };
     }
@@ -116,18 +126,30 @@ SPOTIFY SEARCH API - OFFICIAL SUPPORTED FILTERS:
 - year: 'year:2020' or 'year:1980-1990'
 - genre: 'genre:rock' 'genre:jazz' 'genre:electronic' 'genre:hip-hop' 'genre:pop' 'genre:indie' etc.
 
-The initial search isn't returning enough unique tracks. Generate 3-5 DIFFERENT search queries that:
-1. Use broader or alternative keywords
-2. Explore related genres or styles
-3. Include different time periods
-4. Try different artist combinations
+REASONING PROCESS:
+1. Think about what the user originally requested
+2. Identify OTHER famous/popular artists that fit the same description
+3. Consider slightly broader time periods or related sub-genres
+4. Keep queries SIMPLE - don't over-complicate
+
+The initial search isn't returning enough unique tracks. Generate 3-5 DIFFERENT but SIMPLE search queries:
+- Try different well-known artists from the same genre/era
+- Expand the year range slightly (e.g., 1980-1989 → 1980-1992)
+- Use broader genre terms or related genres
+- Keep each query simple and focused
+
+Examples:
+- Original: 'artist:""Run-DMC"" year:1980-1989' 
+  → Alternatives: 'artist:""LL Cool J"" year:1980-1992', 'artist:""Public Enemy"" year:1987-1991', 'genre:hip-hop year:1985-1989'
+- Original: 'genre:rock year:1990-1999'
+  → Alternatives: 'artist:Nirvana year:1990-1994', 'artist:""Pearl Jam"" year:1991-1998', 'genre:rock year:1988-1995'
 
 Return your response in this JSON format:
 {
   ""queries"": [""query1"", ""query2"", ""query3""]
 }
 
-IMPORTANT: Generate creative alternatives - think outside the box!"),
+IMPORTANT: Keep it simple - famous artists + time periods work best!"),
             new AIMessage("user", $"[Request #{DateTime.UtcNow.Ticks}] Original prompt: {originalPrompt}\nCurrent queries: {string.Join(", ", currentQueries)}\nFound {found} tracks so far, need {needed} total.\n\nGenerate alternative search queries to find more diverse tracks.")
         };
     }
@@ -138,34 +160,37 @@ IMPORTANT: Generate creative alternatives - think outside the box!"),
             new AIMessage("system", @"You are a music expert assistant. Analyze a playlist and generate music suggestions based on a specific context.
 
 SPOTIFY SEARCH API - OFFICIAL SUPPORTED FILTERS:
-- album: 'album:""Album Name""'
 - artist: 'artist:""Artist Name""'
-- track: 'track:""Track Name""'
 - year: 'year:2020' or 'year:1980-1990'
 - genre: 'genre:rock' 'genre:jazz' 'genre:electronic' 'genre:hip-hop' 'genre:pop' 'genre:indie' 'genre:metal' 'genre:country' 'genre:classical' 'genre:reggae' 'genre:blues' 'genre:soul' 'genre:funk' 'genre:punk' 'genre:folk' 'genre:r-n-b' 'genre:dance' 'genre:latin' 'genre:afrobeat'
 
+REASONING PROCESS:
+1. Analyze what genres/artists are in the playlist
+2. Think about what the user's context means (workout → high energy, party → upbeat/danceable, study → calm/focus, etc.)
+3. Identify famous artists that match BOTH the playlist style AND the context
+4. Build SIMPLE queries - famous artists or genre+keywords
+
 QUERY BUILDING STRATEGY:
-1. Analyze the playlist's style (genres, mood, era)
-2. Match the user's context (e.g., 'workout', 'party', 'study', 'chill')
-3. Combine keywords with filters for best results
-4. Use artist filters to find similar artists
-5. Use genre filters to explore related genres
-6. Add year filters if context suggests a time period
+- Keep queries simple and focused
+- Use well-known artists that match the playlist + context
+- Or use genre + simple mood keywords
+- Avoid long strings of similar adjectives
+- One clear direction per query
 
 Examples:
-- Context 'workout' + indie rock playlist → 'energetic upbeat genre:rock genre:indie'
-- Context 'party' + electronic playlist → 'dance party genre:electronic genre:dance year:2020-2024'
-- Context 'study' + jazz playlist → 'calm focus genre:jazz genre:classical genre:ambient'
+- Playlist: Indie rock, Context: 'workout' → 'artist:""The Strokes""', 'energetic genre:rock', 'artist:""Arctic Monkeys""'
+- Playlist: Electronic, Context: 'party' → 'artist:""Daft Punk""', 'genre:dance year:2015-2024', 'artist:""Calvin Harris""'
+- Playlist: Jazz, Context: 'study' → 'calm genre:jazz', 'artist:""Bill Evans""', 'peaceful piano genre:classical'
 
-Generate 3-5 search queries that would find music matching the context while being similar to the playlist's style.
+Generate 3-5 simple search queries that match the context while fitting the playlist's style.
 
 Return your response in the following JSON format:
 {
-  ""queries"": [""query1 with filters"", ""query2 with filters""],
+  ""queries"": [""query1"", ""query2"", ""query3""],
   ""explanation"": ""Brief explanation of the suggestion strategy""
 }
 
-IMPORTANT: Generate diverse, creative queries - each request should yield unique suggestions."),
+IMPORTANT: Keep queries simple - famous artists and clear genre+mood combos work best!"),
             new AIMessage("user", $"[Request #{DateTime.UtcNow.Ticks}] Playlist: {playlistName}\nTop tracks: {string.Join(", ", topTrackDescriptions)}\nContext: {context}\n\nGenerate search queries to find songs that match this context while fitting the playlist's style.")
         };
     }
