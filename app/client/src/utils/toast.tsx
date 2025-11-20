@@ -76,28 +76,23 @@ export const showToast = {
     }
   ) => {
     if (!areNotificationsEnabled()) return promise;
-    return toast.promise(
-      promise,
-      {
-        loading: messages.loading,
-        success: messages.success,
-        error: (err: unknown) => {
-          const errorMessage = typeof err === 'string' ? err : messages.error;
-          return (t: { id: string }) => (
-            <div className="flex items-center justify-between gap-3 w-full">
-              <span className="flex-1">{errorMessage}</span>
-              <button
-                onClick={() => toast.dismiss(t.id)}
-                className="px-3 py-1 text-sm bg-red-800 hover:bg-red-700 rounded transition-colors shrink-0"
-              >
-                Dismiss
-              </button>
-            </div>
-          );
-        },
+    
+    const loadingToastId = toast.loading(messages.loading, {
+      style: {
+        background: '#064e3b',
+        color: '#fff',
+        fontWeight: '500',
       },
-      {
-        success: {
+      iconTheme: {
+        primary: '#10b981',
+        secondary: '#fff',
+      },
+    });
+
+    return promise
+      .then((result) => {
+        toast.dismiss(loadingToastId);
+        toast.success(messages.success, {
           duration: 4000,
           style: {
             background: '#065f46',
@@ -108,31 +103,38 @@ export const showToast = {
             primary: '#10b981',
             secondary: '#fff',
           },
-        },
-        error: {
-          duration: Infinity,
-          style: {
-            background: '#991b1b',
-            color: '#fff',
-            fontWeight: '500',
-          },
-          iconTheme: {
-            primary: '#ef4444',
-            secondary: '#fff',
-          },
-        },
-        loading: {
-          style: {
-            background: '#064e3b',
-            color: '#fff',
-            fontWeight: '500',
-          },
-          iconTheme: {
-            primary: '#10b981',
-            secondary: '#fff',
-          },
-        },
-      }
-    );
+        });
+        return result;
+      })
+      .catch((err) => {
+        toast.dismiss(loadingToastId);
+        const errorMessage = typeof err === 'string' ? err : messages.error;
+        toast.error(
+          (t) => (
+            <div className="flex items-center justify-between gap-3 w-full">
+              <span className="flex-1">{errorMessage}</span>
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                className="px-3 py-1 text-sm bg-red-800 hover:bg-red-700 rounded transition-colors shrink-0"
+              >
+                Dismiss
+              </button>
+            </div>
+          ),
+          {
+            duration: Infinity,
+            style: {
+              background: '#991b1b',
+              color: '#fff',
+              fontWeight: '500',
+            },
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          }
+        );
+        throw err;
+      });
   },
 };
