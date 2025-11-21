@@ -16,6 +16,7 @@ export function AgentControlPage() {
     status,
     currentTask,
     currentConversation,
+    conversations,
     setConversations,
     setStatus,
     setCurrentTask,
@@ -24,15 +25,18 @@ export function AgentControlPage() {
   const { elapsedTime } = useAgentTimer();
   const { isConnected, latestStatus } = useWebSocket();
   const [loading, setLoading] = useState(true);
-  const [allConversations, setAllConversations] = useState<Conversation[]>([]);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [recentActions, setRecentActions] = useState<AgentAction[]>([]);
   const [realtimeMessage, setRealtimeMessage] = useState<string | null>(null);
 
   const loadConversations = useCallback(async () => {
     try {
       const convs = await conversationApi.getAll();
-      setAllConversations(convs);
       setConversations(convs);
+      // If no conversations, also clear recent actions
+      if (convs.length === 0) {
+        setRecentActions([]);
+      }
     } catch (error) {
       console.error('Failed to load conversations:', error);
       showToast.error(
@@ -40,6 +44,7 @@ export function AgentControlPage() {
       );
     } finally {
       setLoading(false);
+      setInitialLoadDone(true);
     }
   }, [setConversations]);
 
@@ -117,7 +122,7 @@ export function AgentControlPage() {
         <RecentActionsList actions={recentActions} loading={loading} />
 
         <ConversationsList 
-          conversations={allConversations} 
+          conversations={conversations} 
           currentConversationId={currentConversation?.id} 
         />
       </div>

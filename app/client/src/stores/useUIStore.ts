@@ -9,6 +9,7 @@ interface UIState {
   setSidebarOpen: (open: boolean) => void;
   openModal: (content: React.ReactNode) => void;
   closeModal: () => void;
+  reset: () => void;
 }
 
 const getInitialSidebarState = () => {
@@ -29,4 +30,11 @@ export const useUIStore = create<UIState>((set) => ({
   setSidebarOpen: (open) => set({ isSidebarOpen: open }),
   openModal: (content) => set({ isModalOpen: true, modalContent: content }),
   closeModal: () => set({ isModalOpen: false, modalContent: null }),
+  reset: () =>
+    set({
+      isSidebarOpen: getInitialSidebarState(),
+      isTransitioning: false,
+      isModalOpen: false,
+      modalContent: null,
+    }),
 }));

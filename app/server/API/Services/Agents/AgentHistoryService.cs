@@ -105,6 +105,7 @@ public class AgentHistoryService : IAgentHistoryService {
                 await _actionRepository.DeleteAsync(action.Id);
                 deletedCount++;
             }
+            await _conversationRepository.DeleteAsync(convId);
         }
 
         return deletedCount;

@@ -19,12 +19,13 @@ interface AgentState {
   addConversation: (conversation: Conversation) => void;
   addRecentAction: (action: ApiAgentAction) => void;
   clearRecentActions: () => void;
+  reset: () => void;
 }
 
 export const useAgentStore = create<AgentState>()(
   devtools(
     persist(
-      (set) => ({
+      (set, _get, api) => ({
         status: 'idle',
         currentTask: null,
         progress: 0,
@@ -45,6 +46,18 @@ export const useAgentStore = create<AgentState>()(
             recentActions: [action, ...state.recentActions].slice(0, 10),
           })),
         clearRecentActions: () => set({ recentActions: [] }),
+        reset: () => {
+          set({
+            status: 'idle',
+            currentTask: null,
+            progress: 0,
+            currentConversation: null,
+            conversations: [],
+            recentActions: [],
+          });
+          // Clear persisted localStorage data using persist API
+          api.persist.clearStorage();
+        },
       }),
       {
         name: 'agent-storage',

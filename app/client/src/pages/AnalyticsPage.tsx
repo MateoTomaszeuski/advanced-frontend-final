@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { agentApi } from '../services/api';
 import type { AppAnalytics } from '../types/api';
 import { showToast } from '../utils/toast';
+import { useAgentStore } from '../stores/useAgentStore';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -36,6 +37,7 @@ export function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<AppAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const analyticsLoaded = useRef(false);
+  const zustandConversations = useAgentStore((state) => state.conversations);
 
   useEffect(() => {
     if (!analyticsLoaded.current) {
@@ -159,7 +161,7 @@ export function AnalyticsPage() {
               </div>
               <div className="bg-theme-card rounded-lg shadow p-6 border border-theme-border">
                 <h3 className="text-sm font-medium text-theme-text opacity-70 mb-2">Conversations</h3>
-                <p className="text-3xl font-bold text-theme-accent">{analytics.userActivity.totalConversations}</p>
+                <p className="text-3xl font-bold text-theme-accent">{zustandConversations.length}</p>
                 <p className="text-xs text-theme-text opacity-60 mt-1">Active sessions</p>
               </div>
               <div className="bg-theme-card rounded-lg shadow p-6 border border-theme-border">

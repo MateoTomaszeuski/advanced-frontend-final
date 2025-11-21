@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { Button } from '../components/forms/Button';
 import { useUserStore } from '../stores/useUserStore';
+import { useAgentStore } from '../stores/useAgentStore';
+import { useUIStore } from '../stores/useUIStore';
 import { spotifyApi, agentApi } from '../services/api';
 import { useAuth } from 'react-oidc-context';
 import toast from 'react-hot-toast';
@@ -11,6 +13,9 @@ import { showToast } from '../utils/toast';
 export function SettingsPage() {
   const navigate = useNavigate();
   const { updateSpotifyConnection, preferences, updatePreferences } = useUserStore();
+  const resetUserStore = useUserStore((state) => state.reset);
+  const resetAgentStore = useAgentStore((state) => state.reset);
+  const resetUIStore = useUIStore((state) => state.reset);
   const auth = useAuth();
   const [spotifyStatus, setSpotifyStatus] = useState<{
     isConnected: boolean;
@@ -401,11 +406,14 @@ export function SettingsPage() {
                 size="sm" 
                 className="ml-4 whitespace-nowrap"
                 onClick={async () => {
-                  if (window.confirm('Are you sure you want to delete all history? This will permanently delete all your agent actions from the database. This action cannot be undone.')) {
+                  if (window.confirm('Are you sure you want to delete all history? This will permanently delete all your agent actions from the database and clear all local data. This action cannot be undone.')) {
                     try {
                       setIsLoading(true);
                       await agentApi.clearHistory();
-                      showToast.success('History deleted');
+                      resetAgentStore();
+                      resetUserStore();
+                      resetUIStore();
+                      showToast.success('History and local data cleared');
                     } catch (error) {
                       console.error('Failed to clear history:', error);
                       showToast.error('Failed to clear history');

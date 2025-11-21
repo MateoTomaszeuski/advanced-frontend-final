@@ -19,6 +19,7 @@ interface UserState {
   updateSpotifyConnection: (connected: boolean) => void;
   updatePreferences: (preferences: Partial<UserPreferences>) => void;
   clearUser: () => void;
+  reset: () => void;
 }
 
 const defaultPreferences: UserPreferences = {
@@ -28,7 +29,7 @@ const defaultPreferences: UserPreferences = {
 export const useUserStore = create<UserState>()(
   devtools(
     persist(
-      (set) => ({
+      (set, _get, api) => ({
         user: null,
         preferences: defaultPreferences,
         setUser: (user) => set({ user }),
@@ -41,6 +42,11 @@ export const useUserStore = create<UserState>()(
             preferences: { ...state.preferences, ...newPreferences },
           })),
         clearUser: () => set({ user: null, preferences: defaultPreferences }),
+        reset: () => {
+          set({ user: null, preferences: defaultPreferences });
+          // Clear persisted localStorage data using persist API
+          api.persist.clearStorage();
+        },
       }),
       {
         name: 'user-storage',
