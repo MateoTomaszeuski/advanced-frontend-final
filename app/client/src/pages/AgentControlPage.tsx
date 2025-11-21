@@ -6,7 +6,7 @@ import { ConversationsList } from '../components/agent-control/ConversationsList
 import { useAgentStore } from '../stores/useAgentStore';
 import { conversationApi, agentApi } from '../services/api';
 import { useState, useEffect, useCallback } from 'react';
-import type { Conversation, AgentAction } from '../types/api';
+import type { AgentAction } from '../types/api';
 import { useAgentTimer } from '../hooks/useAgentTimer';
 import { showToast } from '../utils/toast';
 import { useWebSocket } from '../hooks/useWebSocket';
@@ -25,7 +25,6 @@ export function AgentControlPage() {
   const { elapsedTime } = useAgentTimer();
   const { isConnected, latestStatus } = useWebSocket();
   const [loading, setLoading] = useState(true);
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [recentActions, setRecentActions] = useState<AgentAction[]>([]);
   const [realtimeMessage, setRealtimeMessage] = useState<string | null>(null);
 
@@ -44,7 +43,6 @@ export function AgentControlPage() {
       );
     } finally {
       setLoading(false);
-      setInitialLoadDone(true);
     }
   }, [setConversations]);
 
