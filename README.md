@@ -1790,6 +1790,15 @@ An intelligent Spotify management assistant that automates playlist creation, mu
   - Fixed timeout errors showing "Failed to fetch" instead of helpful message
   - Fixed Analytics page showing toasts even when notifications disabled
   - Fixed all pages showing toasts when preferences set to disabled
+  - Fixed AI tool serialization (lowercase property names: type, function, name, description, parameters instead of PascalCase)
+  - Fixed authentication in ThemesController (uses GetCurrentUser() extension method instead of User.FindFirst("email"))
+  - Fixed theme not applying to UI (migrated from regular CSS with !important overrides to Tailwind v4 @theme directive)
+  - Fixed React Fast Refresh warning (added eslint-disable-next-line react-refresh/only-export-components comment)
+  - Fixed infinite loop in ThemeContext by defining useTheme separately and exporting with eslint disable comment
+  - Fixed MainLayout hardcoded bg-gray-50 to bg-theme-background
+  - Fixed preview text not updating to theme colors
+  - Fixed header/top bar text not updating to theme colors
+  - Fixed dashboard cards and all pages not updating to theme colors (comprehensive grep search and replacement)
 
 - **History Management System Redesign**:
   - **Removed Client-Side Filtering**: Eliminated `historyHidden` and `historyClearedAt` properties from UserPreferences
@@ -1959,17 +1968,6 @@ An intelligent Spotify management assistant that automates playlist creation, mu
     - Integrated with existing settings card layout
     - Proper navigation hierarchy maintained
   
-  - **Bug Fixes**:
-    - Fixed AI tool serialization (lowercase property names: type, function, name, description, parameters instead of PascalCase)
-    - Fixed authentication in ThemesController (uses GetCurrentUser() extension method instead of User.FindFirst("email"))
-    - Fixed theme not applying to UI (migrated from regular CSS with !important overrides to Tailwind v4 @theme directive)
-    - Fixed React Fast Refresh warning (added eslint-disable-next-line react-refresh/only-export-components comment)
-    - Fixed infinite loop in ThemeContext by defining useTheme separately and exporting with eslint disable comment
-    - Fixed MainLayout hardcoded bg-gray-50 to bg-theme-background
-    - Fixed preview text not updating to theme colors
-    - Fixed header/top bar text not updating to theme colors
-    - Fixed dashboard cards and all pages not updating to theme colors (comprehensive grep search and replacement)
-  
   - **Theme Features**:
     - Generate themes from natural language descriptions ("dark professional theme with purple accents", "bright summer vibes", "minimal light theme", etc.)
     - Save themes to database per user (unique per user_id, one theme per user)
@@ -1995,27 +1993,6 @@ An intelligent Spotify management assistant that automates playlist creation, mu
     - Replaced all border-gray-* with border-theme-border
     - Proper opacity usage for text hierarchy (primary text = no opacity, secondary = opacity-80, tertiary = opacity-70)
     - Ensured mobile responsive design adapts colors properly
-- **Backend Refactoring - Service Extraction**:
-  - **MusicDiscoveryService** reduced from 468 to 154 lines (67% reduction)
-    - Created `DiscoveryQueryGenerator` (171 lines) - AI query generation logic
-    - Created `TrackDiscoveryHelper` (208 lines) - Track discovery and search logic
-    - Created interfaces: `IDiscoveryQueryGenerator`, `ITrackDiscoveryHelper`
-  - **AgentController** reduced from 466 to 332 lines (29% reduction)
-    - Created `AgentAnalyticsService` (67 lines) - App analytics aggregation
-    - Created `AgentHistoryService` (128 lines) - Action history management
-    - Created `ConversationValidator` helper - Conversation ownership validation
-    - Created interfaces: `IAgentAnalyticsService`, `IAgentHistoryService`
-  - **SpotifyController** reduced from 435 to 317 lines (27% reduction)
-    - Created `PlaylistAnalyticsService` (100 lines) - Playlist analytics logic
-    - Created interface: `IPlaylistAnalyticsService`
-  - **Refactoring Benefits**:
-    - All 3 files previously over 400 lines now under 350 lines
-    - Created 7 new service classes for better separation of concerns
-    - Added 6 new interfaces for dependency injection
-    - Improved testability with smaller, focused services
-    - Maintained all functionality with 100% test pass rate
-    - Registered all new services in DI container (Program.cs)
-
 
 ---
 
