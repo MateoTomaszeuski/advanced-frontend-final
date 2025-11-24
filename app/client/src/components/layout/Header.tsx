@@ -43,8 +43,7 @@ export function Header() {
             <p className="text-xs text-theme-text opacity-70">{auth.user?.profile?.email}</p>
           </div>
           <Button
-            variant="ghost"
-            className='text-theme-accent hover:text-theme-accent hover:opacity-80'
+            variant="primary"
             onClick={async () => {
               try {
                 // Remove user from session
